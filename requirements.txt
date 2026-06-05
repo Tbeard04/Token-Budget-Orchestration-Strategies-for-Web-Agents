@@ -1,0 +1,34 @@
+# --- Agent layer ---
+pydantic-ai>=1.0 # native token usage
+langgraph>=0.2 # state-graph orchestration for Strategy B pipeline + Strategy C router
+langchain>=0.3 # if using LC utilities beyond LangGraph
+
+
+# --- Environment ---
+browsergym # meta-package; pulls core + benchmarks
+browsergym-webarena # WebArena tasks for BrowserGym
+playwright # browser driver
+
+
+# --- Models / embeddings ---
+openai
+sentence-transformers # all-MiniLM-L6-v2 for task embeddings
+
+
+# --- Analysis (needed from Phase 3 onward, safe to install now) ---
+pandas
+numpy
+scipy
+statsmodels # mixed-effects logistic regression
+scikit-learn # K-means allocation clustering
+xgboost # difficulty predictor
+matplotlib
+seaborn
+
+
+# --- Offline RL ---
+d3rlpy # CQL implementation
+
+
+# --- Utilities ---
+python-dotenv
