@@ -195,13 +195,13 @@ def build_prompt(obs: dict) -> str:
     try:
         axtree = flatten_axtree_to_str(
             obs["axtree_object"],
+            extra_properties=obs["extra_element_properties"],
             filter_visible_only=True,
             filter_with_bid_only=True,
         )
-    except TypeError:
-        # older/newer signature - fall back and report so can adjust
+    except (TypeError, ValueError, KeyError) as _e:
         axtree = flatten_axtree_to_str(obs["axtree_object"])
-        print("[warn] AXTree filter kwargs not supported by this version")
+        print(f"[warn] AXTree filtering unavailable ({_e}); using unfiltered tree")
     err = obs.get("last_action_error") or "none"
     return (
         f"GOAL:\n{goal}\n\n"
