@@ -96,6 +96,15 @@ Rules:
 - If the task asks a question, it is complete only once you call
   send_msg_to_user(...) with the answer.
 - Keep reasoning to one sentence. Output one action only.
+- Review ACTIONS YOU HAVE ALREADY TAKEN. Never repeat an action that did not
+  change the page. If an action produced no progress, try a different element
+  or a different approach.
+- Prefer navigating via links and scrolling over using site search boxes.
+  Search endpoints are slow and often fail. Only use search if no navigational
+  path is visible.
+- If the page shows a server error (500, 502, 504) or fails to load, use
+  go_back() and try a different route. Do NOT answer N/A because of a page
+  error - N/A means the information genuinely does not exist.
 
 Answering with send_msg_to_user - the answer is graded by EXACT MATCH:
 - Send ONLY the answer itself. No explanation, no preamble, no quotes,
@@ -201,7 +210,7 @@ def site_of(task_id: int) -> str:
     return "unknown"
 
 
-def build_prompt(obs: dict) -> str:
+def build_prompt(obs: dict, history: list[str] | None = None) -> str:
     goal = obs.get("goal") or " ".join(
         p.get("text", "") for p in obs.get("goal_object", [])
     )
@@ -216,10 +225,14 @@ def build_prompt(obs: dict) -> str:
         axtree = flatten_axtree_to_str(obs["axtree_object"])
         print(f"[warn] AXTree filtering unavailable ({_e}); using unfiltered tree")
     err = obs.get("last_action_error") or "none"
+    hist = "none yet"
+    if history:
+        hist = "\n".join(f"  {n}. {a}" for n, a in enumerate(history[-8:]))
     return (
         f"GOAL:\n{goal}\n\n"
         f"URL: {obs.get('url', 'unknown')}\n"
         f"LAST ACTION ERROR: {err}\n\n"
+        f"ACTIONS YOU HAVE ALREADY TAKEN:\n{hist}\n\n"
         f"PAGE (AXTree):\n{axtree}"
     )
 
@@ -243,13 +256,14 @@ def run_episode(task_id: int) -> dict:
 
     in_tok = out_tok = 0
     steps: list[dict] = []
+    action_history: list[str] = []
     success = False
     reason = "max_steps"
     reward = 0.0
     t0 = time.time()
 
     for i in range(MAX_STEPS):
-        prompt = build_prompt(obs)
+        prompt = build_prompt(obs, action_history)
 
         # Check BEFORE paying: an episode must never exceed its stated budget.
         spent = in_tok + out_tok
@@ -267,6 +281,7 @@ def run_episode(task_id: int) -> dict:
         out_tok += u.output_tokens
         total = in_tok + out_tok
         decided = result.output
+        action_history.append(decided.action)
 
         print(f"\n step {i}")
         print(f"   reason : {decided.reasoning}")
