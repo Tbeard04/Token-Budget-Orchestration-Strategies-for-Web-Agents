@@ -18,6 +18,7 @@ import json
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -37,11 +38,25 @@ for _wa, _bare in [
     if os.getenv(_wa) and not os.getenv(_bare):
         os.environ[_bare] = os.environ[_wa]
 
+import types
+
+import openai
+
+if not hasattr(openai, "error"):
+    _err = types.ModuleType("openai.error")
+    for _n in ["OpenAIError", "APIError", "RateLimitError", "APIConnectionError",
+               "AuthenticationError", "InvalidRequestError",
+               "ServiceUnavailableError", "Timeout", "TryAgain"]:
+        setattr(_err, _n, type(_n, (Exception,), {}))
+    openai.error = _err
+    sys.modules["openai.error"] = _err
+
 import gymnasium as gym
 import browsergym.webarena  # noqa: F401
 from browsergym.utils.obs import flatten_axtree_to_str
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
+
 
 # ----------------------------------------------------------------------------
 # Config
@@ -85,6 +100,14 @@ Rules:
 
 agent = Agent(MODEL, output_type=AgentAction, instructions=INSTRUCTIONS)
 
+# Playwright's sync API runs inside an event loop, and agent.run_sync() tries to
+# start its own inside it -> "This event loop is already running". Calling the
+# agent from a worker thread avoids the clash.
+_executor = ThreadPoolExecutor(max_workers=1)
+
+
+def call_agent(prompt: str):
+    return _executor.submit(agent.run_sync, prompt).result()
 
 # ----------------------------------------------------------------------------
 # Helpers
@@ -163,7 +186,7 @@ def run_episode(task_id: int) -> dict:
     site = site_of(task_id)
     print(f"\n{'=' * 60}\nTASK {task_id}  (site: {site})\n{'=' * 60}")
 
-    env = gym.make(f"browsergym/webarena.{task_id}")
+    env = gym.make(f"browsergym/webarena.{task_id}", timeout=60000)
     obs, _ = env.reset()
 
     #Print the task goal and start URL
@@ -181,7 +204,7 @@ def run_episode(task_id: int) -> dict:
     t0 = time.time()
 
     for i in range(MAX_STEPS):
-        result = agent.run_sync(build_prompt(obs))
+        result = call_agent(build_prompt(obs))
         u = result.usage()
         in_tok += u.input_tokens
         out_tok += u.output_tokens
