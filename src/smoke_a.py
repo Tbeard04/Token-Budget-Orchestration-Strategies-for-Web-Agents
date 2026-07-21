@@ -244,7 +244,7 @@ def run_episode(task_id: int) -> dict:
     site = site_of(task_id)
     print(f"\n{'=' * 60}\nTASK {task_id}  (site: {site})\n{'=' * 60}")
 
-    env = gym.make(f"browsergym/webarena.{task_id}", timeout=60000)
+    env = gym.make(f"browsergym/webarena.{task_id}", timeout=60000, action_timeout=5000)
     obs, _ = env.reset()
 
     #Print the task goal and start URL
