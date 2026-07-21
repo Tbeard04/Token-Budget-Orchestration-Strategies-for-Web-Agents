@@ -227,8 +227,20 @@ def run_episode(task_id: int) -> dict:
     t0 = time.time()
 
     for i in range(MAX_STEPS):
-        result = call_agent(build_prompt(obs))
+        prompt = build_prompt(obs)
+
+        # Check BEFORE paying: an episode must never exceed its stated budget.
+        spent = in_tok + out_tok
+        est_in = len(prompt) // 4
+        if spent + est_in > SAFETY_TOKEN_CAP:
+            reason = "budget_would_exceed"
+            print(f"\n step {i}: SKIPPED - est. {est_in} input tokens would exceed "
+                  f"cap (used {spent}/{SAFETY_TOKEN_CAP})")
+            break
+
+        result = call_agent(prompt)
         u = result.usage()
+
         in_tok += u.input_tokens
         out_tok += u.output_tokens
         total = in_tok + out_tok
