@@ -248,6 +248,7 @@ def run_episode(task_id: int) -> dict:
             "input_tokens": u.input_tokens,
             "output_tokens": u.output_tokens,
             "cumulative_tokens": total,
+            "usage_details": dict(u.details) if getattr(u, "details", None) else None,
         })
 
         if total >= SAFETY_TOKEN_CAP:
