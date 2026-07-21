@@ -96,6 +96,19 @@ Rules:
 - If the task asks a question, it is complete only once you call
   send_msg_to_user(...) with the answer.
 - Keep reasoning to one sentence. Output one action only.
+
+Answering with send_msg_to_user - the answer is graded by EXACT MATCH:
+- Send ONLY the answer itself. No explanation, no preamble, no quotes,
+  no sentence wrapping it.
+  Correct:   send_msg_to_user('Sprite Stasis Ball 65 cm')
+  Wrong:     send_msg_to_user('The top seller is Sprite Stasis Ball 65 cm')
+- For a list of items, comma-separate them: send_msg_to_user('Alice, Bob')
+- If nothing on the page satisfies the criteria, send exactly:
+  send_msg_to_user('N/A')
+- Numbers: send digits only, e.g. send_msg_to_user('0')
+- Do NOT answer until you have navigated to and verified the specific
+  information the task asks for. Answering early ends the episode and
+  cannot be undone.
 """
 
 REASONING_EFFORT = "low"   # pinned for reproducibility: hidden reasoning tokens
