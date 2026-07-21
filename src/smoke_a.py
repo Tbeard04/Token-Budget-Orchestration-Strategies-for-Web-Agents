@@ -192,7 +192,16 @@ def build_prompt(obs: dict) -> str:
     goal = obs.get("goal") or " ".join(
         p.get("text", "") for p in obs.get("goal_object", [])
     )
-    axtree = flatten_axtree_to_str(obs["axtree_object"])
+    try:
+        axtree = flatten_axtree_to_str(
+            obs["axtree_object"],
+            filter_visible_only=True,
+            filter_with_bid_only=True,
+        )
+    except TypeError:
+        # older/newer signature - fall back and report so can adjust
+        axtree = flatten_axtree_to_str(obs["axtree_object"])
+        print("[warn] AXTree filter kwargs not supported by this version")
     err = obs.get("last_action_error") or "none"
     return (
         f"GOAL:\n{goal}\n\n"
