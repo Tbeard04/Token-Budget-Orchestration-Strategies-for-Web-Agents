@@ -225,6 +225,9 @@ def build_prompt(obs: dict, history: list[str] | None = None) -> str:
         axtree = flatten_axtree_to_str(obs["axtree_object"])
         print(f"[warn] AXTree filtering unavailable ({_e}); using unfiltered tree")
     err = obs.get("last_action_error") or "none"
+    if err != "none" and "Timeout" in err and "exceeded" in err:
+        err = ("previous action timed out waiting for the page to settle - "
+               "it may have SUCCEEDED. Check the current page before retrying.")
     hist = "none yet"
     if history:
         hist = "\n".join(f"  {n}. {a}" for n, a in enumerate(history[-8:]))
