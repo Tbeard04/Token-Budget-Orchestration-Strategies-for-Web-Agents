@@ -98,7 +98,30 @@ Rules:
 - Keep reasoning to one sentence. Output one action only.
 """
 
-agent = Agent(MODEL, output_type=AgentAction, instructions=INSTRUCTIONS)
+REASONING_EFFORT = "low"   # pinned for reproducibility: hidden reasoning tokens
+                           # are billed as output, so this must not drift
+
+try:
+    from pydantic_ai.models.openai import (
+        OpenAIResponsesModel,
+        OpenAIResponsesModelSettings,
+    )
+
+    _model = OpenAIResponsesModel(MODEL.split(":", 1)[1])
+    _settings = OpenAIResponsesModelSettings(
+        openai_reasoning_effort=REASONING_EFFORT
+    )
+    agent = Agent(
+        _model,
+        output_type=AgentAction,
+        instructions=INSTRUCTIONS,
+        model_settings=_settings,
+    )
+    print(f"[config] reasoning_effort pinned to '{REASONING_EFFORT}'")
+except Exception as _e:
+    print(f"[config] WARNING: could not pin reasoning_effort ({_e}); "
+          f"using provider default")
+    agent = Agent(MODEL, output_type=AgentAction, instructions=INSTRUCTIONS)
 
 # Playwright's sync API runs inside an event loop, and agent.run_sync() tries to
 # start its own inside it -> "This event loop is already running". Calling the
