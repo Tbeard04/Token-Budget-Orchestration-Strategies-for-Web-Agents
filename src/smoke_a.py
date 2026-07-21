@@ -239,6 +239,8 @@ def run_episode(task_id: int) -> dict:
         print(f"   action : {decided.action}")
         print(f"   tokens : +{u.input_tokens} in / +{u.output_tokens} out"
               f"   (cumulative {total})")
+        if getattr(u, "details", None):
+            print(f"   detail : {u.details}")
 
         steps.append({
             "step": i,
