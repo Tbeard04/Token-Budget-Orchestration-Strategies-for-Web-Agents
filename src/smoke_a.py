@@ -320,8 +320,8 @@ def run_episode(task_id: int) -> dict:
     steps: list[dict] = []
     action_history: list[str] = []
     url_history: list[str] = [obs.get("url", "")]
-    seen_urls: set[str] = set(url_history)
-    steps_since_new_url = 0
+    url_action_counts: Counter = Counter()
+    consecutive_errors = 0
     success = False
     reason = "max_steps"
     reward = 0.0
@@ -348,6 +348,11 @@ def run_episode(task_id: int) -> dict:
         decided = result.output
         action_history.append(decided.action)
 
+        # Count this action taken FROM this page (obs is still pre-step here)
+        pair = (obs.get("url", ""), decided.action)
+        url_action_counts[pair] += 1
+        pair_n = url_action_counts[pair]
+
         print(f"\n step {i}")
         print(f"   reason : {decided.reasoning}")
         print(f"   action : {decided.action}")
@@ -371,14 +376,10 @@ def run_episode(task_id: int) -> dict:
             break
 
         obs, reward, terminated, truncated, _ = env.step(decided.action)
-        cur_url = obs.get("url", "")
-        url_history.append(cur_url)
-        if cur_url in seen_urls:
-            steps_since_new_url += 1
-        else:
-            seen_urls.add(cur_url)
-            steps_since_new_url = 0
+        url_history.append(obs.get("url", ""))
         err = obs.get("last_action_error")
+        consecutive_errors = consecutive_errors + 1 if err else 0
+
         print(f"   result : reward={reward}"
               f"{'  ERROR: ' + str(err) if err else '  (action accepted)'}")
 
@@ -389,12 +390,17 @@ def run_episode(task_id: int) -> dict:
             reason = "env_terminated"
             break
 
-        # Stagnation guard (applied to A, B and C alike): revisiting a hub page
-        # is legitimate exploration, but reaching no NEW page for several steps
-        # means the agent is circling rather than making progress.
-        if steps_since_new_url >= 6:
-            reason = "no_progress"
-            print(f"   STALL  : no new URL in {steps_since_new_url} steps - terminating")
+        # Shared environment constraints (applied to A, B and C alike).
+        # NB: URL change is deliberately NOT the progress signal - AJAX
+        # workflows (admin grids, filter panels, forms) legitimately operate
+        # on a single URL for many steps.
+        if consecutive_errors >= 4:
+            reason = "repeated_action_failure"
+            print(f"   STALL  : {consecutive_errors} consecutive failed actions - terminating")
+            break
+        if pair_n >= 3:
+            reason = "navigation_cycle"
+            print(f"   CYCLE  : same action from same page {pair_n}x - terminating")
             break
 
     env.close()
