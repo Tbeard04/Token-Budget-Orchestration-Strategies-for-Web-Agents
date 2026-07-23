@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 
 load_dotenv()   # <-- MUST come before browsergym import
 
-# Map your WA_* names onto the bare names BrowserGym/WebArena expects
+# Map WA_* names onto the bare names BrowserGym/WebArena expects for the smoke test
 for _wa, _bare in [
     ("WA_SHOPPING", "SHOPPING"),
     ("WA_SHOPPING_ADMIN", "SHOPPING_ADMIN"),
@@ -51,8 +51,40 @@ if not hasattr(openai, "error"):
     openai.error = _err
     sys.modules["openai.error"] = _err
 
+
+def _patch_webarena_openai() -> None:
+    try:
+        from llms.providers import openai_utils as _ou
+    except Exception as _e:
+        print(f"[config] could not patch WebArena openai_utils: {_e}")
+        return
+
+    from openai import OpenAI
+    _client = OpenAI()
+    
+
+    EVAL_MODEL = "gpt-4o-mini"
+    def _v1_chat(messages, model, temperature, max_tokens, top_p,
+                 context_length, stop_token=None):
+        resp = _client.chat.completions.create(
+            model=EVAL_MODEL,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            top_p=top_p,
+            stop=[stop_token] if stop_token else None,
+        )
+        return resp.choices[0].message.content
+
+    _ou.generate_from_openai_chat_completion = _v1_chat
+    print("[config] patched WebArena openai_utils for openai>=1.0")
+
+
+_patch_webarena_openai()
+
 import gymnasium as gym
 import browsergym.webarena  # noqa: F401
+
 from browsergym.utils.obs import flatten_axtree_to_str
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
@@ -62,9 +94,9 @@ from pydantic_ai import Agent
 # Config
 # ----------------------------------------------------------------------------
 MODEL = "openai:gpt-5-mini"     # switch to "openai:gpt-4o-mini" to compare
-MAX_STEPS = 12                  # safety stop: a stuck agent can't loop forever
+MAX_STEPS = 25                  # safety stop: a stuck agent can't loop forever
 SAFETY_TOKEN_CAP = 16_000       # safety stop on spend for the smoke test
-SITES = ["shopping", "shopping_admin", "reddit"]   # your three sites
+SITES = ["shopping", "shopping_admin", "reddit"]   # three sites
 
 
 # ----------------------------------------------------------------------------
@@ -105,6 +137,9 @@ Rules:
 - If the page shows a server error (500, 502, 504) or fails to load, use
   go_back() and try a different route. Do NOT answer N/A because of a page
   error - N/A means the information genuinely does not exist.
+- If the task is impossible to complete on this site (the data does not exist,
+  or the site does not support the requested operation), send exactly:
+  send_msg_to_user('N/A')
 
 Answering with send_msg_to_user - the answer is graded by EXACT MATCH:
 - Send ONLY the answer itself. No explanation, no preamble, no quotes,
