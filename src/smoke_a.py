@@ -94,7 +94,12 @@ def _patch_webarena_evaluator() -> None:
         print(f"[config] could not patch WebArena evaluators: {_e}")
         return
 
-    _orig = _ev.HTMLContentExactEvaluator.__call__
+    _cls = getattr(_ev, "HTMLContentEvaluator", None) or getattr(
+        _ev, "HTMLContentExactEvaluator", None)
+    if _cls is None:
+        print("[config] no HTML content evaluator class found")
+        return
+    _orig = _cls.__call__
 
     def _norm(rc):
         if isinstance(rc, str):
@@ -122,8 +127,8 @@ def _patch_webarena_evaluator() -> None:
                 _json.dump(cfg, f)
         return _orig(self, trajectory, config_file, page, client)
 
-    _ev.HTMLContentExactEvaluator.__call__ = _patched
-    print("[config] patched WebArena HTMLContentExactEvaluator for dict configs")
+    _cls.__call__ = _patched
+    print(f"[config] patched WebArena {_cls.__name__} for dict configs")
 
 
 _patch_webarena_evaluator()
