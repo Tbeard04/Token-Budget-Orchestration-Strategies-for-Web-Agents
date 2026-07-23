@@ -83,6 +83,51 @@ def _patch_webarena_openai() -> None:
 
 _patch_webarena_openai()
 
+def _patch_webarena_evaluator() -> None:
+    """WebArena's HTMLContentExactEvaluator assumes required_contents is a
+    string, but BrowserGym supplies the newer dict format
+    ({'must_include': [...]} or {'exact_match': '...'}). Normalise to a string
+    so both formats work."""
+    try:
+        from evaluation_harness import evaluators as _ev  # type: ignore
+    except Exception as _e:
+        print(f"[config] could not patch WebArena evaluators: {_e}")
+        return
+
+    _orig = _ev.HTMLContentExactEvaluator.__call__
+
+    def _norm(rc):
+        if isinstance(rc, str):
+            return rc
+        if isinstance(rc, dict):
+            if "exact_match" in rc:
+                return str(rc["exact_match"])
+            if "must_include" in rc:
+                v = rc["must_include"]
+                return " |OR| ".join(map(str, v)) if isinstance(v, list) else str(v)
+        return str(rc)
+
+    def _patched(self, trajectory, config_file, page, client=None):
+        import json as _json
+        with open(config_file) as f:
+            cfg = _json.load(f)
+        changed = False
+        for tgt in cfg.get("program_html", []):
+            rc = tgt.get("required_contents")
+            if not isinstance(rc, str):
+                tgt["required_contents"] = _norm(rc)
+                changed = True
+        if changed:
+            with open(config_file, "w") as f:
+                _json.dump(cfg, f)
+        return _orig(self, trajectory, config_file, page, client)
+
+    _ev.HTMLContentExactEvaluator.__call__ = _patched
+    print("[config] patched WebArena HTMLContentExactEvaluator for dict configs")
+
+
+_patch_webarena_evaluator()
+
 import gymnasium as gym
 import browsergym.webarena  # noqa: F401
 
@@ -423,6 +468,8 @@ def main() -> None:
         try:
             results.append(run_episode(tid))
         except Exception as e:                      # keep going if one site fails
+            import traceback
+            traceback.print_exc()
             print(f"\n!! task {tid} failed: {type(e).__name__}: {e}")
             results.append({"task_id": tid, "site": site_of(tid),
                             "error": f"{type(e).__name__}: {e}"})
