@@ -83,8 +83,6 @@ def _patch_webarena_openai() -> None:
 
 _patch_webarena_openai()
 
-
-
 import gymnasium as gym
 import browsergym.webarena  # noqa: F401
 
@@ -266,9 +264,25 @@ def build_prompt(obs: dict, history: list[str] | None = None, urls: list[str] | 
         axtree = flatten_axtree_to_str(obs["axtree_object"])
         print(f"[warn] AXTree filtering unavailable ({_e}); using unfiltered tree")
     err = obs.get("last_action_error") or "none"
+    err = obs.get("last_action_error") or "none"
     if err != "none" and "Timeout" in err and "exceeded" in err:
-        err = ("previous action timed out waiting for the page to settle - "
-               "it may have SUCCEEDED. Check the current page before retrying.")
+        # A timeout can mean the click landed and only the navigation wait
+        # expired (harmless), OR that the element genuinely cannot be actioned.
+        # If the same action just failed and the URL did not change, it is the
+        # latter - say so, or the agent retries it indefinitely.
+        repeated = (
+            history is not None and len(history) >= 2
+            and history[-1] == history[-2]
+            and urls is not None and len(urls) >= 2
+            and urls[-1] == urls[-2]
+        )
+        if repeated:
+            err = ("this exact action has FAILED more than once and the page has "
+                   "not changed. It will not work. Choose a DIFFERENT element or "
+                   "a different approach - do not retry it.")
+        else:
+            err = ("previous action timed out waiting for the page to settle - "
+                   "it may have succeeded. Check the current page before retrying.")
     hist = "none yet"
     if history:
         rows = []
