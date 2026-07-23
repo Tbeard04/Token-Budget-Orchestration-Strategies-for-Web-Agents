@@ -245,7 +245,7 @@ def site_of(task_id: int) -> str:
     return "unknown"
 
 
-def build_prompt(obs: dict, history: list[str] | None = None) -> str:
+def build_prompt(obs: dict, history: list[str] | None = None, urls: list[str] | None = None) -> str:
     goal = obs.get("goal") or " ".join(
         p.get("text", "") for p in obs.get("goal_object", [])
     )
@@ -265,7 +265,11 @@ def build_prompt(obs: dict, history: list[str] | None = None) -> str:
                "it may have SUCCEEDED. Check the current page before retrying.")
     hist = "none yet"
     if history:
-        hist = "\n".join(f"  {n}. {a}" for n, a in enumerate(history[-8:]))
+        rows = []
+        for n in range(max(0, len(history) - 8), len(history)):
+            u = urls[n] if urls and n < len(urls) else ""
+            rows.append(f"  {n}. {history[n]}  -> {u[:70]}")
+        hist = "\n".join(rows)
     return (
         f"GOAL:\n{goal}\n\n"
         f"URL: {obs.get('url', 'unknown')}\n"
