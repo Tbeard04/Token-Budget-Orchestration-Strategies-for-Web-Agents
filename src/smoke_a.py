@@ -128,9 +128,11 @@ Rules:
 - If the task asks a question, it is complete only once you call
   send_msg_to_user(...) with the answer.
 - Keep reasoning to one sentence. Output one action only.
-- Review ACTIONS YOU HAVE ALREADY TAKEN. Never repeat an action that did not
-  change the page. If an action produced no progress, try a different element
-  or a different approach.
+- Review ACTIONS YOU HAVE ALREADY TAKEN. Each line shows an action and the URL
+  it led to. Element ids change on every page load, so the SAME destination can
+  have a DIFFERENT id - judge repetition by the URL, not the id. If a URL
+  appears more than once in your history, you are going in circles: stop
+  navigating there and try a different route or a different part of the page.
 - Prefer navigating via links and scrolling over using site search boxes.
   Search endpoints are slow and often fail. Only use search if no navigational
   path is visible.
@@ -287,7 +289,6 @@ def run_episode(task_id: int) -> dict:
     print(f"\n{'=' * 60}\nTASK {task_id}  (site: {site})\n{'=' * 60}")
 
 
-    # I CHANGED FROM 60K TO 10K (TEMPORARILY)
     env = gym.make(f"browsergym/webarena.{task_id}", timeout=10000)
     obs, _ = env.reset()
 
@@ -301,13 +302,14 @@ def run_episode(task_id: int) -> dict:
     in_tok = out_tok = 0
     steps: list[dict] = []
     action_history: list[str] = []
+    url_history: list[str] = [obs.get("url", "")]
     success = False
     reason = "max_steps"
     reward = 0.0
     t0 = time.time()
 
     for i in range(MAX_STEPS):
-        prompt = build_prompt(obs, action_history)
+        prompt = build_prompt(obs, action_history, url_history)
 
         # Check BEFORE paying: an episode must never exceed its stated budget.
         spent = in_tok + out_tok
@@ -349,6 +351,7 @@ def run_episode(task_id: int) -> dict:
             break
 
         obs, reward, terminated, truncated, _ = env.step(decided.action)
+        url_history.append(obs.get("url", ""))
         err = obs.get("last_action_error")
         print(f"   result : reward={reward}"
               f"{'  ERROR: ' + str(err) if err else '  (action accepted)'}")
