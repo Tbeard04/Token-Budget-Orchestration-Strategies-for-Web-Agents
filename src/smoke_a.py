@@ -84,22 +84,11 @@ def _patch_webarena_openai() -> None:
 _patch_webarena_openai()
 
 def _patch_webarena_evaluator() -> None:
-    """WebArena's HTMLContentExactEvaluator assumes required_contents is a
-    string, but BrowserGym supplies the newer dict format
-    ({'must_include': [...]} or {'exact_match': '...'}). Normalise to a string
-    so both formats work."""
-    try:
-        from evaluation_harness import evaluators as _ev  # type: ignore
-    except Exception as _e:
-        print(f"[config] could not patch WebArena evaluators: {_e}")
-        return
-
-    _cls = getattr(_ev, "HTMLContentEvaluator", None) or getattr(
-        _ev, "HTMLContentExactEvaluator", None)
-    if _cls is None:
-        print("[config] no HTML content evaluator class found")
-        return
-    _orig = _cls.__call__
+    """WebArena's HTML content evaluator assumes required_contents is a string,
+    but BrowserGym supplies the newer dict format ({'must_include': [...]} or
+    {'exact_match': '...'}). The same file is importable under two module names,
+    so patch every copy that is loaded."""
+    import importlib
 
     def _norm(rc):
         if isinstance(rc, str):
@@ -112,23 +101,40 @@ def _patch_webarena_evaluator() -> None:
                 return " |OR| ".join(map(str, v)) if isinstance(v, list) else str(v)
         return str(rc)
 
-    def _patched(self, trajectory, config_file, page, client=None):
-        import json as _json
-        with open(config_file) as f:
-            cfg = _json.load(f)
-        changed = False
-        for tgt in cfg.get("program_html", []):
-            rc = tgt.get("required_contents")
-            if not isinstance(rc, str):
-                tgt["required_contents"] = _norm(rc)
-                changed = True
-        if changed:
-            with open(config_file, "w") as f:
-                _json.dump(cfg, f)
-        return _orig(self, trajectory, config_file, page, client)
+    def _make(orig):
+        def _patched(self, trajectory, config_file, page, client=None):
+            import json as _json
+            with open(config_file) as f:
+                cfg = _json.load(f)
+            changed = False
+            for tgt in cfg.get("program_html", []):
+                rc = tgt.get("required_contents")
+                if not isinstance(rc, str):
+                    tgt["required_contents"] = _norm(rc)
+                    changed = True
+            if changed:
+                with open(config_file, "w") as f:
+                    _json.dump(cfg, f)
+            return orig(self, trajectory, config_file, page, client)
+        return _patched
 
-    _cls.__call__ = _patched
-    print(f"[config] patched WebArena {_cls.__name__} for dict configs")
+    patched = 0
+    for _name in ("webarena.evaluation_harness.evaluators",
+                  "evaluation_harness.evaluators"):
+        try:
+            _ev = importlib.import_module(_name)
+        except Exception:
+            continue
+        _cls = getattr(_ev, "HTMLContentExactEvaluator", None) or getattr(
+            _ev, "HTMLContentEvaluator", None)
+        if _cls is None:
+            continue
+        _cls.__call__ = _make(_cls.__call__)
+        patched += 1
+        print(f"[config] patched {_name}.{_cls.__name__}")
+
+    if not patched:
+        print("[config] WARNING: no HTML content evaluator patched")
 
 
 _patch_webarena_evaluator()
