@@ -264,7 +264,6 @@ def build_prompt(obs: dict, history: list[str] | None = None, urls: list[str] | 
         axtree = flatten_axtree_to_str(obs["axtree_object"])
         print(f"[warn] AXTree filtering unavailable ({_e}); using unfiltered tree")
     err = obs.get("last_action_error") or "none"
-    err = obs.get("last_action_error") or "none"
     if err != "none" and "Timeout" in err and "exceeded" in err:
         # A timeout can mean the click landed and only the navigation wait
         # expired (harmless), OR that the element genuinely cannot be actioned.
