@@ -132,8 +132,9 @@ Rules:
 - Review ACTIONS YOU HAVE ALREADY TAKEN. Each line shows an action and the URL
   it led to. Element ids change on every page load, so the SAME destination can
   have a DIFFERENT id - judge repetition by the URL, not the id. If a URL
-  appears more than once in your history, you are going in circles: stop
-  navigating there and try a different route or a different part of the page.
+  appears repeatedly WITHOUT you reaching any new page in between, you are
+  going in circles: try a different route or a different part of the page.
+  Returning to a hub page to take a different branch is fine.
 - Prefer navigating via links and scrolling over using site search boxes.
   Search endpoints are slow and often fail. Only use search if no navigational
   path is visible.
@@ -304,7 +305,8 @@ def run_episode(task_id: int) -> dict:
     steps: list[dict] = []
     action_history: list[str] = []
     url_history: list[str] = [obs.get("url", "")]
-    url_counts: Counter = Counter(url_history)
+    seen_urls: set[str] = set(url_history)
+    steps_since_new_url = 0
     success = False
     reason = "max_steps"
     reward = 0.0
@@ -356,7 +358,11 @@ def run_episode(task_id: int) -> dict:
         obs, reward, terminated, truncated, _ = env.step(decided.action)
         cur_url = obs.get("url", "")
         url_history.append(cur_url)
-        url_counts[cur_url] += 1
+        if cur_url in seen_urls:
+            steps_since_new_url += 1
+        else:
+            seen_urls.add(cur_url)
+            steps_since_new_url = 0
         err = obs.get("last_action_error")
         print(f"   result : reward={reward}"
               f"{'  ERROR: ' + str(err) if err else '  (action accepted)'}")
@@ -368,11 +374,12 @@ def run_episode(task_id: int) -> dict:
             reason = "env_terminated"
             break
 
-        # Shared environment constraint (applied to A, B and C alike):
-        # terminate an episode that is demonstrably circling.
-        if url_counts[cur_url] >= 4:
-            reason = "navigation_loop"
-            print(f"   LOOP   : visited this URL {url_counts[cur_url]}x - terminating")
+        # Stagnation guard (applied to A, B and C alike): revisiting a hub page
+        # is legitimate exploration, but reaching no NEW page for several steps
+        # means the agent is circling rather than making progress.
+        if steps_since_new_url >= 6:
+            reason = "no_progress"
+            print(f"   STALL  : no new URL in {steps_since_new_url} steps - terminating")
             break
 
     env.close()
