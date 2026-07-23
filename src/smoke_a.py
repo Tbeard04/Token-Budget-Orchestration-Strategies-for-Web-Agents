@@ -18,6 +18,7 @@ import json
 import os
 import sys
 import time
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -303,6 +304,7 @@ def run_episode(task_id: int) -> dict:
     steps: list[dict] = []
     action_history: list[str] = []
     url_history: list[str] = [obs.get("url", "")]
+    url_counts: Counter = Counter(url_history)
     success = False
     reason = "max_steps"
     reward = 0.0
@@ -332,6 +334,7 @@ def run_episode(task_id: int) -> dict:
         print(f"\n step {i}")
         print(f"   reason : {decided.reasoning}")
         print(f"   action : {decided.action}")
+        print(f"   url    : {obs.get('url', '')[:90]}")
         print(f"   tokens : +{u.input_tokens} in / +{u.output_tokens} out"
               f"   (cumulative {total})")
         if getattr(u, "details", None):
@@ -351,7 +354,9 @@ def run_episode(task_id: int) -> dict:
             break
 
         obs, reward, terminated, truncated, _ = env.step(decided.action)
-        url_history.append(obs.get("url", ""))
+        cur_url = obs.get("url", "")
+        url_history.append(cur_url)
+        url_counts[cur_url] += 1
         err = obs.get("last_action_error")
         print(f"   result : reward={reward}"
               f"{'  ERROR: ' + str(err) if err else '  (action accepted)'}")
@@ -361,6 +366,13 @@ def run_episode(task_id: int) -> dict:
             break
         if terminated or truncated:
             reason = "env_terminated"
+            break
+
+        # Shared environment constraint (applied to A, B and C alike):
+        # terminate an episode that is demonstrably circling.
+        if url_counts[cur_url] >= 4:
+            reason = "navigation_loop"
+            print(f"   LOOP   : visited this URL {url_counts[cur_url]}x - terminating")
             break
 
     env.close()
