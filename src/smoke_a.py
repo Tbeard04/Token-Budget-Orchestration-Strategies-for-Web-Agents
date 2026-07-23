@@ -107,16 +107,18 @@ def _patch_webarena_evaluator() -> None:
             with open(config_file) as f:
                 cfg = _json.load(f)
             changed = False
-            for tgt in cfg.get("program_html", []):
-                rc = tgt.get("required_contents")
-                if not isinstance(rc, str):
-                    tgt["required_contents"] = _norm(rc)
-                    changed = True
+            for holder in (cfg, cfg.get("eval", {})):
+                if not isinstance(holder, dict):
+                    continue
+                for tgt in holder.get("program_html", []):
+                    rc = tgt.get("required_contents")
+                    if not isinstance(rc, str):
+                        tgt["required_contents"] = _norm(rc)
+                        changed = True
             if changed:
                 with open(config_file, "w") as f:
                     _json.dump(cfg, f)
             return orig(self, trajectory, config_file, page, client)
-        return _patched
 
     patched = 0
     for _name in ("webarena.evaluation_harness.evaluators",
