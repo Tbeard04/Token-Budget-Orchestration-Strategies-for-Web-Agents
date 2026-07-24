@@ -238,8 +238,10 @@ def main() -> None:
     ap.add_argument("tasks", nargs="*", type=int,
                     help="task ids; default is one per site")
     ap.add_argument("--budget", type=int, default=None)
-    ap.add_argument("--out", default="strategy_a_results.jsonl")
+    ap.add_argument("--out", default="../data/raw/strategy_a_results.jsonl")
     args = ap.parse_args()
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
 
     if args.tasks:
         task_ids = args.tasks
