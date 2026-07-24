@@ -1,0 +1,1 @@
+This folder contains processed JSONL collecction data for strategy C. 
