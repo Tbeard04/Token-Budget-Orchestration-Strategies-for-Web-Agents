@@ -65,8 +65,7 @@ if not hasattr(openai, "error"):
 
 # WebArena's fuzzy-match evaluators call openai.ChatCompletion (removed in
 # 1.0) and hardcode gpt-4-1106-preview (retired). Replace with a v1 client.
-# NOTE: this changes the grader model relative to the original paper; record
-# it in the methodology.
+# NOTE: this changes the grader model relative to the original paper
 EVAL_MODEL = "gpt-4o-mini"
 
 
@@ -262,7 +261,7 @@ def goal_of(obs: dict) -> str:
 # Agent construction and invocation
 # ----------------------------------------------------------------------------
 def make_agent(instructions: str, output_type, label: str = "agent") -> Agent:
-    """Build a Pydantic AI agent with reasoning_effort pinned.
+    """Pydantic AI agent with reasoning_effort pinned.
 
     Pinning matters for reproducibility: GPT-5 Mini's hidden reasoning tokens
     are billed as output, so an unpinned effort setting would let per-episode
