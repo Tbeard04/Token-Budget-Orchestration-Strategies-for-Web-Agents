@@ -26,7 +26,8 @@ import statistics
 from collections import defaultdict
 from pathlib import Path
 
-import smoke_a as S
+import wa_env as W
+import strategy_a as S
 
 
 def sample_tasks(n: int, sites: list[str], seed: int) -> dict[str, list[int]]:
