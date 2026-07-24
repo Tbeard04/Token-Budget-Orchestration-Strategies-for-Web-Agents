@@ -144,6 +144,14 @@ Rules:
 - If the task is impossible to complete on this site (the data does not exist,
   or the site does not support the requested operation), send exactly:
   send_msg_to_user('N/A')
+- For dropdowns, comboboxes and select elements, use
+  select_option('378', 'games') directly with the option you want. Do NOT
+  click a dropdown to "open" it first - clicking does nothing useful and
+  wastes a step.
+- Some tasks only require you to REACH a page ("browse X", "search for Y",
+  "go to Z"). These need no answer: once the correct page is loaded the task
+  is complete. Do not click into individual items or navigate away - use
+  noop() to stay on the page.
 
 Answering with send_msg_to_user - the answer is graded by EXACT MATCH:
 - Send ONLY the answer itself. No explanation, no preamble, no quotes,
@@ -408,6 +416,7 @@ def run_episode(task_id: int) -> dict:
     record = {
         "site": site,
         "task_id": task_id,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "goal": goal,
         "success": success,
         "final_reward": reward,
