@@ -1,21 +1,21 @@
 """
-probe_a.py - run Strategy A over several tasks per site and summarise.
+probe.py - run Strategy A over several tasks per site and summarise.
 
 Purpose: gather enough episodes to (a) see the spread of cost and success
 across sites, and (b) decide the final token budget ladder.
 
-Wraps smoke_a.py rather than duplicating it, so all agent config, prompt,
-AXTree filtering and budget logic stay in one place.
+Imports wa_env and strategy_a rather than duplicating them, so agent config,
+prompt, AXTree filtering and budget logic stay in one place.
 
 Tasks are sampled RANDOMLY with a fixed seed. WebArena tasks are template
 generated, so consecutive ids are often variants of the same question -
 taking the first n per site would give an unrepresentative sample.
 
 Run:
-    python probe_a.py                      # 5 tasks/site, cap from smoke_a
-    python probe_a.py --n 5 --cap 32000    # recommended first run
-    python probe_a.py --sites reddit       # one site only
-    python probe_a.py --seed 7             # different sample
+    python probe.py                      # 5 tasks/site, cap from smoke_a
+    python probe.py --n 5 --cap 32000    # recommended first run
+    python probe.py --sites reddit       # one site only
+    python probe.py --seed 7             # different sample
 """
 from __future__ import annotations
 
@@ -32,14 +32,9 @@ import strategy_a as S
 
 def sample_tasks(n: int, sites: list[str], seed: int) -> dict[str, list[int]]:
     """Randomly sample n single-site task ids per site, reproducibly."""
-    pools: dict[str, list[int]] = defaultdict(list)
-    for cfg in S.load_configs():
-        cfg_sites = cfg.get("sites", [])
-        if len(cfg_sites) == 1 and cfg_sites[0] in sites:
-            pools[cfg_sites[0]].append(cfg["task_id"])
-
+    pools = W.single_site_tasks(sites)
     rng = random.Random(seed)
-    out: dict[str, list[int]] = {}
+    out = {}
     for site in sites:
         pool = pools.get(site, [])
         if not pool:
@@ -58,14 +53,13 @@ def main() -> None:
     ap.add_argument("--n", type=int, default=5, help="tasks per site")
     ap.add_argument("--cap", type=int, default=None, help="override token cap")
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--sites", nargs="+", default=S.SITES)
-    ap.add_argument("--out", default="probe_results.jsonl")
+    ap.add_argument("--sites", nargs="+", default=W.SITES)
+    ap.add_argument("--out", default="../data/raw/probe_results.jsonl")
     args = ap.parse_args()
 
-    if args.cap:
-        S.SAFETY_TOKEN_CAP = args.cap
-    print(f"[probe] token cap  : {S.SAFETY_TOKEN_CAP}")
-    print(f"[probe] max steps  : {S.MAX_STEPS}")
+    cap = args.cap or S.DEFAULT_BUDGET
+    print(f"[probe] token cap  : {cap}")
+    print(f"[probe] max steps  : {W.MAX_STEPS}")
     print(f"[probe] seed       : {args.seed}")
 
     plan = sample_tasks(args.n, args.sites, args.seed)
@@ -81,7 +75,7 @@ def main() -> None:
         for site, ids in plan.items():
             for tid in ids:
                 try:
-                    rec = S.run_episode(tid)
+                    rec = S.run_episode(tid, cap)
                 except Exception as e:
                     import traceback
                     traceback.print_exc()
