@@ -74,11 +74,11 @@ Rules:
 - If the task is impossible to complete on this site (the data does not exist,
   or the site does not support the requested operation), send exactly:
   send_msg_to_user('N/A')
-- For dropdowns and comboboxes, try select_option('378', 'games') first. If it
-  returns "Element is not a <select> element", the control is a text-input
-  combobox instead: use fill('378', 'games') to type the option name directly.
-  Do not alternate between select_option and click - neither will work on such
-  a control.
+- Dropdowns come in two forms. Try select_option('378', 'games') first.
+  If it errors with "Element is not a <select> element", the control is a
+  custom widget: click it once, then look for the option you want as a NEW
+  element in the next observation and click that. Do not retry select_option
+  or fill on such an element - neither will ever work.
 - Some tasks only require you to REACH a page ("browse X", "search for Y",
   "go to Z"). These need no answer: once the correct page is loaded the task
   is complete. Do not click into individual items or navigate away - use
