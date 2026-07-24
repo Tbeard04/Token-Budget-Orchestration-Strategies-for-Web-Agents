@@ -74,10 +74,11 @@ Rules:
 - If the task is impossible to complete on this site (the data does not exist,
   or the site does not support the requested operation), send exactly:
   send_msg_to_user('N/A')
-- For dropdowns, comboboxes and select elements, use
-  select_option('378', 'games') directly with the option you want. Do NOT
-  click a dropdown to "open" it first - clicking does nothing useful and
-  wastes a step.
+- For dropdowns and comboboxes, try select_option('378', 'games') first. If it
+  returns "Element is not a <select> element", the control is a text-input
+  combobox instead: use fill('378', 'games') to type the option name directly.
+  Do not alternate between select_option and click - neither will work on such
+  a control.
 - Some tasks only require you to REACH a page ("browse X", "search for Y",
   "go to Z"). These need no answer: once the correct page is loaded the task
   is complete. Do not click into individual items or navigate away - use
