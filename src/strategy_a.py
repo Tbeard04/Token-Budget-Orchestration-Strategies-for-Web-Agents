@@ -76,9 +76,9 @@ Rules:
   send_msg_to_user('N/A')
 - Dropdowns come in two forms. Try select_option('378', 'games') first.
   If it errors with "Element is not a <select> element", the control is a
-  custom widget: click it once, then look for the option you want as a NEW
-  element in the next observation and click that. Do not retry select_option
-  or fill on such an element - neither will ever work.
+  custom widget: click it once, then look at the NEXT observation. A searchbox
+  may appear - fill it with the option name to filter, then click the matching
+  option. Do not retry select_option on such an element; it will never work.
 - Some tasks only require you to REACH a page ("browse X", "search for Y",
   "go to Z"). These need no answer: once the correct page is loaded the task
   is complete. Do not click into individual items or navigate away - use
