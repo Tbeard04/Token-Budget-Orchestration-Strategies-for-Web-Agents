@@ -92,6 +92,19 @@ def _patch_webarena_openai() -> None:
         return resp.choices[0].message.content
 
     _ou.generate_from_openai_chat_completion = _v1_chat
+
+    # The evaluator may have imported the function directly, holding its own reference that the module-level patch above does not reach. So I patch it here too.
+    for _mod_name in ("evaluation_harness.evaluators",
+                      "webarena.evaluation_harness.evaluators"):
+        try:
+            import importlib
+            _eval_mod = importlib.import_module(_mod_name)
+            if hasattr(_eval_mod, "generate_from_openai_chat_completion"):
+                _eval_mod.generate_from_openai_chat_completion = _v1_chat
+                print(f"[wa_env] also patched {_mod_name}")
+        except Exception:
+            pass
+
     print(f"[wa_env] patched WebArena openai_utils (eval model: {EVAL_MODEL})")
 
 
