@@ -30,6 +30,7 @@ last budget run.
 """
 
 from __future__ import annotations
+from itertools import groupby
 
 import argparse
 import json
@@ -113,8 +114,14 @@ def main() -> None:
             for b in args.budgets
             if (args.strategy, tid, b) not in done]
 
-    # Spread any state-contamination order effect evenly across conditions.
-    random.Random(args.seed).shuffle(todo)
+    # Group by (site, task_id), shuffle budgets within each group, then shuffle the group order. This keeps a task's budget conditions adjacent while still spreading order effects.
+    todo.sort(key=lambda x: (x[0], x[1]))
+    rng = random.Random(args.seed)
+    groups = [list(g) for _, g in groupby(todo, key=lambda x: (x[0], x[1]))]
+    for g in groups:
+        rng.shuffle(g)
+    rng.shuffle(groups)
+    todo = [item for g in groups for item in g]
 
     planned = sum(len(ids) for ids in plan.values()) * len(args.budgets)
     print(f"\n[batch] strategy    : {args.strategy}")
