@@ -1,0 +1,87 @@
+[
+  {
+    "site": "shopping",
+    "task_id": 574,
+    "goal": "I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "no_progress",
+    "steps": 7,
+    "input_tokens": 13104,
+    "output_tokens": 2447,
+    "total_tokens": 15551,
+    "wall_clock_seconds": 122.2,
+    "step_log": [
+      {
+        "step": 0,
+        "action": "click('227')",
+        "input_tokens": 1668,
+        "output_tokens": 320,
+        "cumulative_tokens": 1988,
+        "usage_details": {
+          "reasoning_tokens": 256
+        }
+      },
+      {
+        "step": 1,
+        "action": "click('1501')",
+        "input_tokens": 1856,
+        "output_tokens": 194,
+        "cumulative_tokens": 4038,
+        "usage_details": {
+          "reasoning_tokens": 128
+        }
+      },
+      {
+        "step": 2,
+        "action": "click('1488')",
+        "input_tokens": 1876,
+        "output_tokens": 516,
+        "cumulative_tokens": 6430,
+        "usage_details": {
+          "reasoning_tokens": 448
+        }
+      },
+      {
+        "step": 3,
+        "action": "click('1510')",
+        "input_tokens": 1896,
+        "output_tokens": 451,
+        "cumulative_tokens": 8777,
+        "usage_details": {
+          "reasoning_tokens": 384
+        }
+      },
+      {
+        "step": 4,
+        "action": "click('1510')",
+        "input_tokens": 1916,
+        "output_tokens": 299,
+        "cumulative_tokens": 10992,
+        "usage_details": {
+          "reasoning_tokens": 256
+        }
+      },
+      {
+        "step": 5,
+        "action": "click('1501')",
+        "input_tokens": 1936,
+        "output_tokens": 339,
+        "cumulative_tokens": 13267,
+        "usage_details": {
+          "reasoning_tokens": 256
+        }
+      },
+      {
+        "step": 6,
+        "action": "click('1501')",
+        "input_tokens": 1956,
+        "output_tokens": 328,
+        "cumulative_tokens": 15551,
+        "usage_details": {
+          "reasoning_tokens": 256
+        }
+      }
+    ]
+  }
+]
