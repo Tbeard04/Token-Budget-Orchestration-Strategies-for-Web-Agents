@@ -85,3 +85,102 @@ def load_completed(path: Path) -> set[tuple]:
             if "task_id" in r and "budget_level" in r:
                 done.add((r.get("strategy"), r["task_id"], r["budget_level"]))
     return done
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--strategy", choices=["A", "B"], required=True)
+    ap.add_argument("--n", type=int, default=67, help="tasks per site")
+    ap.add_argument("--sites", nargs="+", default=W.SITES)
+    ap.add_argument("--budgets", nargs="+", type=int, default=W.BUDGETS)
+    ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--out", default=None)
+    args = ap.parse_args()
+
+    out_path = Path(
+        args.out or f"../data/raw/strategy_{args.strategy.lower()}.jsonl"
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    runner = (strategy_a.run_episode if args.strategy == "A"
+              else strategy_b.run_episode)
+
+    plan = sample_tasks(args.n, args.sites, args.seed)
+    done = load_completed(out_path)
+
+    todo = [(site, tid, b)
+            for site, ids in plan.items()
+            for tid in ids
+            for b in args.budgets
+            if (args.strategy, tid, b) not in done]
+
+    # Spread any state-contamination order effect evenly across conditions.
+    random.Random(args.seed).shuffle(todo)
+
+    planned = sum(len(ids) for ids in plan.values()) * len(args.budgets)
+    print(f"\n[batch] strategy    : {args.strategy}")
+    print(f"[batch] sites       : {args.sites}")
+    print(f"[batch] budgets     : {args.budgets}")
+    print(f"[batch] seed        : {args.seed}")
+    print(f"[batch] output      : {out_path}")
+    print(f"[batch] planned     : {planned} episodes")
+    print(f"[batch] already done: {len(done)}")
+    print(f"[batch] to run      : {len(todo)}")
+    for site, ids in plan.items():
+        print(f"[batch]   {site:16s} {len(ids)} tasks")
+
+    if not todo:
+        print("\n[batch] nothing to do - all episodes already collected")
+        return
+
+    t_start = time.time()
+    n_ok = n_err = n_success = 0
+
+    # Append: never truncate an existing results file.
+    with out_path.open("a") as fh:
+        for idx, (site, tid, budget) in enumerate(todo, 1):
+            elapsed = time.time() - t_start
+            rate = elapsed / max(idx - 1, 1)
+            eta_min = (len(todo) - idx + 1) * rate / 60
+            print(f"\n[batch] {idx}/{len(todo)}  {site} task {tid} @ {budget}"
+                  f"   (elapsed {elapsed/60:.0f}m, eta {eta_min:.0f}m,"
+                  f" ok {n_ok}, success {n_success}, err {n_err})")
+
+            try:
+                rec = runner(tid, budget)
+                n_ok += 1
+                if rec.get("success"):
+                    n_success += 1
+            except KeyboardInterrupt:
+                print("\n[batch] interrupted - completed episodes are saved.")
+                print(f"[batch] rerun the same command to resume from {idx}/{len(todo)}")
+                raise
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                n_err += 1
+                # Record the failure so a resume does not retry it forever.
+                rec = {
+                    "strategy": args.strategy,
+                    "site": site,
+                    "task_id": tid,
+                    "budget_level": budget,
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                    "error": f"{type(e).__name__}: {e}",
+                }
+
+            # Write immediately: an interrupt must never lose finished work.
+            fh.write(json.dumps(rec) + "\n")
+            fh.flush()
+
+    mins = (time.time() - t_start) / 60
+    print(f"\n{'=' * 78}")
+    print(f"[batch] finished in {mins:.0f} minutes")
+    print(f"[batch]   episodes ok : {n_ok}")
+    print(f"[batch]   successes   : {n_success}"
+          f"  ({n_success / max(n_ok, 1):.1%})")
+    print(f"[batch]   errors      : {n_err}")
+    print(f"[batch] results in {out_path}")
+
+
+if __name__ == "__main__":
+    main()
