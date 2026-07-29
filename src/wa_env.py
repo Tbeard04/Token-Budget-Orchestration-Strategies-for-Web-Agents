@@ -52,7 +52,18 @@ for _wa, _bare in [
 # WebArena's codebase targets openai 0.x. pydantic-ai requires openai 1.x.
 # Rather than downgrade, shim the removed surfaces WebArena still references.
 import openai
+
+if not hasattr(openai, "error"):
+    _err = types.ModuleType("openai.error")
+    for _n in ["OpenAIError", "APIError", "RateLimitError", "APIConnectionError",
+               "AuthenticationError", "InvalidRequestError",
+               "ServiceUnavailableError", "Timeout", "TryAgain"]:
+        setattr(_err, _n, type(_n, (Exception,), {}))
+    openai.error = _err
+    sys.modules["openai.error"] = _err
+
 EVAL_MODEL = "gpt-4o-mini"
+
 # WebArena's evaluators call openai.ChatCompletion.create(), removed in
 # openai>=1.0. Rather than patching every import path that references it,
 # put a compatible shim on the openai module itself so ALL callers are covered.
@@ -72,7 +83,6 @@ if not hasattr(openai, "ChatCompletion"):
                 top_p=top_p,
                 stop=stop,
             )
-            # Return a dict-like object matching the old API's response shape
             return {
                 "choices": [
                     {"message": {"content": resp.choices[0].message.content}}
@@ -85,6 +95,7 @@ if not hasattr(openai, "ChatCompletion"):
 
     openai.ChatCompletion = _FakeChatCompletion
     print(f"[wa_env] shimmed openai.ChatCompletion (eval model: {EVAL_MODEL})")
+
 
 
 # WebArena's fuzzy-match evaluators call openai.ChatCompletion (removed in
