@@ -63,3 +63,25 @@ def sample_tasks(n: int, sites: list[str], seed: int) -> dict[str, list[int]]:
             print(f"[batch] note: only {k} tasks available for '{site}'")
         out[site] = sorted(rng.sample(pool, k))
     return out
+
+
+def load_completed(path: Path) -> set[tuple]:
+    """Read an existing results file and return the finished episodes.
+
+    Tolerates a truncated final line, which is what a hard interrupt leaves.
+    """
+    done: set[tuple] = set()
+    if not path.exists():
+        return done
+    with path.open() as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if "task_id" in r and "budget_level" in r:
+                done.add((r.get("strategy"), r["task_id"], r["budget_level"]))
+    return done
