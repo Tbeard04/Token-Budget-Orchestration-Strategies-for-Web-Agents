@@ -166,6 +166,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
             "agent_role": "single",
             "action": decided.action,
             "url": obs.get("url", ""),
+            "prompt_chars": len(prompt),
             "input_tokens": u.input_tokens,
             "output_tokens": u.output_tokens,
             "cumulative_tokens": total,
@@ -180,6 +181,11 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         url_history.append(obs.get("url", ""))
         err = obs.get("last_action_error")
         consecutive_errors = consecutive_errors + 1 if err else 0
+
+        #attach the outcome to the step that produced it
+        steps[-1]["action_error"] = str(err) if err else None
+        steps[-1]["step_reward"] = reward
+        steps[-1]["next_url"] = obs.get("url", "")
 
         print(f"   result : reward={reward}"
               f"{'  ERROR: ' + str(err) if err else '  (action accepted)'}")
