@@ -242,12 +242,12 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
 
         # --- 1. Planner: what should happen next -----------------------------
         r_plan = W.call_agent(planner, base)
-        record(i, "planner", r_plan.usage(), None, cur_url,{"plan": plan})
         if in_tok + out_tok >= cap:
             reason = "budget_exhausted_mid_step"
             print("   STOP    : budget exhausted after the Planner")
             break
         plan = r_plan.output.plan
+        record(i, "planner", r_plan.usage(), None, cur_url,{"plan": plan})
         print(f"   plan    : {plan}")
 
         # --- 2. Executor: turn the sub-goal into one action -------------------
