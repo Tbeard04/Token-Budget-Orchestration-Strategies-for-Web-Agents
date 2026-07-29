@@ -52,21 +52,45 @@ for _wa, _bare in [
 # WebArena's codebase targets openai 0.x. pydantic-ai requires openai 1.x.
 # Rather than downgrade, shim the removed surfaces WebArena still references.
 import openai
+EVAL_MODEL = "gpt-4o-mini"
+# WebArena's evaluators call openai.ChatCompletion.create(), removed in
+# openai>=1.0. Rather than patching every import path that references it,
+# put a compatible shim on the openai module itself so ALL callers are covered.
+if not hasattr(openai, "ChatCompletion"):
+    from openai import OpenAI as _OpenAI
+    _chat_client = _OpenAI()
 
-if not hasattr(openai, "error"):
-    _err = types.ModuleType("openai.error")
-    for _n in ["OpenAIError", "APIError", "RateLimitError", "APIConnectionError",
-               "AuthenticationError", "InvalidRequestError",
-               "ServiceUnavailableError", "Timeout", "TryAgain"]:
-        setattr(_err, _n, type(_n, (Exception,), {}))
-    openai.error = _err
-    sys.modules["openai.error"] = _err
+    class _FakeChatCompletion:
+        @staticmethod
+        def create(model=None, messages=None, temperature=1.0,
+                   max_tokens=None, top_p=1.0, stop=None, **kwargs):
+            resp = _chat_client.chat.completions.create(
+                model=EVAL_MODEL,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=top_p,
+                stop=stop,
+            )
+            # Return a dict-like object matching the old API's response shape
+            return {
+                "choices": [
+                    {"message": {"content": resp.choices[0].message.content}}
+                ]
+            }
+
+        @staticmethod
+        async def acreate(**kwargs):
+            return _FakeChatCompletion.create(**kwargs)
+
+    openai.ChatCompletion = _FakeChatCompletion
+    print(f"[wa_env] shimmed openai.ChatCompletion (eval model: {EVAL_MODEL})")
 
 
 # WebArena's fuzzy-match evaluators call openai.ChatCompletion (removed in
 # 1.0) and hardcode gpt-4-1106-preview (retired). Replace with a v1 client.
 # NOTE: this changes the grader model relative to the original paper
-EVAL_MODEL = "gpt-4o-mini"
+
 
 
 def _patch_webarena_openai() -> None:
