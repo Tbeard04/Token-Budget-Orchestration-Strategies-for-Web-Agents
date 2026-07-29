@@ -157,3 +157,18 @@ depth required, not on surface wording or sentence length.
 Also assign one task_category, list the UI interaction types involved, give
 an honest confidence between 0 and 1, and justify the scores in one sentence.
 """
+
+def tier_of(total: int) -> str:
+    """Band a rubric total (0-8) into Easy/Medium/Hard.
+
+    Cut-points are 2 and 5. Adjust here if the initial distribution comes
+    out lopsided; because dimension scores are stored per task, re-banding
+    is a one-liner over the JSONL and does not need re-annotation.
+    """
+    if total <= 2:
+        return "Easy"
+    if total <= 5:
+        return "Medium"
+    return "Hard"
+
+annotator = W.make_agent(ANNOTATOR_INSTRUCTIONS, TaskAnnotation, label="annotator")
