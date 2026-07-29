@@ -199,21 +199,26 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
     reward = 0.0
     t0 = time.time()
 
-    def record(step_i: int, role: str, usage, action: str | None, url: str) -> None:
+    def record(step_i: int, role: str, usage, action: str | None, url: str,
+               extra: dict | None = None) -> None:
         """Log one agent call. Three of these per logical step."""
         nonlocal in_tok, out_tok
         in_tok += usage.input_tokens
         out_tok += usage.output_tokens
-        steps.append({
+        rec = {
             "step": step_i,
             "agent_role": role,
             "action": action,
             "url": url,
+            "prompt_chars": len(base),
             "input_tokens": usage.input_tokens,
             "output_tokens": usage.output_tokens,
             "cumulative_tokens": in_tok + out_tok,
             "usage_details": dict(usage.details) if getattr(usage, "details", None) else None,
-        })
+        }
+        if extra:
+            rec.update(extra)
+        steps.append(rec)
         print(f"   {role:8s}: +{usage.input_tokens} in / +{usage.output_tokens} out"
               f"   (cumulative {in_tok + out_tok})")
 
@@ -237,7 +242,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
 
         # --- 1. Planner: what should happen next -----------------------------
         r_plan = W.call_agent(planner, base)
-        record(i, "planner", r_plan.usage(), None, cur_url)
+        record(i, "planner", r_plan.usage(), None, cur_url,{"plan": plan})
         if in_tok + out_tok >= cap:
             reason = "budget_exhausted_mid_step"
             print("   STOP    : budget exhausted after the Planner")
@@ -249,7 +254,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         exec_prompt = f"{base}\n\nPLANNER SUB-GOAL:\n{plan}"
         r_exec = W.call_agent(executor, exec_prompt)
         proposed = r_exec.output.action
-        record(i, "executor", r_exec.usage(), proposed, cur_url)
+        record(i, "executor", r_exec.usage(), proposed, cur_url,{"proposed_action": proposed})
         if in_tok + out_tok >= cap:
             reason = "budget_exhausted_mid_step"
             print("   STOP    : budget exhausted after the Executor")
@@ -265,7 +270,11 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         final_action = verdict.revised_action if revised else proposed
         if revised:
             critic_revisions += 1
-        record(i, "critic", r_crit.usage(), final_action, cur_url)
+        record(i, "critic", r_crit.usage(), final_action, cur_url,
+               {"approved": verdict.approve,
+                "revised": revised,
+                "proposed_action": proposed,
+                "critic_reasoning": verdict.reasoning})
         print(f"   critic  : {'REVISED' if revised else 'approved'} -> {final_action}")
         if revised:
             print(f"   why     : {verdict.reasoning}")
@@ -284,6 +293,14 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         url_history.append(obs.get("url", ""))
         err = obs.get("last_action_error")
         consecutive_errors = consecutive_errors + 1 if err else 0
+
+        #Attach the outcome to all three role records for this step.
+        #Required by Strategy C: the router must know "the previous action failed" to decide whether to invoke the Critic or Stop.
+        for s in steps:
+            if s["step"] == i:
+                s["action_error"] = str(err) if err else None
+                s["step_reward"] = reward
+                s["next_url"] = obs.get("url", "")
 
         print(f"   result  : reward={reward}"
               f"{'  ERROR: ' + str(err)[:70] if err else '  (action accepted)'}")
