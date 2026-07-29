@@ -46,9 +46,7 @@ BAND TOTALS TO TIERS
 
 Validation (before relying on the output)
 -----------------------------------------
-  a) Hand-label roughly 50 tasks yourself, then run the annotator over the
-     same 50 and report Cohen's kappa. That single number turns "an LLM
-     labelled my data" into a validated instrument.
+  a) Hand-label roughly 50 tasks, then run the annotator over the same tasks and report Cohen's kappa.
 
   b) After collection, check the tiers correlate with observed median tokens
      and step counts. Correlation with COST (not success) is the honest test:
@@ -64,3 +62,27 @@ Run
     # or a specific list, e.g. a hand-labelled gold set
     python annotate_tasks.py --tasks 47 276 623 109
 """
+from __future__ import annotations
+
+import argparse
+import json
+import random
+from collections import Counter
+from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+import wa_env as W
+
+# Task categories - six buckets that cover the observed range of WebArena tasks on the three target sites.
+# ---------------------------------------------------------------------------
+TaskCategory = Literal[
+    "navigation",       # reach a target page or UI state
+    "single_query",     # retrieve a fact from one page
+    "multi_hop_query",  # retrieve a fact requiring traversal across pages
+    "form_fill",        # complete and submit a form
+    "crud_operation",   # create / update / delete a resource
+    "composite",        # two or more of the above in sequence
+]
+
