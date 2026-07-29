@@ -28,3 +28,38 @@ levels may be contaminated by its own earlier runs. This means resetting the sit
 Shuffling spreads any such order effect evenly across conditions rather than letting it always favour the
 last budget run.
 """
+
+from __future__ import annotations
+
+import argparse
+import json
+import random
+import time
+from pathlib import Path
+
+import wa_env as W
+import strategy_a
+import strategy_b
+
+
+def sample_tasks(n: int, sites: list[str], seed: int) -> dict[str, list[int]]:
+    """Randomly sample n single-site task ids per site, reproducibly.
+
+    Random rather than first-n: WebArena tasks are template generated, so
+    consecutive ids are often variants of the same question and would give an
+    unrepresentative subset.
+    """
+    pools = W.single_site_tasks(sites)
+    rng = random.Random(seed)
+    out: dict[str, list[int]] = {}
+    for site in sites:
+        pool = pools.get(site, [])
+        if not pool:
+            print(f"[batch] WARNING: no single-site tasks found for '{site}'")
+            out[site] = []
+            continue
+        k = min(n, len(pool))
+        if k < n:
+            print(f"[batch] note: only {k} tasks available for '{site}'")
+        out[site] = sorted(rng.sample(pool, k))
+    return out
