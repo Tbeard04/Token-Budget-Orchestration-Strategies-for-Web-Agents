@@ -172,3 +172,17 @@ def tier_of(total: int) -> str:
     return "Hard"
 
 annotator = W.make_agent(ANNOTATOR_INSTRUCTIONS, TaskAnnotation, label="annotator")
+
+
+# Sampling: MUST match run_batch.py exactly, or the tier labels will not
+# cover the same tasks the collection ran on.
+# ---------------------------------------------------------------------------
+def sample_tasks(n: int, sites: list[str], seed: int) -> list[int]:
+    pools = W.single_site_tasks(sites)
+    rng = random.Random(seed)
+    ids: list[int] = []
+    for site in sites:
+        pool = pools.get(site, [])
+        if pool:
+            ids.extend(rng.sample(pool, min(n, len(pool))))
+    return sorted(ids)
