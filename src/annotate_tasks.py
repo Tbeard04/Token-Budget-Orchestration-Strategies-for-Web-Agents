@@ -86,3 +86,74 @@ TaskCategory = Literal[
     "composite",        # two or more of the above in sequence
 ]
 
+# Structured output - the model is constrained to return these four rubric
+# scores (0-2 each) plus derived labels. Storing the individual dimensions,
+# not just the final tier, means the bands can be adjusted later without
+# re-annotating: just re-band from the stored dimension scores.
+# ---------------------------------------------------------------------------
+class TaskAnnotation(BaseModel):
+    pages_to_traverse: int = Field(
+        ge=0, le=2,
+        description="0 single page, 1 two-to-three pages, 2 four-plus or unbounded",
+    )
+    retrieval_type: int = Field(
+        ge=0, le=2,
+        description="0 read one value, 1 compare or filter a few, "
+                    "2 aggregate or count over a set",
+    )
+    interaction: int = Field(
+        ge=0, le=2,
+        description="0 read-only, 1 one form or click sequence, "
+                    "2 multi-step state change",
+    )
+    target_locatability: int = Field(
+        ge=0, le=2,
+        description="0 target named explicitly in the task, "
+                    "1 derivable from the page, 2 must be discovered by scanning",
+    )
+    task_category: TaskCategory
+    interaction_types: list[str] = Field(
+        description="UI interactions involved, e.g. ['search', 'click', 'form_fill']"
+    )
+    confidence: float = Field(
+        ge=0.0, le=1.0,
+        description="Honest confidence in this classification",
+    )
+    justification: str = Field(
+        description="One sentence explaining the scores"
+    )
+
+
+ANNOTATOR_INSTRUCTIONS = """\
+You classify WebArena web-agent tasks for a study of token budgets. You are
+given a task's natural-language intent, its evaluation criteria, and the site
+it runs on. Score it on four dimensions, each 0-2.
+
+PAGES TO TRAVERSE - how many distinct pages must be visited?
+  0 = everything needed is on the starting page
+  1 = two or three pages
+  2 = four or more, or an unbounded search across pages
+
+RETRIEVAL TYPE - what must be done with the information?
+  0 = read a single stated value
+  1 = compare or filter a small number of items
+  2 = aggregate, count, or reason over a set of items
+
+INTERACTION - what must be done to the site?
+  0 = read-only; nothing on the site changes
+  1 = one form submission or click sequence
+  2 = a multi-step state change (create, edit, delete, configure)
+
+TARGET LOCATABILITY - how hard is the target to find?
+  0 = named explicitly in the task, e.g. "the Sprite Stasis Ball"
+  1 = derivable from what is on the page
+  2 = must be discovered by scanning or searching
+
+Score from the task description alone. Do NOT guess how well an agent would
+perform - you are measuring the task's structural demands, not an agent's
+capability. Judge on the number of distinct interactions and the reasoning
+depth required, not on surface wording or sentence length.
+
+Also assign one task_category, list the UI interaction types involved, give
+an honest confidence between 0 and 1, and justify the scores in one sentence.
+"""
