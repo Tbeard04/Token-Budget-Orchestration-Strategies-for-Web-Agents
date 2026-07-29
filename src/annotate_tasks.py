@@ -215,3 +215,76 @@ def annotate(cfg: dict) -> dict:
         "confidence": a.confidence,
         "justification": a.justification,
     }
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tasks", nargs="*", type=int,
+                    help="explicit task ids; otherwise sample like run_batch")
+    ap.add_argument("--n", type=int, default=67, help="tasks per site")
+    ap.add_argument("--sites", nargs="+", default=W.SITES)
+    ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--review-threshold", type=float, default=0.7,
+                    help="rows below this confidence get flagged for hand review")
+    ap.add_argument("--out", default="../data/raw/tasks_annotated.jsonl")
+    args = ap.parse_args()
+
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    task_ids = args.tasks or sample_tasks(args.n, args.sites, args.seed)
+    by_id = {c["task_id"]: c for c in W.load_configs() if "task_id" in c}
+
+    print(f"[annotate] tasks     : {len(task_ids)}")
+    print(f"[annotate] seed      : {args.seed}")
+    print(f"[annotate] output    : {out_path}\n")
+
+    rows: list[dict] = []
+    with out_path.open("w") as fh:
+        for i, tid in enumerate(task_ids, 1):
+            cfg = by_id.get(tid)
+            if cfg is None:
+                print(f"[annotate] {i}/{len(task_ids)} task {tid}: NOT FOUND")
+                continue
+            try:
+                row = annotate(cfg)
+            except Exception as e:
+                print(f"[annotate] {i}/{len(task_ids)} task {tid}: "
+                      f"{type(e).__name__}: {e}")
+                continue
+
+            row["needs_review"] = row["confidence"] < args.review_threshold
+            rows.append(row)
+            fh.write(json.dumps(row) + "\n")
+            fh.flush()
+
+            flag = "  <-- REVIEW" if row["needs_review"] else ""
+            print(f"[annotate] {i}/{len(task_ids)} task {tid:>4} "
+                  f"{row['site']:15s} {row['rubric_total']}/8 "
+                  f"{row['difficulty_tier']:6s} {row['task_category']}{flag}")
+
+    print(f"\n{'=' * 70}\nTIER DISTRIBUTION\n{'=' * 70}")
+    tiers = Counter(r["difficulty_tier"] for r in rows)
+    for t in ("Easy", "Medium", "Hard"):
+        n = tiers.get(t, 0)
+        print(f"   {t:8s} {n:4d}  ({n / max(len(rows), 1):.0%})")
+
+    print(f"\n{'=' * 70}\nTIER BY SITE\n{'=' * 70}")
+    for site in args.sites:
+        rs = [r for r in rows if r["site"] == site]
+        c = Counter(r["difficulty_tier"] for r in rs)
+        print(f"   {site:16s} E:{c.get('Easy',0):3d}  "
+              f"M:{c.get('Medium',0):3d}  H:{c.get('Hard',0):3d}")
+
+    print(f"\n{'=' * 70}\nCATEGORY DISTRIBUTION\n{'=' * 70}")
+    for cat, n in Counter(r["task_category"] for r in rows).most_common():
+        print(f"   {cat:18s} {n:4d}")
+
+    n_review = sum(1 for r in rows if r["needs_review"])
+    print(f"\n[annotate] wrote {len(rows)} rows to {out_path}")
+    print(f"[annotate] {n_review} flagged for manual review "
+          f"(confidence < {args.review_threshold})")
+
+
+if __name__ == "__main__":
+    main()
