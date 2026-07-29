@@ -1,1 +1,1 @@
-This folder contains raw JSONL collecction data for strategy A & B. 
+This folder contains raw JSONL/JSON collecction data for strategy A & B, including any tests conducted.
