@@ -174,9 +174,7 @@ def tier_of(total: int) -> str:
 annotator = W.make_agent(ANNOTATOR_INSTRUCTIONS, TaskAnnotation, label="annotator")
 
 
-# Sampling: MUST match run_batch.py exactly, or the tier labels will not
-# cover the same tasks the collection ran on.
-# ---------------------------------------------------------------------------
+
 def sample_tasks(n: int, sites: list[str], seed: int) -> list[int]:
     pools = W.single_site_tasks(sites)
     rng = random.Random(seed)
@@ -186,3 +184,34 @@ def sample_tasks(n: int, sites: list[str], seed: int) -> list[int]:
         if pool:
             ids.extend(rng.sample(pool, min(n, len(pool))))
     return sorted(ids)
+
+def annotate(cfg: dict) -> dict:
+    """Run one task through the rubric, return a flat dict for JSONL."""
+    intent = cfg.get("intent", "")
+    eval_criteria = json.dumps(cfg.get("eval", {}))[:1200]
+    sites = cfg.get("sites", [])
+    site = sites[0] if sites else "unknown"
+
+    prompt = (f"SITE: {site}\n"
+              f"INTENT: {intent}\n"
+              f"EVALUATION CRITERIA: {eval_criteria}")
+
+    a = W.call_agent(annotator, prompt).output
+    total = (a.pages_to_traverse + a.retrieval_type
+             + a.interaction + a.target_locatability)
+
+    return {
+        "task_id": cfg.get("task_id"),
+        "site": site,
+        "intent": intent,
+        "pages_to_traverse": a.pages_to_traverse,
+        "retrieval_type": a.retrieval_type,
+        "interaction": a.interaction,
+        "target_locatability": a.target_locatability,
+        "rubric_total": total,
+        "difficulty_tier": tier_of(total),
+        "task_category": a.task_category,
+        "interaction_types": a.interaction_types,
+        "confidence": a.confidence,
+        "justification": a.justification,
+    }
