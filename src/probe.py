@@ -144,9 +144,6 @@ def main() -> None:
         print(f"   {k:24s} {v}")
 
     print(f"\nWrote {len(results)} episodes to {out_path}")
-    print("\nNext: use the token distribution above to set the budget ladder,\n"
-          "and check the termination reasons - mostly 'budget_would_exceed'\n"
-          "means the cap binds; mostly 'env_terminated' means wrong answers.")
 
 
 if __name__ == "__main__":
