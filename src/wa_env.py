@@ -157,7 +157,7 @@ MODEL = "openai:gpt-5-mini"
 REASONING_EFFORT = "low"
 MAX_STEPS = 25
 SITES = ["shopping", "shopping_admin", "reddit"]
-BUDGETS = [2000, 4000, 8000, 16000, 32000]
+BUDGETS = [2000, 4000, 8000, 16000, 32000, 64000]
 
 # Guard thresholds (applied to A, B and C alike)
 # page will not respond to any action
