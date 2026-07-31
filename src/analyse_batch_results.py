@@ -329,3 +329,52 @@ def plot_difficulty_curve(df: pd.DataFrame, out_dir: Path) -> None:
     fig.savefig(path, dpi=150)
     print(f"   saved: {path}")
     plt.close()
+
+
+# Main
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--file", default="../data/raw/strategy_a.jsonl",
+                    help="path to the JSONL results file")
+    ap.add_argument("--tiers", default=None,
+                    help="path to task_metadata.jsonl for difficulty breakdown")
+    ap.add_argument("--out", default="../data/processed",
+                    help="directory for plots")
+    args = ap.parse_args()
+
+    df = load(args.file)
+    print(f"Loaded {len(df)} episodes from {args.file}")
+
+    if args.tiers and Path(args.tiers).exists():
+        tiers = pd.read_json(args.tiers, lines=True)
+        df = df.merge(tiers[["task_id", "difficulty_tier", "task_category",
+                             "rubric_total"]], on="task_id", how="left")
+        matched = df["difficulty_tier"].notna().sum()
+        print(f"Joined difficulty tiers: {matched}/{len(df)} episodes matched")
+
+    # Tables
+    success_by_budget(df)
+    success_by_site(df)
+    task_solvability(df)
+    termination_reasons(df)
+    token_distribution(df)
+    per_step_cost(df)
+    difficulty_breakdown(df)
+
+    # Plots
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    print_section("PLOTS")
+    plot_cost_curve(df, out_dir)
+    plot_termination_reasons(df, out_dir)
+    plot_tokens_by_budget(df, out_dir)
+    plot_success_by_site(df, out_dir)
+    plot_difficulty_curve(df, out_dir)
+
+    print(f"\nDone. {len(df)} episodes analysed.")
+
+
+if __name__ == "__main__":
+    main()
