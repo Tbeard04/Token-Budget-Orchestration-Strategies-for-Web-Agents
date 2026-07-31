@@ -136,3 +136,17 @@ def termination_reasons(df: pd.DataFrame) -> pd.Series:
     for reason, n in counts.items():
         print(f"   {reason:30s} {n:4d}  ({n/total:.0%})")
     return counts
+
+
+def token_distribution(df: pd.DataFrame) -> None:
+    print_section("Token Distribution")
+    toks = df["total_tokens"].dropna()
+    print(f"episodes           : {len(toks)}")
+    print(f"min                : {toks.min():.0f}")
+    print(f"25th percentile    : {toks.quantile(0.25):.0f}")
+    print(f"median             : {toks.median():.0f}")
+    print(f"75th percentile    : {toks.quantile(0.75):.0f}")
+    print(f"max                : {toks.max():.0f}")
+    succ = df.loc[df["success"] == True, "total_tokens"]
+    if len(succ):
+        print(f"   median of successes: {succ.median():.0f}  (n={len(succ)})")
