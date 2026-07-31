@@ -278,3 +278,25 @@ def plot_tokens_by_budget(df: pd.DataFrame, out_dir: Path) -> None:
     fig.savefig(path, dpi=150)
     print(f"   saved: {path}")
     plt.close()
+
+
+def plot_success_by_site(df: pd.DataFrame, out_dir: Path) -> None:
+    """Grouped bar chart: success rate by site and budget."""
+    strategy = df["strategy"].iloc[0] if "strategy" in df.columns else "A"
+
+    pivot = df.pivot_table(
+        values="success", index="budget_level", columns="site", aggfunc="mean"
+    )
+    fig, ax = plt.subplots()
+    pivot.plot(kind="bar", ax=ax, width=0.7)
+    ax.set_xlabel("Token Budget")
+    ax.set_ylabel("Success Rate")
+    ax.set_title(f"Strategy {strategy}: Success Rate by Site and Budget")
+    ax.set_xticklabels([f"{x//1000}k" for x in pivot.index], rotation=0)
+    ax.legend(title="Site")
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / f"success_by_site_{strategy.lower()}.png"
+    fig.savefig(path, dpi=150)
+    print(f"   saved: {path}")
+    plt.close()
