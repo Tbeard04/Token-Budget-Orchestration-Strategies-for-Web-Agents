@@ -37,5 +37,46 @@ def load(path: str) -> pd.DataFrame:
         df = df[df["error"].isna()].copy()
     return df
 
+
 def print_section(title: str) -> None:
     print(f"\n{'=' * 70}\n{title}\n{'=' * 70}")
+
+
+def success_by_budget(df: pd.DataFrame) -> pd.DataFrame:
+    """The cost curve: success rate at each budget level.
+    
+    Reports both episode-level SR and distinct-task-level solvability.
+    The pooled 'overall' rate is deliberately NOT shown as it conflates
+    budget levels that are different experimental conditions.
+    """
+    print_section("Success Rate by Budget Level (Cost Curve)")
+    
+    rows = []
+    for budget, grp in df.groupby("budget_level"):
+        n_episodes = len(grp)
+        n_success = grp["success"].sum()
+        sr = grp["success"].mean()
+        distinct_solved = grp.loc[grp["success"] == True, "task_id"].nunique()
+        distinct_total = grp["task_id"].nunique()
+        rows.append({
+            "budget_level": budget,
+            "episodes": n_episodes,
+            "successes": int(n_success),
+            "episode_SR": sr,
+            "tasks_solved": distinct_solved,
+            "tasks_total": distinct_total,
+            "task_SR": distinct_solved / distinct_total if distinct_total else 0,
+            "median_tokens": grp["total_tokens"].median(),
+            "median_steps": grp["steps"].median(),
+        })
+    
+    tbl = pd.DataFrame(rows).set_index("budget_level")
+    print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
+    
+    # Task-level summary
+    any_success = df.loc[df["success"] == True, "task_id"].nunique()
+    total_tasks = df["task_id"].nunique()
+    print(f"\n   Distinct tasks solved at ANY budget: {any_success}/{total_tasks}"
+          f" ({any_success/total_tasks:.0%})")
+    
+    return tbl
