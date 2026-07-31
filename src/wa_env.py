@@ -102,8 +102,6 @@ if not hasattr(openai, "ChatCompletion"):
 # 1.0) and hardcode gpt-4-1106-preview (retired). Replace with a v1 client.
 # NOTE: this changes the grader model relative to the original paper
 
-
-
 def _patch_webarena_openai() -> None:
     try:
         from llms.providers import openai_utils as _ou  # type: ignore
