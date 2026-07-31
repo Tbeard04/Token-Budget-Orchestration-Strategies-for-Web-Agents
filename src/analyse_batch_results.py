@@ -226,3 +226,30 @@ def plot_cost_curve(df: pd.DataFrame, out_dir: Path) -> None:
     fig.savefig(path, dpi=150)
     print(f"   saved: {path}")
     plt.close()
+
+
+def plot_termination_reasons(df: pd.DataFrame, out_dir: Path) -> None:
+    """Bar chart of termination reasons."""
+    strategy = df["strategy"].iloc[0] if "strategy" in df.columns else "A"
+    counts = df["termination_reason"].value_counts()
+
+    fig, ax = plt.subplots()
+    colours = []
+    for reason in counts.index:
+        if reason == "success":
+            colours.append("#4CAF50")
+        elif "budget" in reason or "safety" in reason:
+            colours.append("#FF9800")
+        elif "cycle" in reason or "stall" in reason or "failure" in reason:
+            colours.append("#F44336")
+        else:
+            colours.append("#9E9E9E")
+    ax.barh(counts.index, counts.values, color=colours)
+    ax.set_xlabel("Episode Count")
+    ax.set_title(f"Strategy {strategy}: Termination Reasons")
+    ax.invert_yaxis()
+    fig.tight_layout()
+    path = out_dir / f"termination_reasons_{strategy.lower()}.png"
+    fig.savefig(path, dpi=150)
+    print(f"   saved: {path}")
+    plt.close()
