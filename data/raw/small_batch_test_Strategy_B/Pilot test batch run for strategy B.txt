@@ -1,3 +1,5 @@
+Pilot test batch run for strategy B ubuntu terminal output:
+
 [batch] strategy    : A
 [batch] sites       : ['shopping', 'shopping_admin', 'reddit']
 [batch] budgets     : [2000, 4000, 8000, 16000, 32000]
