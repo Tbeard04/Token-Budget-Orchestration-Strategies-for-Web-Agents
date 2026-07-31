@@ -101,3 +101,29 @@ def success_by_site(df: pd.DataFrame) -> pd.DataFrame:
     tbl = pd.DataFrame(rows).set_index("site")
     print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
     return tbl
+
+
+def task_solvability(df: pd.DataFrame) -> pd.DataFrame:
+    """Which tasks are solvable, and at which minimum budget?"""
+    print_section("Task Solvability")
+    
+    solved = df[df["success"] == True].groupby("task_id").agg(
+        site=("site", "first"),
+        min_budget=("budget_level", "min"),
+        max_budget=("budget_level", "max"),
+        times_solved=("success", "sum"),
+        budgets_tested=("budget_level", "nunique"),
+    ).sort_values("min_budget")
+    
+    total_tasks = df["task_id"].nunique()
+    print(f"   {len(solved)}/{total_tasks} tasks solved at least once "
+          f"({len(solved)/total_tasks:.0%})\n")
+    
+    if len(solved):
+        print(solved.to_string())
+        print(f"\n   Minimum budget needed (median of solved tasks): "
+              f"{solved['min_budget'].median():.0f}")
+    else:
+        print("   No tasks solved at any budget level.")
+    
+    return solved
