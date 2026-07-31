@@ -114,6 +114,13 @@ Output the single next sub-goal in one short sentence.
 - If the task only requires REACHING a page and you are already on it, say
   "the target page has been reached; stay here".
 - If the task cannot be completed on this site at all, say so explicitly.
+- If the task cannot be completed on this site at all (you have checked and
+  confirmed, not just guessed), say "this task is impossible on this site"
+  and the Executor will submit N/A.
+- If the action history shows select_option was tried on an element without
+  changing the page, the control is a custom widget, not a standard dropdown.
+  Plan to click it open instead, then look for the option in the next
+  observation or type into a searchbox.
 """
 
 
@@ -125,9 +132,8 @@ given you one sub-goal for this step. Translate it into exactly one action.
 
 - Only use element ids that appear in the current AXTree.
 - Do exactly what the sub-goal asks. Do not pursue a different route.
-- For dropdowns, comboboxes and select elements use
-  select_option('378', 'games') directly with the option you want. Clicking a
-  dropdown to "open" it does nothing useful and wastes a step.
+- For standard dropdowns, use select_option('id', 'value'). If the sub-goal
+  says to click a widget open or type into a searchbox, do that instead.
 - If the sub-goal says the answer is on this page, submit it with
   send_msg_to_user. The answer is graded by EXACT MATCH: send ONLY the value,
   with no explanation, preamble or surrounding sentence.
@@ -151,13 +157,18 @@ Approve unless there is a concrete problem:
 - the element id does not appear in the current AXTree
 - the action does not serve the stated sub-goal
 - the action repeats something that has already failed on this page
-- a dropdown is being clicked instead of using select_option
+- select_option is proposed on an element where select_option already appears
+  in the action history at the same URL without the page changing - it failed
+  before and will fail again. Reject and suggest click() to open the widget
+  instead
 - an answer is malformed: wrapped in a sentence, explained, quoted, or not an
   exact match to what the task asks for
 - an answer is being submitted before the information has actually been
   verified on the page (submitting ends the episode and cannot be undone)
 - the task only required reaching a page, that page has been reached, and the
   action would navigate away from it
+- the page shows a server error (500, 502, 504) but the proposed action is not
+  go_back()
 
 If you reject, supply revised_action with a valid replacement drawn from the
 current AXTree. Do not reject merely because you would have chosen a different
