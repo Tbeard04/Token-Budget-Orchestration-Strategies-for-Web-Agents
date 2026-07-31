@@ -121,6 +121,10 @@ Output the single next sub-goal in one short sentence.
   changing the page, the control is a custom widget, not a standard dropdown.
   Plan to click it open instead, then look for the option in the next
   observation or type into a searchbox.
+- When filling a form with multiple fields, complete one field at a time and
+  verify it took effect before moving to the next. Do not skip ahead to other
+  fields if a required field (like a forum/category selector) still shows its
+  default value.
 """
 
 
@@ -157,10 +161,10 @@ Approve unless there is a concrete problem:
 - the element id does not appear in the current AXTree
 - the action does not serve the stated sub-goal
 - the action repeats something that has already failed on this page
-- select_option is proposed on an element where select_option already appears
-  in the action history at the same URL without the page changing - it failed
-  before and will fail again. Reject and suggest click() to open the widget
-  instead
+- select_option or fill is proposed on an element where the same action type
+  on the same element already appears in the action history at the same URL
+  without the page changing - it failed before and will fail again. Suggest
+  a different element or a different action type
 - an answer is malformed: wrapped in a sentence, explained, quoted, or not an
   exact match to what the task asks for
 - an answer is being submitted before the information has actually been
