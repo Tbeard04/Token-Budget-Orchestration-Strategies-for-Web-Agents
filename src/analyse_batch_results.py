@@ -80,3 +80,24 @@ def success_by_budget(df: pd.DataFrame) -> pd.DataFrame:
           f" ({any_success/total_tasks:.0%})")
     
     return tbl
+
+
+def success_by_site(df: pd.DataFrame) -> pd.DataFrame:
+    print_section("Success Rate by Site")
+    rows = []
+    for site, grp in df.groupby("site"):
+        distinct_solved = grp.loc[grp["success"] == True, "task_id"].nunique()
+        distinct_total = grp["task_id"].nunique()
+        rows.append({
+            "site": site,
+            "episodes": len(grp),
+            "episode_SR": grp["success"].mean(),
+            "tasks_solved": distinct_solved,
+            "tasks_total": distinct_total,
+            "task_SR": distinct_solved / distinct_total if distinct_total else 0,
+            "median_tokens": grp["total_tokens"].median(),
+            "median_steps": grp["steps"].median(),
+        })
+    tbl = pd.DataFrame(rows).set_index("site")
+    print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
+    return tbl
