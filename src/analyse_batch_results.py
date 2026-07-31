@@ -253,3 +253,28 @@ def plot_termination_reasons(df: pd.DataFrame, out_dir: Path) -> None:
     fig.savefig(path, dpi=150)
     print(f"   saved: {path}")
     plt.close()
+
+
+def plot_tokens_by_budget(df: pd.DataFrame, out_dir: Path) -> None:
+    """Box plot of actual tokens consumed at each budget level."""
+    strategy = df["strategy"].iloc[0] if "strategy" in df.columns else "A"
+
+    budgets = sorted(df["budget_level"].unique())
+    data = [df.loc[df["budget_level"] == b, "total_tokens"].values for b in budgets]
+
+    fig, ax = plt.subplots()
+    bp = ax.boxplot(data, labels=[f"{b//1000}k" for b in budgets],
+                    patch_artist=True)
+    colour = COLOURS.get(strategy, "#333")
+    for patch in bp["boxes"]:
+        patch.set_facecolor(colour)
+        patch.set_alpha(0.4)
+    ax.set_xlabel("Token Budget")
+    ax.set_ylabel("Actual Tokens Consumed")
+    ax.set_title(f"Strategy {strategy}: Token Consumption by Budget Level")
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / f"token_boxplot_{strategy.lower()}.png"
+    fig.savefig(path, dpi=150)
+    print(f"   saved: {path}")
+    plt.close()
