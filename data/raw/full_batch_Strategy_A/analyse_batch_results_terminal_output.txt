@@ -1,0 +1,142 @@
+======================================================================
+SUCCESS RATE BY BUDGET LEVEL (RQ1 cost curve)
+======================================================================
+              episodes  successes  episode_SR  tasks_solved  tasks_total  task_SR  median_tokens  median_steps
+budget_level
+2000               201          5       2.49%             5          201    2.49%           2425             1
+4000               200         23      11.50%            23          200   11.50%           4352             2
+8000               198         41      20.71%            41          198   20.71%           7680             3
+16000              201         59      29.35%            59          201   29.35%          15172             5
+32000              199         68      34.17%            68          199   34.17%          17372             7
+
+   Distinct tasks solved at ANY budget: 77/201 (38%)
+   NOTE: per-budget episode_SR is the valid metric for RQ1.
+   Do NOT pool across budget levels into a single headline figure.
+
+======================================================================
+SUCCESS RATE BY SITE
+======================================================================
+                episodes  episode_SR  tasks_solved  tasks_total  task_SR  median_tokens  median_steps
+site
+reddit               332      16.57%            26           67   38.81%           7190             2
+shopping             335      22.39%            22           67   32.84%           4761             2
+shopping_admin       332      19.88%            29           67   43.28%           7193             3
+
+======================================================================
+TASK SOLVABILITY
+======================================================================
+   77/201 tasks solved at least once (38%)
+
+                   site  min_budget  max_budget times_solved  budgets_tested
+task_id
+191            shopping        2000       32000            5               5
+260            shopping        2000       32000            5               5
+521            shopping        2000       32000            5               5
+717              reddit        2000       32000            4               4
+796            shopping        2000       32000            5               5
+247      shopping_admin        4000       32000            4               4
+128      shopping_admin        4000       32000            4               4
+115      shopping_admin        4000       32000            4               4
+368            shopping        4000       32000            4               4
+596              reddit        4000       32000            4               4
+518            shopping        4000       32000            4               4
+597              reddit        4000       32000            4               4
+487      shopping_admin        4000       32000            4               4
+517            shopping        4000       32000            4               4
+201      shopping_admin        4000       32000            4               4
+22             shopping        4000       32000            4               4
+599              reddit        4000       32000            4               4
+792            shopping        4000       32000            4               4
+774      shopping_admin        4000       32000            4               4
+773      shopping_admin        4000       32000            2               2
+723              reddit        4000       32000            4               4
+726              reddit        4000       32000            4               4
+468            shopping        4000       32000            4               4
+166            shopping        4000       32000            4               4
+276            shopping        8000       32000            3               3
+298            shopping        8000       16000            2               2
+313            shopping        8000       32000            3               3
+374      shopping_admin        8000       32000            3               3
+470      shopping_admin        8000       32000            2               2
+581              reddit        8000       32000            3               3
+538      shopping_admin        8000       16000            2               2
+402              reddit        8000       32000            3               3
+677      shopping_admin        8000       32000            3               3
+680      shopping_admin        8000       32000            3               3
+652              reddit        8000       32000            3               3
+233            shopping        8000       32000            3               3
+232            shopping        8000       32000            3               3
+47             shopping        8000       32000            3               3
+48             shopping        8000       32000            3               3
+190            shopping        8000       32000            3               3
+199      shopping_admin        8000       32000            3               3
+202      shopping_admin        8000       32000            3               3
+1        shopping_admin       16000       16000         True               1
+489      shopping_admin       16000       32000            2               2
+650              reddit       16000       32000            2               2
+400              reddit       16000       32000            2               2
+488      shopping_admin       16000       32000            2               2
+209      shopping_admin       16000       16000         True               1
+606              reddit       16000       16000         True               1
+604              reddit       16000       32000            2               2
+607              reddit       16000       32000            2               2
+41       shopping_admin       16000       16000         True               1
+633              reddit       16000       16000         True               1
+129      shopping_admin       16000       32000            2               2
+713      shopping_admin       16000       32000            2               2
+710      shopping_admin       16000       32000            2               2
+711      shopping_admin       16000       32000            2               2
+69               reddit       16000       32000            2               2
+12       shopping_admin       16000       16000         True               1
+403              reddit       16000       16000         True               1
+231            shopping       16000       32000            2               2
+216      shopping_admin       32000       32000         True               1
+27               reddit       32000       32000         True               1
+208      shopping_admin       32000       32000         True               1
+691            shopping       32000       32000         True               1
+649              reddit       32000       32000         True               1
+636              reddit       32000       32000         True               1
+631              reddit       32000       32000         True               1
+608              reddit       32000       32000         True               1
+610              reddit       32000       32000         True               1
+612              reddit       32000       32000         True               1
+582              reddit       32000       32000         True               1
+150            shopping       32000       32000         True               1
+95       shopping_admin       32000       32000         True               1
+705      shopping_admin       32000       32000         True               1
+704      shopping_admin       32000       32000         True               1
+714              reddit       32000       32000         True               1
+
+   Minimum budget needed (median of solved tasks): 8000
+
+======================================================================
+TERMINATION REASONS
+======================================================================
+   safety_token_cap                437  (44%)
+   budget_would_exceed             219  (22%)
+   success                         196  (20%)
+   env_terminated                   81  (8%)
+   navigation_cycle                 64  (6%)
+   repeated_action_failure           2  (0%)
+
+======================================================================
+TOKEN DISTRIBUTION (for validating the budget ladder)
+======================================================================
+   episodes           : 999
+   min                : 0
+   25th percentile    : 3280
+   median             : 6184
+   75th percentile    : 13056
+   max                : 33929
+   median of SUCCESSES: 3816  (n=196)
+
+======================================================================
+PER-STEP TOKEN COST
+======================================================================
+                     median         mean         std
+site
+reddit          2851.666667  2865.341182  787.008947
+shopping        2304.000000  2343.253765  261.310534
+shopping_admin  2535.833333  2567.239481  206.805420
+
+   overall median: 2510  mean: 2590  std: 536
