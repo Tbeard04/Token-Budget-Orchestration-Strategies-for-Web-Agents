@@ -10,8 +10,6 @@ budget_level
 32000              199         68      34.17%            68          199   34.17%          17372             7
 
    Distinct tasks solved at ANY budget: 77/201 (38%)
-   NOTE: per-budget episode_SR is the valid metric for RQ1.
-   Do NOT pool across budget levels into a single headline figure.
 
 ======================================================================
 SUCCESS RATE BY SITE
@@ -120,7 +118,7 @@ TERMINATION REASONS
    repeated_action_failure           2  (0%)
 
 ======================================================================
-TOKEN DISTRIBUTION (for validating the budget ladder)
+TOKEN DISTRIBUTION
 ======================================================================
    episodes           : 999
    min                : 0
