@@ -161,3 +161,30 @@ def per_step_cost(df: pd.DataFrame) -> None:
     overall = df_valid["tok_per_step"]
     print(f"\n   overall median: {overall.median():.0f}  "
           f"mean: {overall.mean():.0f}  std: {overall.std():.0f}")
+
+
+def difficulty_breakdown(df: pd.DataFrame) -> None:
+    """Only runs if tier data has been joined."""
+    if "difficulty_tier" not in df.columns:
+        return
+    print_section("Success Rate by Difficulty Tier (RQ2)")
+    tier_order = ["Easy", "Medium", "Hard"]
+    df["difficulty_tier"] = pd.Categorical(
+        df["difficulty_tier"], categories=tier_order, ordered=True
+    )
+    
+    rows = []
+    for (tier, budget), grp in df.groupby(["difficulty_tier", "budget_level"]):
+        distinct_solved = grp.loc[grp["success"] == True, "task_id"].nunique()
+        distinct_total = grp["task_id"].nunique()
+        rows.append({
+            "tier": tier,
+            "budget": budget,
+            "episodes": len(grp),
+            "episode_SR": grp["success"].mean(),
+            "tasks_solved": distinct_solved,
+            "tasks_total": distinct_total,
+            "task_SR": distinct_solved / distinct_total if distinct_total else 0,
+        })
+    tbl = pd.DataFrame(rows).set_index(["tier", "budget"])
+    print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
