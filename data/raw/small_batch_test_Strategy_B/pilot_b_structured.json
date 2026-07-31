@@ -1,0 +1,5435 @@
+[
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 47,
+    "budget_level": 4000,
+    "timestamp": "2026-07-31T16:54:07",
+    "goal": "Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "safety_token_cap",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 1740,
+      "executor": 1701,
+      "critic": 1817
+    },
+    "input_tokens": 4544,
+    "output_tokens": 714,
+    "total_tokens": 5258,
+    "wall_clock_seconds": 12.0,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1496,
+        "output_tokens": 244,
+        "cumulative_tokens": 1740,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Open the 'My Account' link, then navigate to the Orders/Order History (or Purchase History) section to view fulfilled orders from the past month and their totals."
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1524,
+        "output_tokens": 177,
+        "cumulative_tokens": 3441,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('227')"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1524,
+        "output_tokens": 293,
+        "cumulative_tokens": 5258,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('227')",
+        "critic_reasoning": "The element 227 'My Account' exists on the page and clicking it matches the sub-goal to open the account page to access order history."
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 47,
+    "budget_level": 8000,
+    "timestamp": "2026-07-31T16:54:34",
+    "goal": "Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 1866,
+      "executor": 1682,
+      "critic": 1647
+    },
+    "input_tokens": 4508,
+    "output_tokens": 687,
+    "total_tokens": 5195,
+    "wall_clock_seconds": 16.0,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1496,
+        "output_tokens": 370,
+        "cumulative_tokens": 1866,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Open the My Account page by clicking the My Account link with id 227.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1506,
+        "output_tokens": 176,
+        "cumulative_tokens": 3548,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('227')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1506,
+        "output_tokens": 141,
+        "cumulative_tokens": 5195,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('227')",
+        "critic_reasoning": "Element 227 ('My Account') exists in the AXTree and clicking it meets the sub-goal to open the My Account page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 47,
+    "budget_level": 16000,
+    "timestamp": "2026-07-31T16:55:18",
+    "goal": "Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 2,
+    "agent_calls": 6,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 3943,
+      "executor": 3602,
+      "critic": 3754
+    },
+    "input_tokens": 9726,
+    "output_tokens": 1573,
+    "total_tokens": 11299,
+    "wall_clock_seconds": 33.9,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1496,
+        "output_tokens": 305,
+        "cumulative_tokens": 1801,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Open the My Account page by clicking the 'My Account' link so I can view order history and filter for fulfilled orders in the past month.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1519,
+        "output_tokens": 203,
+        "cumulative_tokens": 3523,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('227')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1519,
+        "output_tokens": 163,
+        "cumulative_tokens": 5205,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('227')",
+        "critic_reasoning": "Element 227 corresponds to the 'My Account' link in the AXTree and clicking it matches the sub-goal of opening the My Account page to view order history.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3870,
+        "input_tokens": 1723,
+        "output_tokens": 419,
+        "cumulative_tokens": 7347,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Click the 'My Orders' link in the account navigation (element 1614).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/sales/order/history/"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('1614')",
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3870,
+        "input_tokens": 1734,
+        "output_tokens": 146,
+        "cumulative_tokens": 9227,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('1614')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/sales/order/history/"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('1614')",
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3870,
+        "input_tokens": 1735,
+        "output_tokens": 337,
+        "cumulative_tokens": 11299,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1614')",
+        "critic_reasoning": "Element 1614 is present and clicking it fulfills the sub-goal to open 'My Orders'; the action is appropriate and not repeated or malformed.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/sales/order/history/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 47,
+    "budget_level": 32000,
+    "timestamp": "2026-07-31T16:56:33",
+    "goal": "Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.",
+    "success": true,
+    "final_reward": 1.0,
+    "termination_reason": "success",
+    "steps": 3,
+    "agent_calls": 9,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 7545,
+      "executor": 6894,
+      "critic": 6644
+    },
+    "input_tokens": 17651,
+    "output_tokens": 3432,
+    "total_tokens": 21083,
+    "wall_clock_seconds": 64.5,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1496,
+        "output_tokens": 370,
+        "cumulative_tokens": 1866,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Open the 'My Account' page by clicking the My Account link in the header (element 227).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1511,
+        "output_tokens": 306,
+        "cumulative_tokens": 3683,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "proposed_action": "click('227')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3067,
+        "input_tokens": 1511,
+        "output_tokens": 180,
+        "cumulative_tokens": 5374,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('227')",
+        "critic_reasoning": "Element 227 ('My Account') exists on the page and clicking it directly serves the sub-goal of opening the My Account page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3870,
+        "input_tokens": 1723,
+        "output_tokens": 638,
+        "cumulative_tokens": 7735,
+        "usage_details": {
+          "reasoning_tokens": 512
+        },
+        "plan": "Open the 'My Orders' page from the account navigation to view recent orders.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/sales/order/history/"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('1614')",
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3870,
+        "input_tokens": 1733,
+        "output_tokens": 158,
+        "cumulative_tokens": 9626,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('1614')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/sales/order/history/"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('1614')",
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3870,
+        "input_tokens": 1734,
+        "output_tokens": 271,
+        "cumulative_tokens": 11631,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1614')",
+        "critic_reasoning": "The element with id 1614 ('My Orders') exists in the AXTree and clicking it directly serves the sub-goal of opening the My Orders page; the action is valid.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/sales/order/history/"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/sales/order/history/",
+        "prompt_chars": 5942,
+        "input_tokens": 2631,
+        "output_tokens": 687,
+        "cumulative_tokens": 14949,
+        "usage_details": {
+          "reasoning_tokens": 576
+        },
+        "plan": "the answer is on this page: 0 fulfilled orders in the past month and $0.00 total spent.",
+        "action_error": null,
+        "step_reward": 1.0,
+        "next_url": "http://localhost:7770/sales/order/history/"
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "send_msg_to_user('0 fulfilled orders in the past month and $0.00 total spent.')",
+        "url": "http://localhost:7770/sales/order/history/",
+        "prompt_chars": 5942,
+        "input_tokens": 2648,
+        "output_tokens": 538,
+        "cumulative_tokens": 18135,
+        "usage_details": {
+          "reasoning_tokens": 448
+        },
+        "proposed_action": "send_msg_to_user('0 fulfilled orders in the past month and $0.00 total spent.')",
+        "action_error": null,
+        "step_reward": 1.0,
+        "next_url": "http://localhost:7770/sales/order/history/"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "send_msg_to_user('0 fulfilled orders in the past month and $0.00 total spent.')",
+        "url": "http://localhost:7770/sales/order/history/",
+        "prompt_chars": 5942,
+        "input_tokens": 2664,
+        "output_tokens": 284,
+        "cumulative_tokens": 21083,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "send_msg_to_user('0 fulfilled orders in the past month and $0.00 total spent.')",
+        "critic_reasoning": "The page shows no 'Complete' orders dated between 5/12/23 and 6/12/23 (only a 5/17/23 order is 'Canceled' and other orders are outside the past month), so the proposed answer is correct.",
+        "action_error": null,
+        "step_reward": 1.0,
+        "next_url": "http://localhost:7770/sales/order/history/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 47,
+    "budget_level": 2000,
+    "timestamp": "2026-07-31T16:56:43",
+    "goal": "Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 208,
+    "budget_level": 32000,
+    "timestamp": "2026-07-31T16:58:07",
+    "goal": "Find the customer name and email with phone number +1 2058812302",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 4,
+    "agent_calls": 12,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 10126,
+      "executor": 9678,
+      "critic": 9933
+    },
+    "input_tokens": 26099,
+    "output_tokens": 3638,
+    "total_tokens": 29737,
+    "wall_clock_seconds": 71.4,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4664,
+        "input_tokens": 1871,
+        "output_tokens": 406,
+        "cumulative_tokens": 2277,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Open the Customers section by clicking the CUSTOMERS menu link (element 207).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('207')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4664,
+        "input_tokens": 1881,
+        "output_tokens": 115,
+        "cumulative_tokens": 4273,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('207')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('207')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4664,
+        "input_tokens": 1881,
+        "output_tokens": 156,
+        "cumulative_tokens": 6310,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('207')",
+        "critic_reasoning": "Element 207 exists in the AXTree as the CUSTOMERS menu link and clicking it matches the sub-goal to open the Customers section.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5118,
+        "input_tokens": 2011,
+        "output_tokens": 304,
+        "cumulative_tokens": 8625,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Click the All Customers link in the Customers menu to open the customer list.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('214')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5118,
+        "input_tokens": 2020,
+        "output_tokens": 240,
+        "cumulative_tokens": 10885,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('214')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('214')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5118,
+        "input_tokens": 2020,
+        "output_tokens": 129,
+        "cumulative_tokens": 13034,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('214')",
+        "critic_reasoning": "Element 214 (link 'All Customers') exists in the AXTree and clicking it matches the sub-goal to open the customer list.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/customer/index/",
+        "prompt_chars": 3297,
+        "input_tokens": 1633,
+        "output_tokens": 361,
+        "cumulative_tokens": 15028,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Fill the 'Search by keyword' textbox with +1 2058812302 and run the search to locate the customer's record.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "fill('854', '+1 2058812302')",
+        "url": "http://localhost:7780/admin/customer/index/",
+        "prompt_chars": 3297,
+        "input_tokens": 1653,
+        "output_tokens": 487,
+        "cumulative_tokens": 17168,
+        "usage_details": {
+          "reasoning_tokens": 384
+        },
+        "proposed_action": "fill('854', '+1 2058812302')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "fill('854', '+1 2058812302')",
+        "url": "http://localhost:7780/admin/customer/index/",
+        "prompt_chars": 3297,
+        "input_tokens": 1661,
+        "output_tokens": 702,
+        "cumulative_tokens": 19531,
+        "usage_details": {
+          "reasoning_tokens": 640
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('854', '+1 2058812302')",
+        "critic_reasoning": "The textbox with id 854 exists and filling it with the phone number matches the planner's immediate step; the action is valid and should be executed.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      },
+      {
+        "step": 3,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/customer/index/",
+        "prompt_chars": 7354,
+        "input_tokens": 3146,
+        "output_tokens": 394,
+        "cumulative_tokens": 23071,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Click the Search button with id 855 to run the search for +1 2058812302.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      },
+      {
+        "step": 3,
+        "agent_role": "executor",
+        "action": "click('855')",
+        "url": "http://localhost:7780/admin/customer/index/",
+        "prompt_chars": 7354,
+        "input_tokens": 3161,
+        "output_tokens": 121,
+        "cumulative_tokens": 26353,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('855')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      },
+      {
+        "step": 3,
+        "agent_role": "critic",
+        "action": "click('855')",
+        "url": "http://localhost:7780/admin/customer/index/",
+        "prompt_chars": 7354,
+        "input_tokens": 3161,
+        "output_tokens": 223,
+        "cumulative_tokens": 29737,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('855')",
+        "critic_reasoning": "The button with id 855 exists on the page and matches the Planner's sub-goal to run the search. Clicking it is appropriate.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 208,
+    "budget_level": 2000,
+    "timestamp": "2026-07-31T16:58:17",
+    "goal": "Find the customer name and email with phone number +1 2058812302",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 208,
+    "budget_level": 4000,
+    "timestamp": "2026-07-31T16:58:27",
+    "goal": "Find the customer name and email with phone number +1 2058812302",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 208,
+    "budget_level": 8000,
+    "timestamp": "2026-07-31T16:58:49",
+    "goal": "Find the customer name and email with phone number +1 2058812302",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 2105,
+      "executor": 2136,
+      "critic": 1987
+    },
+    "input_tokens": 5641,
+    "output_tokens": 587,
+    "total_tokens": 6228,
+    "wall_clock_seconds": 12.8,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4664,
+        "input_tokens": 1871,
+        "output_tokens": 234,
+        "cumulative_tokens": 2105,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Click the CUSTOMERS link in the top navigation to open the Customers list (click element 207).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('207')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4664,
+        "input_tokens": 1885,
+        "output_tokens": 251,
+        "cumulative_tokens": 4241,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "click('207')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('207')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4664,
+        "input_tokens": 1885,
+        "output_tokens": 102,
+        "cumulative_tokens": 6228,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('207')",
+        "critic_reasoning": "Element 207 (CUSTOMERS) exists on the page and clicking it matches the sub-goal to open the Customers list.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 208,
+    "budget_level": 16000,
+    "timestamp": "2026-07-31T16:59:32",
+    "goal": "Find the customer name and email with phone number +1 2058812302",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 2,
+    "agent_calls": 6,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 4627,
+      "executor": 4522,
+      "critic": 4329
+    },
+    "input_tokens": 11690,
+    "output_tokens": 1788,
+    "total_tokens": 13478,
+    "wall_clock_seconds": 33.7,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4660,
+        "input_tokens": 1870,
+        "output_tokens": 385,
+        "cumulative_tokens": 2255,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Click the CUSTOMERS menu link (id 207) to open the customer management page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('207')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4660,
+        "input_tokens": 1882,
+        "output_tokens": 357,
+        "cumulative_tokens": 4494,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "proposed_action": "click('207')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('207')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4660,
+        "input_tokens": 1882,
+        "output_tokens": 291,
+        "cumulative_tokens": 6667,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('207')",
+        "critic_reasoning": "Element with id 207 exists in the AXTree and clicking it matches the sub-goal to open the Customers page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5114,
+        "input_tokens": 2010,
+        "output_tokens": 362,
+        "cumulative_tokens": 9039,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Open the All Customers page by clicking the 'All Customers' link in the CUSTOMERS menu.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('214')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5114,
+        "input_tokens": 2023,
+        "output_tokens": 260,
+        "cumulative_tokens": 11322,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "click('214')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('214')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5114,
+        "input_tokens": 2023,
+        "output_tokens": 133,
+        "cumulative_tokens": 13478,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('214')",
+        "critic_reasoning": "Element 214 ('All Customers') exists on the page and clicking it fulfills the sub-goal to open the All Customers page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/customer/index/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 403,
+    "budget_level": 16000,
+    "timestamp": "2026-07-31T17:00:37",
+    "goal": "Change my reddit bio to \"Awesome Prompt Artist\"",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 3,
+    "agent_calls": 9,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 4786,
+      "executor": 4504,
+      "critic": 4275
+    },
+    "input_tokens": 11563,
+    "output_tokens": 2002,
+    "total_tokens": 13565,
+    "wall_clock_seconds": 56.3,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1014,
+        "output_tokens": 332,
+        "cumulative_tokens": 1346,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Click the username button with id 68 to open the account menu so we can navigate to profile/settings.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('68')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1029,
+        "output_tokens": 274,
+        "cumulative_tokens": 2649,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "click('68')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('68')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1029,
+        "output_tokens": 161,
+        "cumulative_tokens": 3839,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('68')",
+        "critic_reasoning": "Element 68 is the username button shown in the AXTree and clicking it satisfies the sub-goal of opening the account menu, so approve.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2089,
+        "input_tokens": 1219,
+        "output_tokens": 391,
+        "cumulative_tokens": 5449,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Open the User settings page by clicking the 'User settings' link in the account menu.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/preferences"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('89')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2089,
+        "input_tokens": 1231,
+        "output_tokens": 169,
+        "cumulative_tokens": 6849,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('89')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/preferences"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('89')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2089,
+        "input_tokens": 1231,
+        "output_tokens": 114,
+        "cumulative_tokens": 8194,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('89')",
+        "critic_reasoning": "Element 89 is the 'User settings' link present in the account menu and clicking it matches the sub-goal to open the User settings page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/preferences"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/preferences",
+        "prompt_chars": 3411,
+        "input_tokens": 1594,
+        "output_tokens": 236,
+        "cumulative_tokens": 10024,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Open the biography editor by clicking the 'Edit biography' link in the sidebar (element 749).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "click('749')",
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/preferences",
+        "prompt_chars": 3411,
+        "input_tokens": 1608,
+        "output_tokens": 193,
+        "cumulative_tokens": 11825,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('749')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "click('749')",
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/preferences",
+        "prompt_chars": 3411,
+        "input_tokens": 1608,
+        "output_tokens": 132,
+        "cumulative_tokens": 13565,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('749')",
+        "critic_reasoning": "Element 749 ('Edit biography') exists in the AXTree and clicking it directly accomplishes the sub-goal of opening the biography editor; the action is valid.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 403,
+    "budget_level": 4000,
+    "timestamp": "2026-07-31T17:01:03",
+    "goal": "Change my reddit bio to \"Awesome Prompt Artist\"",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 1293,
+      "executor": 1185,
+      "critic": 1166
+    },
+    "input_tokens": 3058,
+    "output_tokens": 586,
+    "total_tokens": 3644,
+    "wall_clock_seconds": 16.4,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1014,
+        "output_tokens": 279,
+        "cumulative_tokens": 1293,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Click the username button to open its menu (click element 68).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('68')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1022,
+        "output_tokens": 163,
+        "cumulative_tokens": 2478,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('68')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('68')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1022,
+        "output_tokens": 144,
+        "cumulative_tokens": 3644,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('68')",
+        "critic_reasoning": "Element 68 exists in the AXTree and is the username button with hasPopup='menu' (expanded=False); clicking it matches the sub-goal to open the menu.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 403,
+    "budget_level": 8000,
+    "timestamp": "2026-07-31T17:01:43",
+    "goal": "Change my reddit bio to \"Awesome Prompt Artist\"",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "safety_token_cap",
+    "steps": 2,
+    "agent_calls": 6,
+    "critic_revisions": 1,
+    "tokens_by_role": {
+      "planner": 2834,
+      "executor": 2787,
+      "critic": 2668
+    },
+    "input_tokens": 6763,
+    "output_tokens": 1526,
+    "total_tokens": 8289,
+    "wall_clock_seconds": 30.7,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1014,
+        "output_tokens": 345,
+        "cumulative_tokens": 1359,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Open the account menu by clicking the username button MarvelsGrantMan136 (id 68) to access profile or settings.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('68')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1033,
+        "output_tokens": 284,
+        "cumulative_tokens": 2676,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "click('68')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('68')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1033,
+        "output_tokens": 128,
+        "cumulative_tokens": 3837,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('68')",
+        "critic_reasoning": "Element id 68 is present in the AXTree and is the username button 'MarvelsGrantMan136'; clicking it matches the sub-goal to open the account menu.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2089,
+        "input_tokens": 1219,
+        "output_tokens": 256,
+        "cumulative_tokens": 5312,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Click the 'User settings' link (element 85) to open the account settings page."
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('85')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2089,
+        "input_tokens": 1232,
+        "output_tokens": 238,
+        "cumulative_tokens": 6782,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "click('85')"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('89')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2089,
+        "input_tokens": 1232,
+        "output_tokens": 275,
+        "cumulative_tokens": 8289,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": false,
+        "revised": true,
+        "proposed_action": "click('85')",
+        "critic_reasoning": "Element 85 is 'My account', not the 'User settings' link required by the sub-goal; the correct element id for 'User settings' is 89."
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 403,
+    "budget_level": 32000,
+    "timestamp": "2026-07-31T17:03:55",
+    "goal": "Change my reddit bio to \"Awesome Prompt Artist\"",
+    "success": true,
+    "final_reward": 1.0,
+    "termination_reason": "success",
+    "steps": 5,
+    "agent_calls": 15,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 7992,
+      "executor": 7522,
+      "critic": 7598
+    },
+    "input_tokens": 19229,
+    "output_tokens": 3883,
+    "total_tokens": 23112,
+    "wall_clock_seconds": 122.6,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1014,
+        "output_tokens": 260,
+        "cumulative_tokens": 1274,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Open the user menu by clicking the 'MarvelsGrantMan136' button (id 68) to access profile or account settings.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('68')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1035,
+        "output_tokens": 237,
+        "cumulative_tokens": 2546,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('68')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('68')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1494,
+        "input_tokens": 1035,
+        "output_tokens": 278,
+        "cumulative_tokens": 3859,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('68')",
+        "critic_reasoning": "Element 68 exists in the AXTree and is the user button 'MarvelsGrantMan136' with a popup; clicking it opens the user menu as required by the sub-goal.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2089,
+        "input_tokens": 1219,
+        "output_tokens": 404,
+        "cumulative_tokens": 5482,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Click the 'User settings' link in the account menu (element 89).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/preferences"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('89')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2089,
+        "input_tokens": 1229,
+        "output_tokens": 233,
+        "cumulative_tokens": 6944,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('89')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/preferences"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('89')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2089,
+        "input_tokens": 1229,
+        "output_tokens": 252,
+        "cumulative_tokens": 8425,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('89')",
+        "critic_reasoning": "Element 89 ('User settings') is present in the AXTree and clicking it satisfies the sub-goal.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/preferences"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/preferences",
+        "prompt_chars": 3411,
+        "input_tokens": 1594,
+        "output_tokens": 229,
+        "cumulative_tokens": 10248,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Click the \"Edit biography\" link (element 749) to open the biography editor.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "click('749')",
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/preferences",
+        "prompt_chars": 3411,
+        "input_tokens": 1606,
+        "output_tokens": 189,
+        "cumulative_tokens": 12043,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('749')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "click('749')",
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/preferences",
+        "prompt_chars": 3411,
+        "input_tokens": 1606,
+        "output_tokens": 252,
+        "cumulative_tokens": 13901,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('749')",
+        "critic_reasoning": "Element 749 exists on the page and clicking it matches the sub-goal to open the biography editor.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      },
+      {
+        "step": 3,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography",
+        "prompt_chars": 2122,
+        "input_tokens": 1256,
+        "output_tokens": 268,
+        "cumulative_tokens": 15425,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Fill the Biography textbox (116) with \"Awesome Prompt Artist\", then click the Save button (250).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      },
+      {
+        "step": 3,
+        "agent_role": "executor",
+        "action": "fill('116', 'Awesome Prompt Artist')",
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography",
+        "prompt_chars": 2122,
+        "input_tokens": 1271,
+        "output_tokens": 278,
+        "cumulative_tokens": 16974,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "fill('116', 'Awesome Prompt Artist')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      },
+      {
+        "step": 3,
+        "agent_role": "critic",
+        "action": "fill('116', 'Awesome Prompt Artist')",
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography",
+        "prompt_chars": 2122,
+        "input_tokens": 1276,
+        "output_tokens": 267,
+        "cumulative_tokens": 18517,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('116', 'Awesome Prompt Artist')",
+        "critic_reasoning": "Textbox 116 exists and filling it with the given text matches the planner's sub-goal; action is valid and should be executed.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      },
+      {
+        "step": 4,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography",
+        "prompt_chars": 2258,
+        "input_tokens": 1281,
+        "output_tokens": 467,
+        "cumulative_tokens": 20265,
+        "usage_details": {
+          "reasoning_tokens": 384
+        },
+        "plan": "Click the Save button to save the new biography (element 250).",
+        "action_error": null,
+        "step_reward": 1.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      },
+      {
+        "step": 4,
+        "agent_role": "executor",
+        "action": "click('250')",
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography",
+        "prompt_chars": 2258,
+        "input_tokens": 1289,
+        "output_tokens": 155,
+        "cumulative_tokens": 21709,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('250')",
+        "action_error": null,
+        "step_reward": 1.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      },
+      {
+        "step": 4,
+        "agent_role": "critic",
+        "action": "click('250')",
+        "url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography",
+        "prompt_chars": 2258,
+        "input_tokens": 1289,
+        "output_tokens": 114,
+        "cumulative_tokens": 23112,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('250')",
+        "critic_reasoning": "Element 250 (Save button) exists on the page and clicking it directly accomplishes the planner's sub-goal of saving the updated biography.",
+        "action_error": null,
+        "step_reward": 1.0,
+        "next_url": "http://localhost:9999/user/MarvelsGrantMan136/edit_biography"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 403,
+    "budget_level": 2000,
+    "timestamp": "2026-07-31T17:04:04",
+    "goal": "Change my reddit bio to \"Awesome Prompt Artist\"",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 574,
+    "budget_level": 8000,
+    "timestamp": "2026-07-31T17:04:40",
+    "goal": "I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 1783,
+      "executor": 1776,
+      "critic": 1656
+    },
+    "input_tokens": 4503,
+    "output_tokens": 712,
+    "total_tokens": 5215,
+    "wall_clock_seconds": 24.5,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1493,
+        "output_tokens": 290,
+        "cumulative_tokens": 1783,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Open the 'My Account' page by clicking the My Account link with id 227.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1505,
+        "output_tokens": 271,
+        "cumulative_tokens": 3559,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "click('227')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1505,
+        "output_tokens": 151,
+        "cumulative_tokens": 5215,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('227')",
+        "critic_reasoning": "Element id 227 exists in the AXTree and is the 'My Account' link; clicking it directly satisfies the sub-goal of opening the My Account page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 574,
+    "budget_level": 4000,
+    "timestamp": "2026-07-31T17:05:07",
+    "goal": "I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "safety_token_cap",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 2069,
+      "executor": 1711,
+      "critic": 1745
+    },
+    "input_tokens": 4509,
+    "output_tokens": 1016,
+    "total_tokens": 5525,
+    "wall_clock_seconds": 17.3,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1493,
+        "output_tokens": 576,
+        "cumulative_tokens": 2069,
+        "usage_details": {
+          "reasoning_tokens": 448
+        },
+        "plan": "Click the 'My Account' link (element 227) to open account settings and update the address."
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1508,
+        "output_tokens": 203,
+        "cumulative_tokens": 3780,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('227')"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1508,
+        "output_tokens": 237,
+        "cumulative_tokens": 5525,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('227')",
+        "critic_reasoning": "Element 227 ('My Account') exists on the page and clicking it directly serves the sub-goal of opening account settings to update the address."
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 574,
+    "budget_level": 2000,
+    "timestamp": "2026-07-31T17:05:18",
+    "goal": "I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 574,
+    "budget_level": 16000,
+    "timestamp": "2026-07-31T17:06:30",
+    "goal": "I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "safety_token_cap",
+    "steps": 3,
+    "agent_calls": 9,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 5769,
+      "executor": 5673,
+      "critic": 5545
+    },
+    "input_tokens": 14827,
+    "output_tokens": 2160,
+    "total_tokens": 16987,
+    "wall_clock_seconds": 61.9,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1493,
+        "output_tokens": 223,
+        "cumulative_tokens": 1716,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Click the My Account link in the top banner to open account/profile settings.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1502,
+        "output_tokens": 161,
+        "cumulative_tokens": 3379,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('227')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1502,
+        "output_tokens": 138,
+        "cumulative_tokens": 5019,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('227')",
+        "critic_reasoning": "Element 227 ('My Account') exists in the AXTree and clicking it matches the sub-goal to open account/profile settings.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3873,
+        "input_tokens": 1720,
+        "output_tokens": 254,
+        "cumulative_tokens": 6993,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Click the Manage Addresses link (element 1498) to open the address book so you can edit the shipping/billing address.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('1498')",
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3873,
+        "input_tokens": 1740,
+        "output_tokens": 359,
+        "cumulative_tokens": 9092,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "proposed_action": "click('1498')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('1498')",
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3873,
+        "input_tokens": 1741,
+        "output_tokens": 204,
+        "cumulative_tokens": 11037,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1498')",
+        "critic_reasoning": "Element 1498 ('Manage Addresses') is present in the AXTree and clicking it matches the sub-goal to open the address book.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/customer/address/",
+        "prompt_chars": 3823,
+        "input_tokens": 1694,
+        "output_tokens": 385,
+        "cumulative_tokens": 13116,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Click the Add New Address button (1510) to open the address form and enter 111 Magnolia Path, Atlanta, GA 30303."
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "click('1510')",
+        "url": "http://localhost:7770/customer/address/",
+        "prompt_chars": 3823,
+        "input_tokens": 1717,
+        "output_tokens": 194,
+        "cumulative_tokens": 15027,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('1510')"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "click('1510')",
+        "url": "http://localhost:7770/customer/address/",
+        "prompt_chars": 3823,
+        "input_tokens": 1718,
+        "output_tokens": 242,
+        "cumulative_tokens": 16987,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1510')",
+        "critic_reasoning": "Element 1510 is present and labeled 'Add New Address'; clicking it opens the address form needed to enter the new address."
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 574,
+    "budget_level": 32000,
+    "timestamp": "2026-07-31T17:09:05",
+    "goal": "I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 5,
+    "agent_calls": 15,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 10919,
+      "executor": 9263,
+      "critic": 9528
+    },
+    "input_tokens": 25256,
+    "output_tokens": 4454,
+    "total_tokens": 29710,
+    "wall_clock_seconds": 143.9,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1493,
+        "output_tokens": 215,
+        "cumulative_tokens": 1708,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Open the account settings by clicking the 'My Account' link (element 227).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1504,
+        "output_tokens": 198,
+        "cumulative_tokens": 3410,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('227')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('227')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3070,
+        "input_tokens": 1504,
+        "output_tokens": 288,
+        "cumulative_tokens": 5202,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('227')",
+        "critic_reasoning": "Element 227 ('My Account') exists on the page and clicking it fulfills the sub-goal to open account settings.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/account/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3873,
+        "input_tokens": 1720,
+        "output_tokens": 333,
+        "cumulative_tokens": 7255,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Open the Address Book by clicking the 'Manage Addresses' link (element 1498).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('1498')",
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3873,
+        "input_tokens": 1732,
+        "output_tokens": 134,
+        "cumulative_tokens": 9121,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('1498')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('1498')",
+        "url": "http://localhost:7770/customer/account/",
+        "prompt_chars": 3873,
+        "input_tokens": 1733,
+        "output_tokens": 202,
+        "cumulative_tokens": 11056,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1498')",
+        "critic_reasoning": "Element 1498 ('Manage Addresses') is present in the AXTree and clicking it fulfills the sub-goal of opening the Address Book.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/customer/address/",
+        "prompt_chars": 3823,
+        "input_tokens": 1694,
+        "output_tokens": 444,
+        "cumulative_tokens": 13194,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Open the Change Shipping Address form by clicking the 'Change Shipping Address' link (element 1501).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/edit/id/26/"
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "click('1501')",
+        "url": "http://localhost:7770/customer/address/",
+        "prompt_chars": 3823,
+        "input_tokens": 1709,
+        "output_tokens": 190,
+        "cumulative_tokens": 15093,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('1501')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/edit/id/26/"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "click('1501')",
+        "url": "http://localhost:7770/customer/address/",
+        "prompt_chars": 3823,
+        "input_tokens": 1710,
+        "output_tokens": 121,
+        "cumulative_tokens": 16924,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1501')",
+        "critic_reasoning": "Element 1501 ('Change Shipping Address') exists on the page and clicking it directly fulfills the sub-goal to open the Change Shipping Address form.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/edit/id/26/"
+      },
+      {
+        "step": 3,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/customer/address/edit/id/26/",
+        "prompt_chars": 3811,
+        "input_tokens": 1716,
+        "output_tokens": 397,
+        "cumulative_tokens": 19037,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Fill the Street Address textbox (1514) with '111 Magnolia Path'. ",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/edit/id/26/"
+      },
+      {
+        "step": 3,
+        "agent_role": "executor",
+        "action": "fill('1514', '111 Magnolia Path')",
+        "url": "http://localhost:7770/customer/address/edit/id/26/",
+        "prompt_chars": 3811,
+        "input_tokens": 1726,
+        "output_tokens": 124,
+        "cumulative_tokens": 20887,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "proposed_action": "fill('1514', '111 Magnolia Path')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/edit/id/26/"
+      },
+      {
+        "step": 3,
+        "agent_role": "critic",
+        "action": "fill('1514', '111 Magnolia Path')",
+        "url": "http://localhost:7770/customer/address/edit/id/26/",
+        "prompt_chars": 3811,
+        "input_tokens": 1732,
+        "output_tokens": 122,
+        "cumulative_tokens": 22741,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('1514', '111 Magnolia Path')",
+        "critic_reasoning": "Element 1514 exists and is the Street Address textbox; filling it with '111 Magnolia Path' directly accomplishes the sub-goal.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/edit/id/26/"
+      },
+      {
+        "step": 4,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/customer/address/edit/id/26/",
+        "prompt_chars": 3913,
+        "input_tokens": 1745,
+        "output_tokens": 1162,
+        "cumulative_tokens": 25648,
+        "usage_details": {
+          "reasoning_tokens": 1024
+        },
+        "plan": "Scroll down to reveal the City, State/Region, Postal Code fields and the Save Address button so they can be filled and the form saved.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/edit/id/26/"
+      },
+      {
+        "step": 4,
+        "agent_role": "executor",
+        "action": "scroll(0,400)",
+        "url": "http://localhost:7770/customer/address/edit/id/26/",
+        "prompt_chars": 3913,
+        "input_tokens": 1768,
+        "output_tokens": 178,
+        "cumulative_tokens": 27594,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "scroll(0,400)",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/edit/id/26/"
+      },
+      {
+        "step": 4,
+        "agent_role": "critic",
+        "action": "scroll(0,400)",
+        "url": "http://localhost:7770/customer/address/edit/id/26/",
+        "prompt_chars": 3913,
+        "input_tokens": 1770,
+        "output_tokens": 346,
+        "cumulative_tokens": 29710,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "scroll(0,400)",
+        "critic_reasoning": "scroll(0,400) is a valid scroll action and serves the sub-goal of revealing lower form fields (City, State/Region, Postal Code, and Save Address). The element IDs referenced in the page are present and no prior scroll has failed.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/customer/address/edit/id/26/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 159,
+    "budget_level": 32000,
+    "timestamp": "2026-07-31T17:11:27",
+    "goal": "I have a lot of Nintendo Switch game cards now, help me find the best storage option to fit all 31 cards",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 5,
+    "agent_calls": 15,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 10927,
+      "executor": 9883,
+      "critic": 10088
+    },
+    "input_tokens": 25329,
+    "output_tokens": 5569,
+    "total_tokens": 30898,
+    "wall_clock_seconds": 131.0,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1489,
+        "output_tokens": 466,
+        "cumulative_tokens": 1955,
+        "usage_details": {
+          "reasoning_tokens": 384
+        },
+        "plan": "Open the 'Video Games' category via the 'Video Games' menu item to look for Nintendo Switch game card storage cases.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('1075')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1508,
+        "output_tokens": 322,
+        "cumulative_tokens": 3785,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "proposed_action": "click('1075')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('1075')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1509,
+        "output_tokens": 317,
+        "cumulative_tokens": 5611,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1075')",
+        "critic_reasoning": "Element 1075 exists in the AXTree and is the 'Video Games' menuitem; clicking it fulfills the sub-goal to open that category.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/video-games.html",
+        "prompt_chars": 4071,
+        "input_tokens": 1854,
+        "output_tokens": 415,
+        "cumulative_tokens": 7880,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Open the Nintendo Switch category by clicking the 'Nintendo Switch( 51 item )' link with element 1986.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html?cat=71"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('1986')",
+        "url": "http://localhost:7770/video-games.html",
+        "prompt_chars": 4071,
+        "input_tokens": 1873,
+        "output_tokens": 161,
+        "cumulative_tokens": 9914,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('1986')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html?cat=71"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('1986')",
+        "url": "http://localhost:7770/video-games.html",
+        "prompt_chars": 4071,
+        "input_tokens": 1874,
+        "output_tokens": 358,
+        "cumulative_tokens": 12146,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1986')",
+        "critic_reasoning": "Element 1986 is present in the AXTree and is the 'Nintendo Switch( 51 item )' link; clicking it achieves the sub-goal of opening that category.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html?cat=71"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/video-games.html?cat=71",
+        "prompt_chars": 3673,
+        "input_tokens": 1704,
+        "output_tokens": 596,
+        "cumulative_tokens": 14446,
+        "usage_details": {
+          "reasoning_tokens": 512
+        },
+        "plan": "Search the site for 'Nintendo Switch game card case' using the Search combobox (element 388).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html?cat=71"
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "fill('388', 'Nintendo Switch game card case')",
+        "url": "http://localhost:7770/video-games.html?cat=71",
+        "prompt_chars": 3673,
+        "input_tokens": 1720,
+        "output_tokens": 289,
+        "cumulative_tokens": 16455,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "fill('388', 'Nintendo Switch game card case')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html?cat=71"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "fill('388', 'Nintendo Switch game card case')",
+        "url": "http://localhost:7770/video-games.html?cat=71",
+        "prompt_chars": 3673,
+        "input_tokens": 1727,
+        "output_tokens": 383,
+        "cumulative_tokens": 18565,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('388', 'Nintendo Switch game card case')",
+        "critic_reasoning": "The combobox element 388 exists on the page and filling it with the search query matches the planner's sub-goal to search for Nintendo Switch game card case; no prior failures prevent this action.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html?cat=71"
+      },
+      {
+        "step": 3,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/video-games.html?cat=71",
+        "prompt_chars": 3806,
+        "input_tokens": 1742,
+        "output_tokens": 733,
+        "cumulative_tokens": 21040,
+        "usage_details": {
+          "reasoning_tokens": 576
+        },
+        "plan": "Click the first product in the results grid to open its detail page and check for capacity (look for '32', '30', or 'card slots' in the product title/description).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/powera-1506261-01-wired-controller-for-nintendo-switch-mario.html"
+      },
+      {
+        "step": 3,
+        "agent_role": "executor",
+        "action": "click('1513')",
+        "url": "http://localhost:7770/video-games.html?cat=71",
+        "prompt_chars": 3806,
+        "input_tokens": 1775,
+        "output_tokens": 341,
+        "cumulative_tokens": 23156,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "proposed_action": "click('1513')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/powera-1506261-01-wired-controller-for-nintendo-switch-mario.html"
+      },
+      {
+        "step": 3,
+        "agent_role": "critic",
+        "action": "click('1513')",
+        "url": "http://localhost:7770/video-games.html?cat=71",
+        "prompt_chars": 3806,
+        "input_tokens": 1776,
+        "output_tokens": 302,
+        "cumulative_tokens": 25234,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1513')",
+        "critic_reasoning": "Element 1513 exists on the page and is the first product image in the results grid, so clicking it matches the sub-goal of opening the first product detail page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/powera-1506261-01-wired-controller-for-nintendo-switch-mario.html"
+      },
+      {
+        "step": 4,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/powera-1506261-01-wired-controller-for-nintendo-switch-mario.html",
+        "prompt_chars": 3364,
+        "input_tokens": 1581,
+        "output_tokens": 347,
+        "cumulative_tokens": 27162,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Click the 'Video Games' breadcrumb link (element 1505) to browse for Nintendo Switch game card cases.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      },
+      {
+        "step": 4,
+        "agent_role": "executor",
+        "action": "click('1505')",
+        "url": "http://localhost:7770/powera-1506261-01-wired-controller-for-nintendo-switch-mario.html",
+        "prompt_chars": 3364,
+        "input_tokens": 1598,
+        "output_tokens": 296,
+        "cumulative_tokens": 29056,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "click('1505')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      },
+      {
+        "step": 4,
+        "agent_role": "critic",
+        "action": "click('1505')",
+        "url": "http://localhost:7770/powera-1506261-01-wired-controller-for-nintendo-switch-mario.html",
+        "prompt_chars": 3364,
+        "input_tokens": 1599,
+        "output_tokens": 243,
+        "cumulative_tokens": 30898,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1505')",
+        "critic_reasoning": "Element 1505 ('Video Games' breadcrumb) is present in the AXTree and clicking it matches the sub-goal to browse Video Games.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 159,
+    "budget_level": 16000,
+    "timestamp": "2026-07-31T17:12:22",
+    "goal": "I have a lot of Nintendo Switch game cards now, help me find the best storage option to fit all 31 cards",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "safety_token_cap",
+    "steps": 3,
+    "agent_calls": 9,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 6070,
+      "executor": 5729,
+      "critic": 5487
+    },
+    "input_tokens": 15234,
+    "output_tokens": 2052,
+    "total_tokens": 17286,
+    "wall_clock_seconds": 44.9,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1489,
+        "output_tokens": 254,
+        "cumulative_tokens": 1743,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Open the 'Video Games' category by clicking the menu item with id 1075.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('1075')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1501,
+        "output_tokens": 170,
+        "cumulative_tokens": 3414,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('1075')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('1075')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1502,
+        "output_tokens": 127,
+        "cumulative_tokens": 5043,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1075')",
+        "critic_reasoning": "Element id 1075 ('Video Games' menuitem) exists on the page and clicking it fulfills the planner's sub-goal to open the Video Games category.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/video-games.html",
+        "prompt_chars": 4071,
+        "input_tokens": 1854,
+        "output_tokens": 316,
+        "cumulative_tokens": 7213,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Open the 'Nintendo Switch' category by clicking the Nintendo Switch filter link (element 1986).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html?cat=71"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('1986')",
+        "url": "http://localhost:7770/video-games.html",
+        "prompt_chars": 4071,
+        "input_tokens": 1869,
+        "output_tokens": 166,
+        "cumulative_tokens": 9248,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('1986')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html?cat=71"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('1986')",
+        "url": "http://localhost:7770/video-games.html",
+        "prompt_chars": 4071,
+        "input_tokens": 1870,
+        "output_tokens": 112,
+        "cumulative_tokens": 11230,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1986')",
+        "critic_reasoning": "Element 1986 is present and clicking it matches the sub-goal to open the Nintendo Switch category.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html?cat=71"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/video-games.html?cat=71",
+        "prompt_chars": 3673,
+        "input_tokens": 1704,
+        "output_tokens": 453,
+        "cumulative_tokens": 13387,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Use the search combobox (id 388) to search for \"Nintendo Switch game card case\"."
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "fill('388', 'Nintendo Switch game card case')",
+        "url": "http://localhost:7770/video-games.html?cat=71",
+        "prompt_chars": 3673,
+        "input_tokens": 1719,
+        "output_tokens": 304,
+        "cumulative_tokens": 15410,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "fill('388', 'Nintendo Switch game card case')"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "fill('388', 'Nintendo Switch game card case')",
+        "url": "http://localhost:7770/video-games.html?cat=71",
+        "prompt_chars": 3673,
+        "input_tokens": 1726,
+        "output_tokens": 150,
+        "cumulative_tokens": 17286,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('388', 'Nintendo Switch game card case')",
+        "critic_reasoning": "The combobox with id 388 exists and filling it with the search query matches the planner sub-goal to search for 'Nintendo Switch game card case'."
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 159,
+    "budget_level": 8000,
+    "timestamp": "2026-07-31T17:12:47",
+    "goal": "I have a lot of Nintendo Switch game cards now, help me find the best storage option to fit all 31 cards",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 1787,
+      "executor": 1755,
+      "critic": 1673
+    },
+    "input_tokens": 4498,
+    "output_tokens": 717,
+    "total_tokens": 5215,
+    "wall_clock_seconds": 14.6,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1489,
+        "output_tokens": 298,
+        "cumulative_tokens": 1787,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Click the 'Video Games' menu item (element 1075) to view accessories and storage options.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('1075')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1504,
+        "output_tokens": 251,
+        "cumulative_tokens": 3542,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "click('1075')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('1075')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1505,
+        "output_tokens": 168,
+        "cumulative_tokens": 5215,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1075')",
+        "critic_reasoning": "Element 1075 (Video Games menuitem) is present in the AXTree and clicking it fulfills the planner's sub-goal to view video game accessories/storage options.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7770/video-games.html"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 159,
+    "budget_level": 2000,
+    "timestamp": "2026-07-31T17:12:58",
+    "goal": "I have a lot of Nintendo Switch game cards now, help me find the best storage option to fit all 31 cards",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "shopping",
+    "task_id": 159,
+    "budget_level": 4000,
+    "timestamp": "2026-07-31T17:13:22",
+    "goal": "I have a lot of Nintendo Switch game cards now, help me find the best storage option to fit all 31 cards",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "safety_token_cap",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 1826,
+      "executor": 1699,
+      "critic": 1622
+    },
+    "input_tokens": 4502,
+    "output_tokens": 645,
+    "total_tokens": 5147,
+    "wall_clock_seconds": 13.1,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1489,
+        "output_tokens": 337,
+        "cumulative_tokens": 1826,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Click the 'Video Games' category menu item to browse for game card storage or accessories (click 1075)."
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('1075')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1506,
+        "output_tokens": 193,
+        "cumulative_tokens": 3525,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('1075')"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('1075')",
+        "url": "http://localhost:7770/",
+        "prompt_chars": 3051,
+        "input_tokens": 1507,
+        "output_tokens": 115,
+        "cumulative_tokens": 5147,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1075')",
+        "critic_reasoning": "Element 1075 exists in the AXTree and clicking it matches the planner's sub-goal to open the 'Video Games' category."
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 216,
+    "budget_level": 32000,
+    "timestamp": "2026-07-31T17:14:59",
+    "goal": "What are the key aspects that the customers don't like about Electra Bra Top",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 4,
+    "agent_calls": 12,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 9347,
+      "executor": 8847,
+      "critic": 8666
+    },
+    "input_tokens": 23837,
+    "output_tokens": 3023,
+    "total_tokens": 26860,
+    "wall_clock_seconds": 86.9,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4676,
+        "input_tokens": 1870,
+        "output_tokens": 474,
+        "cumulative_tokens": 2344,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Click the Catalog link (element 189) to open product listings so I can locate the Electra Bra Top and view its reviews/comments.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('189')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4676,
+        "input_tokens": 1892,
+        "output_tokens": 214,
+        "cumulative_tokens": 4450,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('189')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('189')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4676,
+        "input_tokens": 1892,
+        "output_tokens": 168,
+        "cumulative_tokens": 6510,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('189')",
+        "critic_reasoning": "Element 189 (CATALOG) exists on the current AXTree and clicking it directly serves the sub-goal of opening the product listings to locate Electra Bra Top.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5021,
+        "input_tokens": 1977,
+        "output_tokens": 307,
+        "cumulative_tokens": 8794,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Open the Products listing via the 'Products' link (element 201) under the CATALOG menu to find the Electra Bra Top product and view its reviews or comments.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('201')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5021,
+        "input_tokens": 2006,
+        "output_tokens": 339,
+        "cumulative_tokens": 11139,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "proposed_action": "click('201')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('201')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5021,
+        "input_tokens": 2006,
+        "output_tokens": 141,
+        "cumulative_tokens": 13286,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('201')",
+        "critic_reasoning": "Element 201 ('Products') is present in the AXTree and clicking it directly fulfills the sub-goal to open the Products listing to locate Electra Bra Top; action is appropriate.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/catalog/product/",
+        "prompt_chars": 3643,
+        "input_tokens": 1732,
+        "output_tokens": 271,
+        "cumulative_tokens": 15289,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Search for the product by entering 'Electra Bra Top' into the 'Search by keyword' textbox (element 1380) and click the 'Search' button (element 1381).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "fill('1380', 'Electra Bra Top')",
+        "url": "http://localhost:7780/admin/catalog/product/",
+        "prompt_chars": 3643,
+        "input_tokens": 1765,
+        "output_tokens": 214,
+        "cumulative_tokens": 17268,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "fill('1380', 'Electra Bra Top')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "fill('1380', 'Electra Bra Top')",
+        "url": "http://localhost:7780/admin/catalog/product/",
+        "prompt_chars": 3643,
+        "input_tokens": 1772,
+        "output_tokens": 141,
+        "cumulative_tokens": 19181,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('1380', 'Electra Bra Top')",
+        "critic_reasoning": "Element 1380 (Search by keyword textbox) exists on the page and filling it with 'Electra Bra Top' directly serves the planner's sub-goal; action is valid.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      },
+      {
+        "step": 3,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/catalog/product/",
+        "prompt_chars": 5055,
+        "input_tokens": 2296,
+        "output_tokens": 420,
+        "cumulative_tokens": 21897,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Click the Search button (element 1381) to run the search and reveal the Electra Bra Top product row.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      },
+      {
+        "step": 3,
+        "agent_role": "executor",
+        "action": "click('1381')",
+        "url": "http://localhost:7780/admin/catalog/product/",
+        "prompt_chars": 5055,
+        "input_tokens": 2314,
+        "output_tokens": 103,
+        "cumulative_tokens": 24314,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "proposed_action": "click('1381')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      },
+      {
+        "step": 3,
+        "agent_role": "critic",
+        "action": "click('1381')",
+        "url": "http://localhost:7780/admin/catalog/product/",
+        "prompt_chars": 5055,
+        "input_tokens": 2315,
+        "output_tokens": 231,
+        "cumulative_tokens": 26860,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1381')",
+        "critic_reasoning": "Element 1381 (Search button) exists on the page and clicking it fulfills the sub-goal to run the search and reveal the product row.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 216,
+    "budget_level": 16000,
+    "timestamp": "2026-07-31T17:15:40",
+    "goal": "What are the key aspects that the customers don't like about Electra Bra Top",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 2,
+    "agent_calls": 6,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 4668,
+      "executor": 4141,
+      "critic": 4177
+    },
+    "input_tokens": 11619,
+    "output_tokens": 1367,
+    "total_tokens": 12986,
+    "wall_clock_seconds": 31.8,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4672,
+        "input_tokens": 1869,
+        "output_tokens": 402,
+        "cumulative_tokens": 2271,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Click the CATALOG menu (element 189) to open the product listings so I can find and open the Electra Bra Top product page to view customer feedback.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('189')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4672,
+        "input_tokens": 1896,
+        "output_tokens": 125,
+        "cumulative_tokens": 4292,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('189')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('189')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4672,
+        "input_tokens": 1896,
+        "output_tokens": 153,
+        "cumulative_tokens": 6341,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('189')",
+        "critic_reasoning": "Element 189 (CATALOG) exists on the page and clicking it directly serves the sub-goal of opening product listings to find Electra Bra Top.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5017,
+        "input_tokens": 1976,
+        "output_tokens": 421,
+        "cumulative_tokens": 8738,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Open the Products page via the 'Products' link in the CATALOG menu (click element 201).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('201')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5017,
+        "input_tokens": 1991,
+        "output_tokens": 129,
+        "cumulative_tokens": 10858,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('201')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('201')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5017,
+        "input_tokens": 1991,
+        "output_tokens": 137,
+        "cumulative_tokens": 12986,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('201')",
+        "critic_reasoning": "Element 201 ('Products') is present in the AXTree and clicking it matches the sub-goal to open the Products page; approve the action.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/catalog/product/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 216,
+    "budget_level": 2000,
+    "timestamp": "2026-07-31T17:15:50",
+    "goal": "What are the key aspects that the customers don't like about Electra Bra Top",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 216,
+    "budget_level": 8000,
+    "timestamp": "2026-07-31T17:16:35",
+    "goal": "What are the key aspects that the customers don't like about Electra Bra Top",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 2145,
+      "executor": 2025,
+      "critic": 2210
+    },
+    "input_tokens": 5633,
+    "output_tokens": 747,
+    "total_tokens": 6380,
+    "wall_clock_seconds": 35.6,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4672,
+        "input_tokens": 1869,
+        "output_tokens": 276,
+        "cumulative_tokens": 2145,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Click the CATALOG menu link to open the product list and locate the Electra Bra Top.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('189')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4672,
+        "input_tokens": 1882,
+        "output_tokens": 143,
+        "cumulative_tokens": 4170,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('189')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('189')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4672,
+        "input_tokens": 1882,
+        "output_tokens": 328,
+        "cumulative_tokens": 6380,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('189')",
+        "critic_reasoning": "Element id 189 corresponds to the CATALOG menu link in the AXTree and clicking it matches the sub-goal of opening the product list; the action is valid.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 216,
+    "budget_level": 4000,
+    "timestamp": "2026-07-31T17:16:44",
+    "goal": "What are the key aspects that the customers don't like about Electra Bra Top",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 724,
+    "budget_level": 16000,
+    "timestamp": "2026-07-31T17:21:00",
+    "goal": "Like all submissions created by Hrekires in subreddit news",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 4,
+    "agent_calls": 12,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 5798,
+      "executor": 4829,
+      "critic": 4915
+    },
+    "input_tokens": 12675,
+    "output_tokens": 2867,
+    "total_tokens": 15542,
+    "wall_clock_seconds": 246.8,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1017,
+        "output_tokens": 461,
+        "cumulative_tokens": 1478,
+        "usage_details": {
+          "reasoning_tokens": 384
+        },
+        "plan": "Open the 'Submissions' tab by clicking the Submissions link (element 117).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('117')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1029,
+        "output_tokens": 91,
+        "cumulative_tokens": 2598,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "proposed_action": "click('117')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('117')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1029,
+        "output_tokens": 117,
+        "cumulative_tokens": 3744,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('117')",
+        "critic_reasoning": "Element 117 (link 'Submissions') exists in the AXTree and clicking it matches the sub-goal to open the Submissions tab.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1541,
+        "input_tokens": 1031,
+        "output_tokens": 385,
+        "cumulative_tokens": 5160,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Search for the user 'Hrekires' using the search box (element 54) to open their profile or list of submissions.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "fill('54', 'Hrekires')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1541,
+        "input_tokens": 1053,
+        "output_tokens": 232,
+        "cumulative_tokens": 6445,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "fill('54', 'Hrekires')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "fill('54', 'Hrekires')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1541,
+        "input_tokens": 1059,
+        "output_tokens": 122,
+        "cumulative_tokens": 7626,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('54', 'Hrekires')",
+        "critic_reasoning": "Element 54 exists and is a searchbox; filling it with 'Hrekires' matches the sub-goal to search for the user and will open their profile/list of submissions.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1622,
+        "input_tokens": 1063,
+        "output_tokens": 312,
+        "cumulative_tokens": 9001,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Click the 'Submissions' link (element 117) to view the user's submissions.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "click('117')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1622,
+        "input_tokens": 1075,
+        "output_tokens": 149,
+        "cumulative_tokens": 10225,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('117')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "click('117')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1622,
+        "input_tokens": 1075,
+        "output_tokens": 115,
+        "cumulative_tokens": 11415,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('117')",
+        "critic_reasoning": "Element 117 (link 'Submissions') exists in the AXTree and clicking it satisfies the sub-goal to view the user's submissions.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 3,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1641,
+        "input_tokens": 1071,
+        "output_tokens": 458,
+        "cumulative_tokens": 12944,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "press Enter on the search box element 54 to run the search for 'Hrekires'.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q="
+      },
+      {
+        "step": 3,
+        "agent_role": "executor",
+        "action": "press('54', 'Enter')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1641,
+        "input_tokens": 1085,
+        "output_tokens": 115,
+        "cumulative_tokens": 14144,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "press('54', 'Enter')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q="
+      },
+      {
+        "step": 3,
+        "agent_role": "critic",
+        "action": "press('54', 'Enter')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1641,
+        "input_tokens": 1088,
+        "output_tokens": 310,
+        "cumulative_tokens": 15542,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "press('54', 'Enter')",
+        "critic_reasoning": "Element 54 exists as the searchbox and pressing Enter will run the search for the filled term 'Hrekires', which matches the sub-goal.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q="
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 724,
+    "budget_level": 4000,
+    "timestamp": "2026-07-31T17:22:13",
+    "goal": "Like all submissions created by Hrekires in subreddit news",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 1490,
+      "executor": 1223,
+      "critic": 1150
+    },
+    "input_tokens": 3083,
+    "output_tokens": 780,
+    "total_tokens": 3863,
+    "wall_clock_seconds": 64.5,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1017,
+        "output_tokens": 473,
+        "cumulative_tokens": 1490,
+        "usage_details": {
+          "reasoning_tokens": 384
+        },
+        "plan": "Click the 'Submissions' link in the main navigation (element 117) to view the submissions feed.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('117')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1033,
+        "output_tokens": 190,
+        "cumulative_tokens": 2713,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('117')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('117')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1033,
+        "output_tokens": 117,
+        "cumulative_tokens": 3863,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('117')",
+        "critic_reasoning": "Element 117 exists in the AXTree as the 'Submissions' link and clicking it fulfills the sub-goal to view the submissions feed.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 724,
+    "budget_level": 8000,
+    "timestamp": "2026-07-31T17:24:34",
+    "goal": "Like all submissions created by Hrekires in subreddit news",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 2,
+    "agent_calls": 6,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 2996,
+      "executor": 2552,
+      "critic": 2424
+    },
+    "input_tokens": 6291,
+    "output_tokens": 1681,
+    "total_tokens": 7972,
+    "wall_clock_seconds": 131.5,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1017,
+        "output_tokens": 542,
+        "cumulative_tokens": 1559,
+        "usage_details": {
+          "reasoning_tokens": 448
+        },
+        "plan": "Use the search box (54) to search for: author:Hrekires subreddit:news",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "fill('54', 'author:Hrekires subreddit:news')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1030,
+        "output_tokens": 238,
+        "cumulative_tokens": 2827,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "fill('54', 'author:Hrekires subreddit:news')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "fill('54', 'author:Hrekires subreddit:news')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1041,
+        "output_tokens": 204,
+        "cumulative_tokens": 4072,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('54', 'author:Hrekires subreddit:news')",
+        "critic_reasoning": "The element with id 54 exists and is a searchbox; filling it with the provided query matches the planner sub-goal.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1621,
+        "input_tokens": 1054,
+        "output_tokens": 383,
+        "cumulative_tokens": 5509,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Press Enter on the search box (54) to execute the query and display Hrekires' submissions in subreddit news.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "press('54', 'Enter')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1621,
+        "input_tokens": 1073,
+        "output_tokens": 211,
+        "cumulative_tokens": 6793,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "press('54', 'Enter')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "press('54', 'Enter')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1621,
+        "input_tokens": 1076,
+        "output_tokens": 103,
+        "cumulative_tokens": 7972,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "press('54', 'Enter')",
+        "critic_reasoning": "Element 54 exists and is focused with the correct search query; pressing Enter will execute the search and matches the sub-goal.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 724,
+    "budget_level": 2000,
+    "timestamp": "2026-07-31T17:24:42",
+    "goal": "Like all submissions created by Hrekires in subreddit news",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 724,
+    "budget_level": 32000,
+    "timestamp": "2026-07-31T17:32:33",
+    "goal": "Like all submissions created by Hrekires in subreddit news",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 7,
+    "agent_calls": 21,
+    "critic_revisions": 1,
+    "tokens_by_role": {
+      "planner": 11167,
+      "executor": 9497,
+      "critic": 8965
+    },
+    "input_tokens": 22826,
+    "output_tokens": 6803,
+    "total_tokens": 29629,
+    "wall_clock_seconds": 461.3,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1017,
+        "output_tokens": 740,
+        "cumulative_tokens": 1757,
+        "usage_details": {
+          "reasoning_tokens": 640
+        },
+        "plan": "Fill the search box with a query targeting posts by Hrekires in the news subreddit (e.g., \"author:Hrekires subreddit:news\") so the Executor can run the search.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "fill('54', 'author:Hrekires subreddit:news')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1051,
+        "output_tokens": 301,
+        "cumulative_tokens": 3109,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "fill('54', 'author:Hrekires subreddit:news')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "fill('54', 'author:Hrekires subreddit:news')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1505,
+        "input_tokens": 1061,
+        "output_tokens": 110,
+        "cumulative_tokens": 4280,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('54', 'author:Hrekires subreddit:news')",
+        "critic_reasoning": "Element 54 is the search box and the proposed fill matches the planner's sub-goal to search for posts by Hrekires in subreddit news.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1621,
+        "input_tokens": 1054,
+        "output_tokens": 337,
+        "cumulative_tokens": 5671,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "press('54', 'Enter')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "press('54', 'Enter')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1621,
+        "input_tokens": 1055,
+        "output_tokens": 167,
+        "cumulative_tokens": 6893,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "press('54', 'Enter')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "press('54', 'Enter')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1621,
+        "input_tokens": 1058,
+        "output_tokens": 153,
+        "cumulative_tokens": 8104,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "press('54', 'Enter')",
+        "critic_reasoning": "Element 54 exists and is the focused searchbox containing the correct query, so pressing Enter will perform the search and meets the sub-goal.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1418,
+        "input_tokens": 1003,
+        "output_tokens": 446,
+        "cumulative_tokens": 9553,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Open the subreddit 'news' page to look for Hrekires' submissions.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "click('24')",
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1418,
+        "input_tokens": 1014,
+        "output_tokens": 353,
+        "cumulative_tokens": 10920,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "proposed_action": "click('24')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "click('48')",
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1418,
+        "input_tokens": 1014,
+        "output_tokens": 471,
+        "cumulative_tokens": 12405,
+        "usage_details": {
+          "reasoning_tokens": 384
+        },
+        "approved": false,
+        "revised": true,
+        "proposed_action": "click('24')",
+        "critic_reasoning": "Clicking 'Home' (24) does not open the 'news' subreddit; there is no subreddit link on this page, so instead focus the search box to adjust the query or navigate\u2014use the searchbox at id 48.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 3,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1514,
+        "input_tokens": 1039,
+        "output_tokens": 580,
+        "cumulative_tokens": 14024,
+        "usage_details": {
+          "reasoning_tokens": 448
+        },
+        "plan": "Replace the query in the main searchbox (id 112) with 'author:Hrekires' and submit the search using the Search button (id 115).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 3,
+        "agent_role": "executor",
+        "action": "fill('112', 'author:Hrekires')",
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1514,
+        "input_tokens": 1067,
+        "output_tokens": 465,
+        "cumulative_tokens": 15556,
+        "usage_details": {
+          "reasoning_tokens": 384
+        },
+        "proposed_action": "fill('112', 'author:Hrekires')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 3,
+        "agent_role": "critic",
+        "action": "fill('112', 'author:Hrekires')",
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1514,
+        "input_tokens": 1074,
+        "output_tokens": 137,
+        "cumulative_tokens": 16767,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('112', 'author:Hrekires')",
+        "critic_reasoning": "The element id 112 exists and is the main searchbox; filling it with 'author:Hrekires' matches the planner's sub-goal and is valid.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 4,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1605,
+        "input_tokens": 1077,
+        "output_tokens": 469,
+        "cumulative_tokens": 18313,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Fill the main search box 112 with 'author:Hrekires subreddit:news'.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 4,
+        "agent_role": "executor",
+        "action": "fill('112', 'author:Hrekires subreddit:news')",
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1605,
+        "input_tokens": 1089,
+        "output_tokens": 293,
+        "cumulative_tokens": 19695,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "fill('112', 'author:Hrekires subreddit:news')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 4,
+        "agent_role": "critic",
+        "action": "fill('112', 'author:Hrekires subreddit:news')",
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1605,
+        "input_tokens": 1099,
+        "output_tokens": 139,
+        "cumulative_tokens": 20933,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('112', 'author:Hrekires subreddit:news')",
+        "critic_reasoning": "Element '112' exists and is the main searchbox; filling it with 'author:Hrekires subreddit:news' matches the sub-goal and is appropriate.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews"
+      },
+      {
+        "step": 5,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1741,
+        "input_tokens": 1124,
+        "output_tokens": 722,
+        "cumulative_tokens": 22779,
+        "usage_details": {
+          "reasoning_tokens": 640
+        },
+        "plan": "Open the site's Home page via the 'Home' link (element 24).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 5,
+        "agent_role": "executor",
+        "action": "click('24')",
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1741,
+        "input_tokens": 1134,
+        "output_tokens": 185,
+        "cumulative_tokens": 24098,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('24')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 5,
+        "agent_role": "critic",
+        "action": "click('24')",
+        "url": "http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews",
+        "prompt_chars": 1741,
+        "input_tokens": 1134,
+        "output_tokens": 135,
+        "cumulative_tokens": 25367,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('24')",
+        "critic_reasoning": "Element 24 exists and is the 'Home' link, so clicking it satisfies the sub-goal to open the site's Home page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 6,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2027,
+        "input_tokens": 1214,
+        "output_tokens": 345,
+        "cumulative_tokens": 26926,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Click the 'Submissions' link (element 117) to view submissions.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 6,
+        "agent_role": "executor",
+        "action": "click('117')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2027,
+        "input_tokens": 1224,
+        "output_tokens": 99,
+        "cumulative_tokens": 28249,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "proposed_action": "click('117')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 6,
+        "agent_role": "critic",
+        "action": "click('117')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 2027,
+        "input_tokens": 1224,
+        "output_tokens": 156,
+        "cumulative_tokens": 29629,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('117')",
+        "critic_reasoning": "Element 117 exists in the AXTree and is the 'Submissions' link, so clicking it fulfills the sub-goal.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 407,
+    "budget_level": 16000,
+    "timestamp": "2026-07-31T17:33:41",
+    "goal": "Upvote the newest post in deeplearning subreddit",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 3,
+    "agent_calls": 9,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 4705,
+      "executor": 4430,
+      "critic": 4486
+    },
+    "input_tokens": 11289,
+    "output_tokens": 2332,
+    "total_tokens": 13621,
+    "wall_clock_seconds": 59.3,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1015,
+        "output_tokens": 240,
+        "cumulative_tokens": 1255,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Click the 'Forums' link (element 42) to open the list of forums and locate the deeplearning subreddit.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/forums"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('42')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1034,
+        "output_tokens": 264,
+        "cumulative_tokens": 2553,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "click('42')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/forums"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('42')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1034,
+        "output_tokens": 109,
+        "cumulative_tokens": 3696,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('42')",
+        "critic_reasoning": "Element 42 ('Forums') exists in the AXTree and clicking it serves the sub-goal to open the forums list; the action is valid.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/forums"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/forums",
+        "prompt_chars": 2782,
+        "input_tokens": 1427,
+        "output_tokens": 404,
+        "cumulative_tokens": 5527,
+        "usage_details": {
+          "reasoning_tokens": 320
+        },
+        "plan": "Scroll down the forums list to find and open the 'deeplearning' forum by clicking its link.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/forums"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "scroll(0,400)",
+        "url": "http://localhost:9999/forums",
+        "prompt_chars": 2782,
+        "input_tokens": 1442,
+        "output_tokens": 218,
+        "cumulative_tokens": 7187,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "scroll(0,400)",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/forums"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "scroll(0,400)",
+        "url": "http://localhost:9999/forums",
+        "prompt_chars": 2782,
+        "input_tokens": 1444,
+        "output_tokens": 348,
+        "cumulative_tokens": 8979,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "scroll(0,400)",
+        "critic_reasoning": "scroll(0,400) is valid on this page, serves the sub-goal of revealing more forums (including deeplearning), and there is no evidence this would fail.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/forums"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/forums",
+        "prompt_chars": 2455,
+        "input_tokens": 1289,
+        "output_tokens": 330,
+        "cumulative_tokens": 10598,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Scroll down the forums list to find and click the 'deeplearning' subreddit link.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/forums"
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "scroll(0,400)",
+        "url": "http://localhost:9999/forums",
+        "prompt_chars": 2455,
+        "input_tokens": 1301,
+        "output_tokens": 171,
+        "cumulative_tokens": 12070,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "scroll(0,400)",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/forums"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "scroll(0,400)",
+        "url": "http://localhost:9999/forums",
+        "prompt_chars": 2455,
+        "input_tokens": 1303,
+        "output_tokens": 248,
+        "cumulative_tokens": 13621,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "scroll(0,400)",
+        "critic_reasoning": "scroll(0,400) is a valid action that advances the page to locate the 'deeplearning' subreddit and matches the planner's sub-goal; the element IDs referenced exist and no prior identical action has been disallowed.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/forums"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 407,
+    "budget_level": 8000,
+    "timestamp": "2026-07-31T17:34:24",
+    "goal": "Upvote the newest post in deeplearning subreddit",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 2,
+    "agent_calls": 6,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 2913,
+      "executor": 2607,
+      "critic": 2365
+    },
+    "input_tokens": 6235,
+    "output_tokens": 1650,
+    "total_tokens": 7885,
+    "wall_clock_seconds": 34.1,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1015,
+        "output_tokens": 503,
+        "cumulative_tokens": 1518,
+        "usage_details": {
+          "reasoning_tokens": 384
+        },
+        "plan": "Use the search box element 54 to search for \"deeplearning\" to find the subreddit.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "fill('54', 'deeplearning')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1029,
+        "output_tokens": 213,
+        "cumulative_tokens": 2760,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "fill('54', 'deeplearning')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "fill('54', 'deeplearning')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1034,
+        "output_tokens": 134,
+        "cumulative_tokens": 3928,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('54', 'deeplearning')",
+        "critic_reasoning": "Element 54 (searchbox) exists and filling it with 'deeplearning' matches the sub-goal to search for that subreddit; action is appropriate.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1575,
+        "input_tokens": 1042,
+        "output_tokens": 353,
+        "cumulative_tokens": 5323,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Press Enter in the search box to submit the query and open the deeplearning subreddit or results.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=deeplearning"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "press('54', 'Enter')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1575,
+        "input_tokens": 1056,
+        "output_tokens": 309,
+        "cumulative_tokens": 6688,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "proposed_action": "press('54', 'Enter')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=deeplearning"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "press('54', 'Enter')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1575,
+        "input_tokens": 1059,
+        "output_tokens": 138,
+        "cumulative_tokens": 7885,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "press('54', 'Enter')",
+        "critic_reasoning": "Element 54 is present and focused with the query 'deeplearning'; pressing Enter will submit the search per the planner's sub-goal, so approve.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/search?q=deeplearning"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 407,
+    "budget_level": 2000,
+    "timestamp": "2026-07-31T17:34:33",
+    "goal": "Upvote the newest post in deeplearning subreddit",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 407,
+    "budget_level": 32000,
+    "timestamp": "2026-07-31T17:34:54",
+    "goal": "Upvote the newest post in deeplearning subreddit",
+    "success": false,
+    "final_reward": 0,
+    "termination_reason": "env_terminated",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 1584,
+      "executor": 1178,
+      "critic": 1227
+    },
+    "input_tokens": 3095,
+    "output_tokens": 894,
+    "total_tokens": 3989,
+    "wall_clock_seconds": 12.0,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1015,
+        "output_tokens": 569,
+        "cumulative_tokens": 1584,
+        "usage_details": {
+          "reasoning_tokens": 448
+        },
+        "plan": "Navigate directly to the deeplearning subreddit page (open the URL https://old.reddit.com/r/deeplearning/).",
+        "action_error": null,
+        "step_reward": 0,
+        "next_url": "https://old.reddit.com/r/deeplearning/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "goto('https://old.reddit.com/r/deeplearning/')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1035,
+        "output_tokens": 143,
+        "cumulative_tokens": 2762,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "goto('https://old.reddit.com/r/deeplearning/')",
+        "action_error": null,
+        "step_reward": 0,
+        "next_url": "https://old.reddit.com/r/deeplearning/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "goto('https://old.reddit.com/r/deeplearning/')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1045,
+        "output_tokens": 182,
+        "cumulative_tokens": 3989,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "goto('https://old.reddit.com/r/deeplearning/')",
+        "critic_reasoning": "The proposed goto action matches the planner's sub-goal to navigate to the specified subreddit URL and the element id exists not required; navigating to the URL is valid from this page.",
+        "action_error": null,
+        "step_reward": 0,
+        "next_url": "https://old.reddit.com/r/deeplearning/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "reddit",
+    "task_id": 407,
+    "budget_level": 4000,
+    "timestamp": "2026-07-31T17:35:24",
+    "goal": "Upvote the newest post in deeplearning subreddit",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 1318,
+      "executor": 1307,
+      "critic": 1171
+    },
+    "input_tokens": 3088,
+    "output_tokens": 708,
+    "total_tokens": 3796,
+    "wall_clock_seconds": 21.2,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1015,
+        "output_tokens": 303,
+        "cumulative_tokens": 1318,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Use the header search box to search for \"deeplearning\" and open the deeplearning subreddit/forum from the results.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "fill('54', 'deeplearning')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1034,
+        "output_tokens": 273,
+        "cumulative_tokens": 2625,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "fill('54', 'deeplearning')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "fill('54', 'deeplearning')",
+        "url": "http://localhost:9999/",
+        "prompt_chars": 1495,
+        "input_tokens": 1039,
+        "output_tokens": 132,
+        "cumulative_tokens": 3796,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "fill('54', 'deeplearning')",
+        "critic_reasoning": "Element 54 is the header search box and filling it with 'deeplearning' matches the sub-goal to search for the subreddit, so the action is valid.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:9999/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 200,
+    "budget_level": 4000,
+    "timestamp": "2026-07-31T17:35:34",
+    "goal": "Get the billing name of the oldest complete order",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 200,
+    "budget_level": 16000,
+    "timestamp": "2026-07-31T17:36:09",
+    "goal": "Get the billing name of the oldest complete order",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 2,
+    "agent_calls": 6,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 4482,
+      "executor": 4306,
+      "critic": 4322
+    },
+    "input_tokens": 11845,
+    "output_tokens": 1265,
+    "total_tokens": 13110,
+    "wall_clock_seconds": 25.5,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4649,
+        "input_tokens": 1864,
+        "output_tokens": 282,
+        "cumulative_tokens": 2146,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Open the Sales menu by clicking the top menubar SALES link so I can navigate to Orders and view the full order list.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('156')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4649,
+        "input_tokens": 1883,
+        "output_tokens": 201,
+        "cumulative_tokens": 4230,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('156')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('156')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4649,
+        "input_tokens": 1883,
+        "output_tokens": 226,
+        "cumulative_tokens": 6339,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('156')",
+        "critic_reasoning": "Element id 156 corresponds to the top menubar SALES link present in the AXTree and clicking it fulfills the sub-goal to open the Sales menu.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5323,
+        "input_tokens": 2065,
+        "output_tokens": 271,
+        "cumulative_tokens": 8675,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Open the Orders page by clicking the 'Orders' link (element 168).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('168')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5323,
+        "input_tokens": 2075,
+        "output_tokens": 147,
+        "cumulative_tokens": 10897,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('168')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('168')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5323,
+        "input_tokens": 2075,
+        "output_tokens": 138,
+        "cumulative_tokens": 13110,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('168')",
+        "critic_reasoning": "Element 168 ('Orders' link) is present in the AXTree and clicking it directly fulfills the sub-goal to open the Orders page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 200,
+    "budget_level": 2000,
+    "timestamp": "2026-07-31T17:36:18",
+    "goal": "Get the billing name of the oldest complete order",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 0,
+    "agent_calls": 0,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 0,
+      "executor": 0,
+      "critic": 0
+    },
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "wall_clock_seconds": 0.1,
+    "step_log": []
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 200,
+    "budget_level": 8000,
+    "timestamp": "2026-07-31T17:36:40",
+    "goal": "Get the billing name of the oldest complete order",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 1,
+    "agent_calls": 3,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 2248,
+      "executor": 2070,
+      "critic": 2143
+    },
+    "input_tokens": 5623,
+    "output_tokens": 838,
+    "total_tokens": 6461,
+    "wall_clock_seconds": 12.3,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4645,
+        "input_tokens": 1863,
+        "output_tokens": 385,
+        "cumulative_tokens": 2248,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Open the SALES menu by clicking the 'SALES' link in the top menubar to access the Orders list.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('156')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4645,
+        "input_tokens": 1880,
+        "output_tokens": 190,
+        "cumulative_tokens": 4318,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('156')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('156')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4645,
+        "input_tokens": 1880,
+        "output_tokens": 263,
+        "cumulative_tokens": 6461,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('156')",
+        "critic_reasoning": "Element 156 corresponds to the 'SALES' menubar link shown in the AXTree and clicking it matches the sub-goal of opening the SALES menu.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      }
+    ]
+  },
+  {
+    "strategy": "B",
+    "site": "shopping_admin",
+    "task_id": 200,
+    "budget_level": 32000,
+    "timestamp": "2026-07-31T17:38:21",
+    "goal": "Get the billing name of the oldest complete order",
+    "success": false,
+    "final_reward": 0.0,
+    "termination_reason": "budget_would_exceed",
+    "steps": 5,
+    "agent_calls": 15,
+    "critic_revisions": 0,
+    "tokens_by_role": {
+      "planner": 10686,
+      "executor": 10121,
+      "critic": 10187
+    },
+    "input_tokens": 27334,
+    "output_tokens": 3660,
+    "total_tokens": 30994,
+    "wall_clock_seconds": 91.3,
+    "step_log": [
+      {
+        "step": 0,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4649,
+        "input_tokens": 1864,
+        "output_tokens": 369,
+        "cumulative_tokens": 2233,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Click the SALES menu (element id 156) to open its options and then go to the Orders page to locate the oldest completed order.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "executor",
+        "action": "click('156')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4649,
+        "input_tokens": 1886,
+        "output_tokens": 137,
+        "cumulative_tokens": 4256,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "proposed_action": "click('156')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 0,
+        "agent_role": "critic",
+        "action": "click('156')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 4649,
+        "input_tokens": 1886,
+        "output_tokens": 213,
+        "cumulative_tokens": 6355,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('156')",
+        "critic_reasoning": "Element 156 ('SALES') exists in the AXTree and clicking it matches the sub-goal to open the SALES menu so we can navigate to Orders.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/admin/dashboard/"
+      },
+      {
+        "step": 1,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5323,
+        "input_tokens": 2065,
+        "output_tokens": 347,
+        "cumulative_tokens": 8767,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Click the Orders link in the Sales menu (element 168) to open the Orders listing page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 1,
+        "agent_role": "executor",
+        "action": "click('168')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5323,
+        "input_tokens": 2079,
+        "output_tokens": 85,
+        "cumulative_tokens": 10931,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "proposed_action": "click('168')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 1,
+        "agent_role": "critic",
+        "action": "click('168')",
+        "url": "http://localhost:7780/admin/admin/dashboard/",
+        "prompt_chars": 5323,
+        "input_tokens": 2079,
+        "output_tokens": 114,
+        "cumulative_tokens": 13124,
+        "usage_details": {
+          "reasoning_tokens": 0
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('168')",
+        "critic_reasoning": "Element 168 ('Orders') is present in the AXTree and clicking it matches the sub-goal to open the Orders listing page.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 2,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/sales/order/",
+        "prompt_chars": 3490,
+        "input_tokens": 1675,
+        "output_tokens": 311,
+        "cumulative_tokens": 15110,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "plan": "Open the Filters panel by clicking the 'Filters' button (element 845) to add a Status = Complete filter.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 2,
+        "agent_role": "executor",
+        "action": "click('845')",
+        "url": "http://localhost:7780/admin/sales/order/",
+        "prompt_chars": 3490,
+        "input_tokens": 1693,
+        "output_tokens": 198,
+        "cumulative_tokens": 17001,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "proposed_action": "click('845')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 2,
+        "agent_role": "critic",
+        "action": "click('845')",
+        "url": "http://localhost:7780/admin/sales/order/",
+        "prompt_chars": 3490,
+        "input_tokens": 1693,
+        "output_tokens": 135,
+        "cumulative_tokens": 18829,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('845')",
+        "critic_reasoning": "Element 845 (button 'Filters') exists on the page and clicking it directly achieves the sub-goal of opening the Filters panel to add a Status = Complete filter.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 3,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/sales/order/",
+        "prompt_chars": 3544,
+        "input_tokens": 1702,
+        "output_tokens": 368,
+        "cumulative_tokens": 20899,
+        "usage_details": {
+          "reasoning_tokens": 256
+        },
+        "plan": "Set the Status filter to 'Complete' using the Status combobox (967) and then click the 'Apply Filters' button (1060).",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 3,
+        "agent_role": "executor",
+        "action": "select_option('967', 'Complete')",
+        "url": "http://localhost:7780/admin/sales/order/",
+        "prompt_chars": 3544,
+        "input_tokens": 1725,
+        "output_tokens": 255,
+        "cumulative_tokens": 22879,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "select_option('967', 'Complete')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 3,
+        "agent_role": "critic",
+        "action": "select_option('967', 'Complete')",
+        "url": "http://localhost:7780/admin/sales/order/",
+        "prompt_chars": 3544,
+        "input_tokens": 1729,
+        "output_tokens": 132,
+        "cumulative_tokens": 24740,
+        "usage_details": {
+          "reasoning_tokens": 64
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "select_option('967', 'Complete')",
+        "critic_reasoning": "Element 967 exists and is a combobox for Status; using select_option to choose 'Complete' matches the sub-goal and is the correct action.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 4,
+        "agent_role": "planner",
+        "action": null,
+        "url": "http://localhost:7780/admin/sales/order/",
+        "prompt_chars": 3644,
+        "input_tokens": 1731,
+        "output_tokens": 254,
+        "cumulative_tokens": 26725,
+        "usage_details": {
+          "reasoning_tokens": 128
+        },
+        "plan": "Go to the last page of the order list by clicking the 'next page' or pagination control to reach the oldest complete order and open that order's row to view the Bill-to Name.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 4,
+        "agent_role": "executor",
+        "action": "click('1126')",
+        "url": "http://localhost:7780/admin/sales/order/",
+        "prompt_chars": 3644,
+        "input_tokens": 1763,
+        "output_tokens": 300,
+        "cumulative_tokens": 28788,
+        "usage_details": {
+          "reasoning_tokens": 192
+        },
+        "proposed_action": "click('1126')",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      },
+      {
+        "step": 4,
+        "agent_role": "critic",
+        "action": "click('1126')",
+        "url": "http://localhost:7780/admin/sales/order/",
+        "prompt_chars": 3644,
+        "input_tokens": 1764,
+        "output_tokens": 442,
+        "cumulative_tokens": 30994,
+        "usage_details": {
+          "reasoning_tokens": 384
+        },
+        "approved": true,
+        "revised": false,
+        "proposed_action": "click('1126')",
+        "critic_reasoning": "Button 1126 is the pagination 'next' control to reach later pages; clicking it advances toward the last page so it serves the sub-goal.",
+        "action_error": null,
+        "step_reward": 0.0,
+        "next_url": "http://localhost:7780/admin/sales/order/"
+      }
+    ]
+  }
+]
