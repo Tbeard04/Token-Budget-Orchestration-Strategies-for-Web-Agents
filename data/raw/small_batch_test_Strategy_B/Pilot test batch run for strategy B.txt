@@ -1,0 +1,2553 @@
+[batch] strategy    : A
+[batch] sites       : ['shopping', 'shopping_admin', 'reddit']
+[batch] budgets     : [2000, 4000, 8000, 16000, 32000]
+[batch] seed        : 42
+[batch] output      : ../data/raw/strategy_a.jsonl
+[batch] planned     : 1005 episodes
+[batch] already done: 1004
+[batch] to run      : 1
+[batch]   shopping         67 tasks
+[batch]   shopping_admin   67 tasks
+[batch]   reddit           67 tasks
+
+[batch] 1/1  reddit task 606 @ 32000   (elapsed 0m, eta 0m, ok 0, success 0, err 0)
+
+============================================================
+TASK 606  (site: reddit)  [A, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Find a subreddit focused on topics related to NYC, and post my question, "is car necessary" there
+Start URL: http://localhost:9999/
+
+
+ step 0
+   reason : The Forums link should list subreddits/forums including a NYC-focused one so I'll open it.
+   action : click('43')
+   url    : http://localhost:9999/
+   tokens : +3514 in / +427 out   (cumulative 3941)
+   detail : {'reasoning_tokens': 320}
+   result : reward=0.0  (action accepted)
+
+ step 1
+   reason : Search for a NYC-focused forum by using the visible search box to find 'NYC'.
+   action : fill('50', 'NYC')
+   url    : http://localhost:9999/forums
+   tokens : +1779 in / +359 out   (cumulative 6079)
+   detail : {'reasoning_tokens': 256}
+   result : reward=0.0  (action accepted)
+
+ step 2
+   reason : To enter a broad NYC-related community, open AskReddit to post the question there.
+   action : click('144')
+   url    : http://localhost:9999/forums
+   tokens : +1808 in / +257 out   (cumulative 8144)
+   detail : {'reasoning_tokens': 192}
+   result : reward=0.0  (action accepted)
+
+ step 3
+   reason : To post the question in this subreddit, I'll open the submit/post form for AskReddit by clicking the Submit link.
+   action : click('65')
+   url    : http://localhost:9999/f/AskReddit
+   tokens : +3224 in / +174 out   (cumulative 11542)
+   detail : {'reasoning_tokens': 64}
+   result : reward=0.0  (action accepted)
+
+ step 4
+   reason : Open the forum dropdown to choose a NYC-focused subreddit before posting the question.
+   action : click('381')
+   url    : http://localhost:9999/submit/AskReddit
+   tokens : +1761 in / +242 out   (cumulative 13545)
+   detail : {'reasoning_tokens': 192}
+   result : reward=0.0  (action accepted)
+
+ step 5
+   reason : To find an NYC-focused subreddit, search the forum picker for 'nyc' so I can select it and post the question.
+   action : fill('455', 'nyc')
+   url    : http://localhost:9999/submit/AskReddit
+   tokens : +1967 in / +338 out   (cumulative 15850)
+   detail : {'reasoning_tokens': 256}
+   result : reward=0.0  (action accepted)
+
+ step 6
+   reason : Select the 'nyc' subreddit option from the forum combobox so I can post there.
+   action : click('860')
+   url    : http://localhost:9999/submit/AskReddit
+   tokens : +1889 in / +308 out   (cumulative 18047)
+   detail : {'reasoning_tokens': 256}
+   result : reward=0.0  (action accepted)
+
+ step 7
+   reason : I will enter the post title so I can submit the question to the selected forum.
+   action : fill('138', 'is car necessary')
+   url    : http://localhost:9999/submit/AskReddit
+   tokens : +1831 in / +307 out   (cumulative 20185)
+   detail : {'reasoning_tokens': 256}
+   result : reward=0.0  (action accepted)
+
+ step 8
+   reason : Submit the post to the selected nyc forum by clicking the Create submission button.
+   action : click('398')
+   url    : http://localhost:9999/submit/AskReddit
+   tokens : +1865 in / +258 out   (cumulative 22308)
+   detail : {'reasoning_tokens': 192}
+   result : reward=1.0  (action accepted)
+
+ --- A / reddit / task 606 ---
+   success             : True
+   termination_reason  : success
+   steps               : 9
+   input_tokens        : 19638
+   output_tokens       : 2670
+   total_tokens        : 22308
+   wall_clock_seconds  : 119.9
+
+==============================================================================
+[batch] finished in 2 minutes
+[batch]   episodes ok : 1
+[batch]   successes   : 1  (100.0%)
+[batch]   errors      : 0
+[batch] results in ../data/raw/strategy_a.jsonl
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ ^[[200~python -c "
+import json
+rows = [json.loads(l) for l in open('../data/raw/strategy_a.jsonl') if l.strip()]
+errors = [r for r in rows if 'error' in r]
+print(f'total: {len(rows)}')
+print(f'errors: {len(errors)}')"^[[201~
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ python -c "
+import json
+rows = [json.loads(l) for l in open('../data/raw/strategy_a.jsonl') if l.strip()]
+errors = [r for r in rows if 'error' in r]
+print(f'total: {len(rows)}')
+print(f'errors: {len(errors)}')"
+total: 1005
+errors: 0
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ cp ../data/raw/strategy_a.jsonl ../data/raw/full_batch_Strategy_A/strategy_a.jsonl
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ docker stop shopping shopping_admin forum
+shopping
+shopping_admin
+forum
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ docker rm shopping shopping_admin forum
+shopping
+shopping_admin
+forum
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ docker run --name shopping -p 7770:80 -d shopping_final_0712
+docker run --name shopping_admin -p 7780:80 -d shopping_admin_final_0719
+docker run --name forum -p 9999:80 -d postmill-populated-exposed-withimg
+e4a6122d91314969d8773c84a959d86f298521d98e2357137fe4ce216fc36baf
+7c672122f1a79399087bf281468a432ce0b0727b91ecb0ba94ce288fae978f72
+796e7eb86dfcc3adad25e03db3dcba14c9db04e820ced5c42845ccb98545ebc0
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ sleep 120
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ docker exec shopping /var/www/magento2/bin/magento setup:store-config:set --base-url="http://localhost:7770"
+docker exec shopping mysql -u magentouser -pMyPassword magentodb -e \
+  'UPDATE core_config_data SET value="http://localhost:7770/" WHERE path LIKE "web/%base_url";'
+docker exec shopping /var/www/magento2/bin/magento cache:flush
+
+docker exec shopping_admin /var/www/magento2/bin/magento setup:store-config:set --base-url="http://localhost:7780"
+docker exec shopping_admin mysql -u magentouser -pMyPassword magentodb -e \
+  'UPDATE core_config_data SET value="http://localhost:7780/" WHERE path LIKE "web/%base_url";'
+docker exec shopping_admin /var/www/magento2/bin/magento cache:flush
+Flushed cache types:
+config
+layout
+block_html
+collections
+reflection
+db_ddl
+compiled_config
+eav
+customer_notification
+config_integration
+config_integration_api
+full_page
+config_webservice
+translate
+Flushed cache types:
+config
+layout
+block_html
+collections
+reflection
+db_ddl
+compiled_config
+eav
+customer_notification
+config_integration
+config_integration_api
+full_page
+config_webservice
+translate
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ curl -s -o /dev/null -w "shopping %{http_code}\n" http://localhost:7770
+curl -s -o /dev/null -w "cms      %{http_code}\n" http://localhost:7780
+curl -s -o /dev/null -w "forum    %{http_code}\n" http://localhost:9999
+shopping 200
+cms      200
+forum    200
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ git pull
+remote: Enumerating objects: 11, done.
+remote: Counting objects: 100% (11/11), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 6 (delta 4), reused 6 (delta 4), pack-reused 0 (from 0)
+Unpacking objects: 100% (6/6), 2.05 KiB | 40.00 KiB/s, done.
+From https://github.com/Tbeard04/Token-Budget-Orchestration-Strategies-for-Web-Agents
+   1744684..5f989db  main       -> origin/main
+Updating 1744684..5f989db
+error: Your local changes to the following files would be overwritten by merge:
+        data/raw/full_batch_Strategy_A/strategy_a.jsonl
+Please commit your changes or stash them before you merge.
+Aborting
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ rm ../data/raw/full_batch_Strategy_A/strategy_a.jsonl
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ git pull
+Updating 1744684..5f989db
+Fast-forward
+ data/raw/full_batch_Strategy_A/strategy_a.jsonl | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ python strategy_b.py --budget 16000 276
+/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/beartype/_util/hint/pep/utilpeptest.py:345: BeartypeDecorHintPep585DeprecationWarning: PEP 484 type hint typing.Mapping[str, gymnasium.spaces.space.Space[typing.Any]] deprecated by PEP 585 scheduled for removal in the first Python version released after October 5th, 2025. To resolve this, import this hint from "beartype.typing" rather than "typing". See this discussion for further details and alternatives:
+    https://github.com/beartype/beartype#pep-585-deprecations
+  warn(
+[wa_env] patched WebArena openai_utils (eval model: gpt-4o-mini)
+[wa_env] strategy_a: reasoning_effort='low'
+[wa_env] planner: reasoning_effort='low'
+[wa_env] executor: reasoning_effort='low'
+[wa_env] critic: reasoning_effort='low'
+
+============================================================
+TASK 276  (site: shopping)  [B, budget 16000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Traceback (most recent call last):
+  File "/home/ubuntu/project/src/strategy_b.py", line 380, in main
+    rec = run_episode(tid, args.budget)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/project/src/strategy_b.py", line 184, in run_episode
+    obs, _ = env.reset()
+             ^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/gymnasium/wrappers/common.py", line 399, in reset
+    return super().reset(seed=seed, options=options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/gymnasium/core.py", line 333, in reset
+    return self.env.reset(seed=seed, options=options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/gymnasium/wrappers/common.py", line 292, in reset
+    return env_reset_passive_checker(self.env, seed=seed, options=options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/gymnasium/utils/passive_env_checker.py", line 184, in env_reset_passive_checker
+    result = env.reset(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/browsergym/core/env.py", line 341, in reset
+    task_goal, task_info = self.task.setup(page=self.page)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/browsergym/webarena/task.py", line 116, in setup
+    page.goto(url)
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/playwright/sync_api/_generated.py", line 8686, in goto
+    self._sync(
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/playwright/_impl/_page.py", line 519, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/playwright/_impl/_connection.py", line 59, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/playwright/_impl/_connection.py", line 514, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Page.goto: Timeout 10000ms exceeded.
+Call log:
+navigating to "http://localhost:7770/", waiting until "load"
+
+
+========================================================================================
+SUMMARY
+========================================================================================
+site              task     ok  steps  calls  revis   tokens    secs  reason
+shopping           276    ERR      -      -      -        -       -  TimeoutError: Page.goto: Timeo
+
+Wrote 1 episodes to ../data/raw/strategy_b_results.jsonl
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ ^[[A^C^C
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ python strategy_b.py --budget 16000 276
+/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/beartype/_util/hint/pep/utilpeptest.py:345: BeartypeDecorHintPep585DeprecationWarning: PEP 484 type hint typing.Mapping[str, gymnasium.spaces.space.Space[typing.Any]] deprecated by PEP 585 scheduled for removal in the first Python version released after October 5th, 2025. To resolve this, import this hint from "beartype.typing" rather than "typing". See this discussion for further details and alternatives:
+    https://github.com/beartype/beartype#pep-585-deprecations
+  warn(
+[wa_env] patched WebArena openai_utils (eval model: gpt-4o-mini)
+[wa_env] strategy_a: reasoning_effort='low'
+[wa_env] planner: reasoning_effort='low'
+[wa_env] executor: reasoning_effort='low'
+[wa_env] critic: reasoning_effort='low'
+
+============================================================
+TASK 276  (site: shopping)  [B, budget 16000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Search for "switch accessories"
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1459 in / +358 out   (cumulative 1817)
+   plan    : Type 'switch accessories' into the search combobox (id 263) and press Enter to perform the search.
+   executor: +1476 in / +301 out   (cumulative 3594)
+   proposed: fill('263', 'switch accessories')
+   critic  : +1480 in / +552 out   (cumulative 5626)
+   critic  : approved -> fill('263', 'switch accessories')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7770/
+   planner : +1492 in / +174 out   (cumulative 7292)
+   plan    : Click the Search button (element id 268) to perform the search for 'switch accessories'.
+   executor: +1505 in / +214 out   (cumulative 9011)
+   proposed: click('268')
+   critic  : +1505 in / +191 out   (cumulative 10707)
+   critic  : approved -> click('268')
+An error occurred while extracting the dom and axtree. Retrying (4/5 tries left).
+Error('Frame.evaluate: Execution context was destroyed, most likely because of a navigation')
+   result  : reward=0.0  ERROR: TimeoutError: Locator.click: Timeout 5000ms exceeded.
+Call log:
+waitin
+
+ step 2
+   url     : http://localhost:7770/catalogsearch/result/?q=switch+accessories
+   planner : +1909 in / +350 out   (cumulative 12966)
+   plan    : The target page has been reached; stay here
+   executor: +1913 in / +308 out   (cumulative 15187)
+   proposed: noop()
+   critic  : +1912 in / +126 out   (cumulative 17225)
+   critic  : approved -> noop()
+
+ --- B / shopping / task 276 ---
+   success               : False
+   termination_reason    : safety_token_cap
+   steps                 : 3
+   agent_calls           : 9
+   critic_revisions      : 0
+   input_tokens          : 14651
+   output_tokens         : 2574
+   total_tokens          : 17225
+   wall_clock_seconds    : 53.5
+   tokens_by_role        : {'planner': 5742, 'executor': 5717, 'critic': 5766}
+
+========================================================================================
+SUMMARY
+========================================================================================
+site              task     ok  steps  calls  revis   tokens    secs  reason
+shopping           276  False      3      9      0    17225    53.5  safety_token_cap
+
+Wrote 1 episodes to ../data/raw/strategy_b_results.jsonl
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ ^[[A^C^C
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ python strategy_b.py --budget 32000 276
+/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/beartype/_util/hint/pep/utilpeptest.py:345: BeartypeDecorHintPep585DeprecationWarning: PEP 484 type hint typing.Mapping[str, gymnasium.spaces.space.Space[typing.Any]] deprecated by PEP 585 scheduled for removal in the first Python version released after October 5th, 2025. To resolve this, import this hint from "beartype.typing" rather than "typing". See this discussion for further details and alternatives:
+    https://github.com/beartype/beartype#pep-585-deprecations
+  warn(
+[wa_env] patched WebArena openai_utils (eval model: gpt-4o-mini)
+[wa_env] strategy_a: reasoning_effort='low'
+[wa_env] planner: reasoning_effort='low'
+[wa_env] executor: reasoning_effort='low'
+[wa_env] critic: reasoning_effort='low'
+
+============================================================
+TASK 276  (site: shopping)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Search for "switch accessories"
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1470 in / +354 out   (cumulative 1824)
+   plan    : Enter the query "switch accessories" into the search combobox (element 272) and submit the search.
+   executor: +1486 in / +413 out   (cumulative 3723)
+   proposed: fill('272', 'switch accessories')
+   critic  : +1490 in / +607 out   (cumulative 5820)
+   critic  : approved -> fill('272', 'switch accessories')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7770/
+   planner : +1531 in / +225 out   (cumulative 7576)
+   plan    : Click the Search button (277) to run the search for 'switch accessories'.
+   executor: +1541 in / +198 out   (cumulative 9315)
+   proposed: click('277')
+   critic  : +1541 in / +134 out   (cumulative 10990)
+   critic  : approved -> click('277')
+   result  : reward=1.0  (action accepted)
+
+ --- B / shopping / task 276 ---
+   success               : True
+   termination_reason    : success
+   steps                 : 2
+   agent_calls           : 6
+   critic_revisions      : 0
+   input_tokens          : 9059
+   output_tokens         : 1931
+   total_tokens          : 10990
+   wall_clock_seconds    : 36.0
+   tokens_by_role        : {'planner': 3580, 'executor': 3638, 'critic': 3772}
+
+========================================================================================
+SUMMARY
+========================================================================================
+site              task     ok  steps  calls  revis   tokens    secs  reason
+shopping           276   True      2      6      0    10990    36.0  success
+
+Wrote 1 episodes to ../data/raw/strategy_b_results.jsonl
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ ^[[A^C^C
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ python strategy_b.py --budget 32000 47
+/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/beartype/_util/hint/pep/utilpeptest.py:345: BeartypeDecorHintPep585DeprecationWarning: PEP 484 type hint typing.Mapping[str, gymnasium.spaces.space.Space[typing.Any]] deprecated by PEP 585 scheduled for removal in the first Python version released after October 5th, 2025. To resolve this, import this hint from "beartype.typing" rather than "typing". See this discussion for further details and alternatives:
+    https://github.com/beartype/beartype#pep-585-deprecations
+  warn(
+[wa_env] patched WebArena openai_utils (eval model: gpt-4o-mini)
+[wa_env] strategy_a: reasoning_effort='low'
+[wa_env] planner: reasoning_effort='low'
+[wa_env] executor: reasoning_effort='low'
+[wa_env] critic: reasoning_effort='low'
+
+============================================================
+TASK 47  (site: shopping)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1496 in / +512 out   (cumulative 2008)
+   plan    : Open the account dashboard by clicking the 'My Account' link to access order history.
+   executor: +1507 in / +114 out   (cumulative 3629)
+   proposed: click('227')
+   critic  : +1507 in / +134 out   (cumulative 5270)
+   critic  : approved -> click('227')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7770/customer/account/
+   planner : +1723 in / +401 out   (cumulative 7394)
+   plan    : Open the My Orders page by clicking the 'My Orders' link in the account navigation (element 1614) to view recent orders and their statuses.
+   executor: +1748 in / +176 out   (cumulative 9318)
+   proposed: click('1614')
+   critic  : +1749 in / +115 out   (cumulative 11182)
+   critic  : approved -> click('1614')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:7770/sales/order/history/
+   planner : +2631 in / +482 out   (cumulative 14295)
+   plan    : the answer is on this page: 0 fulfilled orders and $0.00 spent over the past month (5/12/2023–6/12/2023).
+   executor: +2661 in / +298 out   (cumulative 17254)
+   proposed: send_msg_to_user('0 fulfilled orders and $0.00 spent over the past month (5/12/2023–6/12/2023).')
+   critic  : +2691 in / +382 out   (cumulative 20327)
+   critic  : approved -> send_msg_to_user('0 fulfilled orders and $0.00 spent over the past month (5/12/2023–6/12/2023).')
+   result  : reward=1.0  (action accepted)
+
+ --- B / shopping / task 47 ---
+   success               : True
+   termination_reason    : success
+   steps                 : 3
+   agent_calls           : 9
+   critic_revisions      : 0
+   input_tokens          : 17713
+   output_tokens         : 2614
+   total_tokens          : 20327
+   wall_clock_seconds    : 62.8
+   tokens_by_role        : {'planner': 7245, 'executor': 6504, 'critic': 6578}
+
+========================================================================================
+SUMMARY
+========================================================================================
+site              task     ok  steps  calls  revis   tokens    secs  reason
+shopping            47   True      3      9      0    20327    62.8  success
+
+Wrote 1 episodes to ../data/raw/strategy_b_results.jsonl
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ ^[[200~python strategy_b.py --budget 32000 623^[[201~^C^C
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ python strategy_b.py --budget 32000 623
+/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/beartype/_util/hint/pep/utilpeptest.py:345: BeartypeDecorHintPep585DeprecationWarning: PEP 484 type hint typing.Mapping[str, gymnasium.spaces.space.Space[typing.Any]] deprecated by PEP 585 scheduled for removal in the first Python version released after October 5th, 2025. To resolve this, import this hint from "beartype.typing" rather than "typing". See this discussion for further details and alternatives:
+    https://github.com/beartype/beartype#pep-585-deprecations
+  warn(
+[wa_env] patched WebArena openai_utils (eval model: gpt-4o-mini)
+[wa_env] strategy_a: reasoning_effort='low'
+[wa_env] planner: reasoning_effort='low'
+[wa_env] executor: reasoning_effort='low'
+[wa_env] critic: reasoning_effort='low'
+
+============================================================
+TASK 623  (site: reddit)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Ask for advice about gift for birthday in a subreddit for relations
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1017 in / +295 out   (cumulative 1312)
+   plan    : Click the Submit link in the header to open the post submission page (element 62).
+   executor: +1029 in / +179 out   (cumulative 2520)
+   proposed: click('62')
+   critic  : +1029 in / +232 out   (cumulative 3781)
+   critic  : approved -> click('62')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:9999/submit
+   planner : +1078 in / +369 out   (cumulative 5228)
+   plan    : Open the Forum dropdown (combobox 378) and choose the relationships subreddit.
+   executor: +1088 in / +186 out   (cumulative 6502)
+   proposed: select_option('378', 'relationships')
+   critic  : +1092 in / +293 out   (cumulative 7887)
+   critic  : approved -> select_option('378', 'relationships')
+   result  : reward=0.0  ERROR: Error: Locator.select_option: Error: Element is not a <select> element
+
+ step 2
+   url     : http://localhost:9999/submit
+   planner : +1176 in / +447 out   (cumulative 9510)
+   plan    : Click the Forum combobox with id 378 to open its menu so the 'relationships' option can be chosen.
+   executor: +1193 in / +197 out   (cumulative 10900)
+   proposed: click('378')
+   critic  : +1193 in / +154 out   (cumulative 12247)
+   critic  : approved -> click('378')
+   result  : reward=0.0  (action accepted)
+
+ step 3
+   url     : http://localhost:9999/submit
+   planner : +1307 in / +380 out   (cumulative 13934)
+   plan    : Type "relationships" into the forum combobox search field (element 379), then select the resulting 'relationships' option.
+   executor: +1326 in / +240 out   (cumulative 15500)
+   proposed: fill('379', 'relationships')
+   critic  : +1329 in / +143 out   (cumulative 16972)
+   critic  : approved -> fill('379', 'relationships')
+   result  : reward=0.0  ERROR: Error: Locator.fill: Error: Element is not an <input>, <textarea> or [
+
+ step 4
+   url     : http://localhost:9999/submit
+   planner : +1418 in / +552 out   (cumulative 18942)
+   plan    : Type 'relationships' into the searchbox (element 415) to filter and select the relationships subreddit.
+   executor: +1433 in / +216 out   (cumulative 20591)
+   proposed: fill('415', 'relationships')
+   critic  : +1436 in / +335 out   (cumulative 22362)
+   critic  : approved -> fill('415', 'relationships')
+   result  : reward=0.0  (action accepted)
+
+ step 5
+   url     : http://localhost:9999/submit
+   planner : +1249 in / +321 out   (cumulative 23932)
+   plan    : Fill the required Title field (element 137) with a descriptive title for asking gift advice, e.g., "Need birthday gift advice for my partner".
+   executor: +1274 in / +228 out   (cumulative 25434)
+   proposed: fill('137', 'Need birthday gift advice for my partner')
+   critic  : +1283 in / +107 out   (cumulative 26824)
+   critic  : approved -> fill('137', 'Need birthday gift advice for my partner')
+   result  : reward=0.0  (action accepted)
+
+ step 6
+   url     : http://localhost:9999/submit
+   planner : +1287 in / +421 out   (cumulative 28532)
+   plan    : Fill the Forum combobox input (element 379) with the text 'relationships' to surface and select the relationships forum.
+   executor: +1306 in / +123 out   (cumulative 29961)
+   proposed: fill('379', 'relationships')
+   critic  : +1309 in / +512 out   (cumulative 31782)
+   critic  : REVISED -> press('379', 'Enter')
+   why     : The combobox textbox 379 has already been filled with 'relationships' earlier and produced no results, so repeating the same fill would likely fail again. A better action is to press Enter on the combobox textbox to trigger the forum search/selection.
+   result  : reward=0.0  (action accepted)
+
+ step 7: SKIPPED - est. 3366 tokens for a 3-agent step would exceed cap (used 31782/32000)
+
+ --- B / reddit / task 623 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 7
+   agent_calls           : 21
+   critic_revisions      : 1
+   input_tokens          : 25852
+   output_tokens         : 5930
+   total_tokens          : 31782
+   wall_clock_seconds    : 143.2
+   tokens_by_role        : {'planner': 11317, 'executor': 10018, 'critic': 10447}
+
+========================================================================================
+SUMMARY
+========================================================================================
+site              task     ok  steps  calls  revis   tokens    secs  reason
+reddit             623  False      7     21      1    31782   143.2  budget_would_exceed
+
+Wrote 1 episodes to ../data/raw/strategy_b_results.jsonl
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ ^[[A^C^C
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ python strategy_b.py --budget 32000 623
+/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/beartype/_util/hint/pep/utilpeptest.py:345: BeartypeDecorHintPep585DeprecationWarning: PEP 484 type hint typing.Mapping[str, gymnasium.spaces.space.Space[typing.Any]] deprecated by PEP 585 scheduled for removal in the first Python version released after October 5th, 2025. To resolve this, import this hint from "beartype.typing" rather than "typing". See this discussion for further details and alternatives:
+    https://github.com/beartype/beartype#pep-585-deprecations
+  warn(
+[wa_env] patched WebArena openai_utils (eval model: gpt-4o-mini)
+[wa_env] strategy_a: reasoning_effort='low'
+[wa_env] planner: reasoning_effort='low'
+[wa_env] executor: reasoning_effort='low'
+[wa_env] critic: reasoning_effort='low'
+
+============================================================
+TASK 623  (site: reddit)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Ask for advice about gift for birthday in a subreddit for relations
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1017 in / +367 out   (cumulative 1384)
+   plan    : Click the 'Submit' link in the header (element id 62) to open the post submission page.
+   executor: +1033 in / +196 out   (cumulative 2613)
+   proposed: click('62')
+   critic  : +1033 in / +106 out   (cumulative 3752)
+   critic  : approved -> click('62')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:9999/submit
+   planner : +1078 in / +578 out   (cumulative 5408)
+   plan    : Open the 'Forum' combobox (element 378) and select the appropriate subreddit (e.g., r/relationships).
+   executor: +1097 in / +230 out   (cumulative 6735)
+   proposed: select_option('378','r/relationships')
+   critic  : +1102 in / +164 out   (cumulative 8001)
+   critic  : approved -> select_option('378','r/relationships')
+   result  : reward=0.0  ERROR: Error: Locator.select_option: Error: Element is not a <select> element
+
+ step 2
+   url     : http://localhost:9999/submit
+   planner : +1177 in / +423 out   (cumulative 9601)
+   plan    : Click the Forum combobox element with id 378 to open the submenu of subreddits.
+   executor: +1190 in / +234 out   (cumulative 11025)
+   proposed: click('378')
+   critic  : +1190 in / +121 out   (cumulative 12336)
+   critic  : approved -> click('378')
+   result  : reward=0.0  (action accepted)
+
+ step 3
+   url     : http://localhost:9999/submit
+^CTraceback (most recent call last):
+  File "/home/ubuntu/project/src/strategy_b.py", line 407, in <module>
+    main()
+  File "/home/ubuntu/project/src/strategy_b.py", line 380, in main
+    rec = run_episode(tid, args.budget)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/project/src/strategy_b.py", line 244, in run_episode
+    r_plan = W.call_agent(planner, base)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/project/src/wa_env.py", line 340, in call_agent
+    return _executor.submit(agent.run_sync, prompt).result()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/concurrent/futures/_base.py", line 451, in result
+    self._condition.wait(timeout)
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/threading.py", line 327, in wait
+    waiter.acquire()
+KeyboardInterrupt
+^CException ignored in: <module 'threading' from '/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/threading.py'>
+Traceback (most recent call last):
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/threading.py", line 1560, in _shutdown
+    atexit_call()
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/concurrent/futures/thread.py", line 31, in _python_exit
+    t.join()
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/threading.py", line 1119, in join
+    self._wait_for_tstate_lock()
+  File "/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/threading.py", line 1139, in _wait_for_tstate_lock
+    if lock.acquire(block, timeout):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt:
+
+(tokenbudget) ubuntu@ip-172-31-31-185:~/project/src$ python run_batch.py --strategy B --n 3 --out ../data/raw/pilot_b.jsonl
+/home/ubuntu/miniconda3/envs/tokenbudget/lib/python3.11/site-packages/beartype/_util/hint/pep/utilpeptest.py:345: BeartypeDecorHintPep585DeprecationWarning: PEP 484 type hint typing.Mapping[str, gymnasium.spaces.space.Space[typing.Any]] deprecated by PEP 585 scheduled for removal in the first Python version released after October 5th, 2025. To resolve this, import this hint from "beartype.typing" rather than "typing". See this discussion for further details and alternatives:
+    https://github.com/beartype/beartype#pep-585-deprecations
+  warn(
+[wa_env] patched WebArena openai_utils (eval model: gpt-4o-mini)
+[wa_env] strategy_a: reasoning_effort='low'
+[wa_env] planner: reasoning_effort='low'
+[wa_env] executor: reasoning_effort='low'
+[wa_env] critic: reasoning_effort='low'
+
+[batch] strategy    : B
+[batch] sites       : ['shopping', 'shopping_admin', 'reddit']
+[batch] budgets     : [2000, 4000, 8000, 16000, 32000]
+[batch] seed        : 42
+[batch] output      : ../data/raw/pilot_b.jsonl
+[batch] planned     : 45 episodes
+[batch] already done: 0
+[batch] to run      : 45
+[batch]   shopping         3 tasks
+[batch]   shopping_admin   3 tasks
+[batch]   reddit           3 tasks
+
+[batch] 1/45  shopping task 47 @ 4000   (elapsed 0m, eta 0m, ok 0, success 0, err 0)
+
+============================================================
+TASK 47  (site: shopping)  [B, budget 4000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1496 in / +244 out   (cumulative 1740)
+   plan    : Open the 'My Account' link, then navigate to the Orders/Order History (or Purchase History) section to view fulfilled orders from the past month and their totals.
+   executor: +1524 in / +177 out   (cumulative 3441)
+   proposed: click('227')
+   critic  : +1524 in / +293 out   (cumulative 5258)
+   critic  : approved -> click('227')
+
+ --- B / shopping / task 47 ---
+   success               : False
+   termination_reason    : safety_token_cap
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 4544
+   output_tokens         : 714
+   total_tokens          : 5258
+   wall_clock_seconds    : 12.0
+   tokens_by_role        : {'planner': 1740, 'executor': 1701, 'critic': 1817}
+
+[batch] 2/45  shopping task 47 @ 8000   (elapsed 0m, eta 17m, ok 1, success 0, err 0)
+
+============================================================
+TASK 47  (site: shopping)  [B, budget 8000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1496 in / +370 out   (cumulative 1866)
+   plan    : Open the My Account page by clicking the My Account link with id 227.
+   executor: +1506 in / +176 out   (cumulative 3548)
+   proposed: click('227')
+   critic  : +1506 in / +141 out   (cumulative 5195)
+   critic  : approved -> click('227')
+   result  : reward=0.0  (action accepted)
+
+ step 1: SKIPPED - est. 4401 tokens for a 3-agent step would exceed cap (used 5195/8000)
+
+ --- B / shopping / task 47 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 4508
+   output_tokens         : 687
+   total_tokens          : 5195
+   wall_clock_seconds    : 16.0
+   tokens_by_role        : {'planner': 1866, 'executor': 1682, 'critic': 1647}
+
+[batch] 3/45  shopping task 47 @ 16000   (elapsed 1m, eta 18m, ok 2, success 0, err 0)
+
+============================================================
+TASK 47  (site: shopping)  [B, budget 16000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1496 in / +305 out   (cumulative 1801)
+   plan    : Open the My Account page by clicking the 'My Account' link so I can view order history and filter for fulfilled orders in the past month.
+   executor: +1519 in / +203 out   (cumulative 3523)
+   proposed: click('227')
+   critic  : +1519 in / +163 out   (cumulative 5205)
+   critic  : approved -> click('227')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7770/customer/account/
+   planner : +1723 in / +419 out   (cumulative 7347)
+   plan    : Click the 'My Orders' link in the account navigation (element 1614).
+   executor: +1734 in / +146 out   (cumulative 9227)
+   proposed: click('1614')
+   critic  : +1735 in / +337 out   (cumulative 11299)
+   critic  : approved -> click('1614')
+   result  : reward=0.0  (action accepted)
+
+ step 2: SKIPPED - est. 5955 tokens for a 3-agent step would exceed cap (used 11299/16000)
+
+ --- B / shopping / task 47 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 2
+   agent_calls           : 6
+   critic_revisions      : 0
+   input_tokens          : 9726
+   output_tokens         : 1573
+   total_tokens          : 11299
+   wall_clock_seconds    : 33.9
+   tokens_by_role        : {'planner': 3943, 'executor': 3602, 'critic': 3754}
+
+[batch] 4/45  shopping task 47 @ 32000   (elapsed 2m, eta 22m, ok 3, success 0, err 0)
+
+============================================================
+TASK 47  (site: shopping)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1496 in / +370 out   (cumulative 1866)
+   plan    : Open the 'My Account' page by clicking the My Account link in the header (element 227).
+   executor: +1511 in / +306 out   (cumulative 3683)
+   proposed: click('227')
+   critic  : +1511 in / +180 out   (cumulative 5374)
+   critic  : approved -> click('227')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7770/customer/account/
+   planner : +1723 in / +638 out   (cumulative 7735)
+   plan    : Open the 'My Orders' page from the account navigation to view recent orders.
+   executor: +1733 in / +158 out   (cumulative 9626)
+   proposed: click('1614')
+   critic  : +1734 in / +271 out   (cumulative 11631)
+   critic  : approved -> click('1614')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:7770/sales/order/history/
+   planner : +2631 in / +687 out   (cumulative 14949)
+   plan    : the answer is on this page: 0 fulfilled orders in the past month and $0.00 total spent.
+   executor: +2648 in / +538 out   (cumulative 18135)
+   proposed: send_msg_to_user('0 fulfilled orders in the past month and $0.00 total spent.')
+   critic  : +2664 in / +284 out   (cumulative 21083)
+   critic  : approved -> send_msg_to_user('0 fulfilled orders in the past month and $0.00 total spent.')
+   result  : reward=1.0  (action accepted)
+
+ --- B / shopping / task 47 ---
+   success               : True
+   termination_reason    : success
+   steps                 : 3
+   agent_calls           : 9
+   critic_revisions      : 0
+   input_tokens          : 17651
+   output_tokens         : 3432
+   total_tokens          : 21083
+   wall_clock_seconds    : 64.5
+   tokens_by_role        : {'planner': 7545, 'executor': 6894, 'critic': 6644}
+
+[batch] 5/45  shopping task 47 @ 2000   (elapsed 3m, eta 29m, ok 4, success 1, err 0)
+
+============================================================
+TASK 47  (site: shopping)  [B, budget 2000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.
+Start URL: http://localhost:7770/
+
+
+ step 0: SKIPPED - est. 3798 tokens for a 3-agent step would exceed cap (used 0/2000)
+
+ --- B / shopping / task 47 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 6/45  shopping_admin task 208 @ 32000   (elapsed 3m, eta 24m, ok 5, success 1, err 0)
+
+============================================================
+TASK 208  (site: shopping_admin)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Find the customer name and email with phone number +1 2058812302
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +1871 in / +406 out   (cumulative 2277)
+   plan    : Open the Customers section by clicking the CUSTOMERS menu link (element 207).
+   executor: +1881 in / +115 out   (cumulative 4273)
+   proposed: click('207')
+   critic  : +1881 in / +156 out   (cumulative 6310)
+   critic  : approved -> click('207')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +2011 in / +304 out   (cumulative 8625)
+   plan    : Click the All Customers link in the Customers menu to open the customer list.
+   executor: +2020 in / +240 out   (cumulative 10885)
+   proposed: click('214')
+   critic  : +2020 in / +129 out   (cumulative 13034)
+   critic  : approved -> click('214')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:7780/admin/customer/index/
+   planner : +1633 in / +361 out   (cumulative 15028)
+   plan    : Fill the 'Search by keyword' textbox with +1 2058812302 and run the search to locate the customer's record.
+   executor: +1653 in / +487 out   (cumulative 17168)
+   proposed: fill('854', '+1 2058812302')
+   critic  : +1661 in / +702 out   (cumulative 19531)
+   critic  : approved -> fill('854', '+1 2058812302')
+   result  : reward=0.0  (action accepted)
+
+ step 3
+   url     : http://localhost:7780/admin/customer/index/
+   planner : +3146 in / +394 out   (cumulative 23071)
+   plan    : Click the Search button with id 855 to run the search for +1 2058812302.
+   executor: +3161 in / +121 out   (cumulative 26353)
+   proposed: click('855')
+   critic  : +3161 in / +223 out   (cumulative 29737)
+   critic  : approved -> click('855')
+   result  : reward=0.0  (action accepted)
+
+ step 4: SKIPPED - est. 4275 tokens for a 3-agent step would exceed cap (used 29737/32000)
+
+ --- B / shopping_admin / task 208 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 4
+   agent_calls           : 12
+   critic_revisions      : 0
+   input_tokens          : 26099
+   output_tokens         : 3638
+   total_tokens          : 29737
+   wall_clock_seconds    : 71.4
+   tokens_by_role        : {'planner': 10126, 'executor': 9678, 'critic': 9933}
+
+[batch] 7/45  shopping_admin task 208 @ 2000   (elapsed 4m, eta 29m, ok 6, success 1, err 0)
+
+============================================================
+TASK 208  (site: shopping_admin)  [B, budget 2000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Find the customer name and email with phone number +1 2058812302
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0: SKIPPED - est. 4995 tokens for a 3-agent step would exceed cap (used 0/2000)
+
+ --- B / shopping_admin / task 208 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 8/45  shopping_admin task 208 @ 4000   (elapsed 5m, eta 25m, ok 7, success 1, err 0)
+
+============================================================
+TASK 208  (site: shopping_admin)  [B, budget 4000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Find the customer name and email with phone number +1 2058812302
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0: SKIPPED - est. 4995 tokens for a 3-agent step would exceed cap (used 0/4000)
+
+ --- B / shopping_admin / task 208 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 9/45  shopping_admin task 208 @ 8000   (elapsed 5m, eta 22m, ok 8, success 1, err 0)
+
+============================================================
+TASK 208  (site: shopping_admin)  [B, budget 8000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Find the customer name and email with phone number +1 2058812302
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +1871 in / +234 out   (cumulative 2105)
+   plan    : Click the CUSTOMERS link in the top navigation to open the Customers list (click element 207).
+   executor: +1885 in / +251 out   (cumulative 4241)
+   proposed: click('207')
+   critic  : +1885 in / +102 out   (cumulative 6228)
+   critic  : approved -> click('207')
+   result  : reward=0.0  (action accepted)
+
+ step 1: SKIPPED - est. 5337 tokens for a 3-agent step would exceed cap (used 6228/8000)
+
+ --- B / shopping_admin / task 208 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 5641
+   output_tokens         : 587
+   total_tokens          : 6228
+   wall_clock_seconds    : 12.8
+   tokens_by_role        : {'planner': 2105, 'executor': 2136, 'critic': 1987}
+
+[batch] 10/45  shopping_admin task 208 @ 16000   (elapsed 5m, eta 20m, ok 9, success 1, err 0)
+
+============================================================
+TASK 208  (site: shopping_admin)  [B, budget 16000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Find the customer name and email with phone number +1 2058812302
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +1870 in / +385 out   (cumulative 2255)
+   plan    : Click the CUSTOMERS menu link (id 207) to open the customer management page.
+   executor: +1882 in / +357 out   (cumulative 4494)
+   proposed: click('207')
+   critic  : +1882 in / +291 out   (cumulative 6667)
+   critic  : approved -> click('207')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +2010 in / +362 out   (cumulative 9039)
+   plan    : Open the All Customers page by clicking the 'All Customers' link in the CUSTOMERS menu.
+   executor: +2023 in / +260 out   (cumulative 11322)
+   proposed: click('214')
+   critic  : +2023 in / +133 out   (cumulative 13478)
+   critic  : approved -> click('214')
+   result  : reward=0.0  (action accepted)
+
+ step 2: SKIPPED - est. 4158 tokens for a 3-agent step would exceed cap (used 13478/16000)
+
+ --- B / shopping_admin / task 208 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 2
+   agent_calls           : 6
+   critic_revisions      : 0
+   input_tokens          : 11690
+   output_tokens         : 1788
+   total_tokens          : 13478
+   wall_clock_seconds    : 33.7
+   tokens_by_role        : {'planner': 4627, 'executor': 4522, 'critic': 4329}
+
+[batch] 11/45  reddit task 403 @ 16000   (elapsed 6m, eta 20m, ok 10, success 1, err 0)
+
+============================================================
+TASK 403  (site: reddit)  [B, budget 16000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Change my reddit bio to "Awesome Prompt Artist"
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1014 in / +332 out   (cumulative 1346)
+   plan    : Click the username button with id 68 to open the account menu so we can navigate to profile/settings.
+   executor: +1029 in / +274 out   (cumulative 2649)
+   proposed: click('68')
+   critic  : +1029 in / +161 out   (cumulative 3839)
+   critic  : approved -> click('68')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:9999/
+   planner : +1219 in / +391 out   (cumulative 5449)
+   plan    : Open the User settings page by clicking the 'User settings' link in the account menu.
+   executor: +1231 in / +169 out   (cumulative 6849)
+   proposed: click('89')
+   critic  : +1231 in / +114 out   (cumulative 8194)
+   critic  : approved -> click('89')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:9999/user/MarvelsGrantMan136/preferences
+   planner : +1594 in / +236 out   (cumulative 10024)
+   plan    : Open the biography editor by clicking the 'Edit biography' link in the sidebar (element 749).
+   executor: +1608 in / +193 out   (cumulative 11825)
+   proposed: click('749')
+   critic  : +1608 in / +132 out   (cumulative 13565)
+   critic  : approved -> click('749')
+   result  : reward=0.0  (action accepted)
+
+ step 3: SKIPPED - est. 3090 tokens for a 3-agent step would exceed cap (used 13565/16000)
+
+ --- B / reddit / task 403 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 3
+   agent_calls           : 9
+   critic_revisions      : 0
+   input_tokens          : 11563
+   output_tokens         : 2002
+   total_tokens          : 13565
+   wall_clock_seconds    : 56.3
+   tokens_by_role        : {'planner': 4786, 'executor': 4504, 'critic': 4275}
+
+[batch] 12/45  reddit task 403 @ 4000   (elapsed 7m, eta 21m, ok 11, success 1, err 0)
+
+============================================================
+TASK 403  (site: reddit)  [B, budget 4000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Change my reddit bio to "Awesome Prompt Artist"
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1014 in / +279 out   (cumulative 1293)
+   plan    : Click the username button to open its menu (click element 68).
+   executor: +1022 in / +163 out   (cumulative 2478)
+   proposed: click('68')
+   critic  : +1022 in / +144 out   (cumulative 3644)
+   critic  : approved -> click('68')
+   result  : reward=0.0  (action accepted)
+
+ step 1: SKIPPED - est. 3066 tokens for a 3-agent step would exceed cap (used 3644/4000)
+
+ --- B / reddit / task 403 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 3058
+   output_tokens         : 586
+   total_tokens          : 3644
+   wall_clock_seconds    : 16.4
+   tokens_by_role        : {'planner': 1293, 'executor': 1185, 'critic': 1166}
+
+[batch] 13/45  reddit task 403 @ 8000   (elapsed 7m, eta 20m, ok 12, success 1, err 0)
+
+============================================================
+TASK 403  (site: reddit)  [B, budget 8000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Change my reddit bio to "Awesome Prompt Artist"
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1014 in / +345 out   (cumulative 1359)
+   plan    : Open the account menu by clicking the username button MarvelsGrantMan136 (id 68) to access profile or settings.
+   executor: +1033 in / +284 out   (cumulative 2676)
+   proposed: click('68')
+   critic  : +1033 in / +128 out   (cumulative 3837)
+   critic  : approved -> click('68')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:9999/
+   planner : +1219 in / +256 out   (cumulative 5312)
+   plan    : Click the 'User settings' link (element 85) to open the account settings page.
+   executor: +1232 in / +238 out   (cumulative 6782)
+   proposed: click('85')
+   critic  : +1232 in / +275 out   (cumulative 8289)
+   critic  : REVISED -> click('89')
+   why     : Element 85 is 'My account', not the 'User settings' link required by the sub-goal; the correct element id for 'User settings' is 89.
+
+ --- B / reddit / task 403 ---
+   success               : False
+   termination_reason    : safety_token_cap
+   steps                 : 2
+   agent_calls           : 6
+   critic_revisions      : 1
+   input_tokens          : 6763
+   output_tokens         : 1526
+   total_tokens          : 8289
+   wall_clock_seconds    : 30.7
+   tokens_by_role        : {'planner': 2834, 'executor': 2787, 'critic': 2668}
+
+[batch] 14/45  reddit task 403 @ 32000   (elapsed 8m, eta 20m, ok 13, success 1, err 0)
+
+============================================================
+TASK 403  (site: reddit)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Change my reddit bio to "Awesome Prompt Artist"
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1014 in / +260 out   (cumulative 1274)
+   plan    : Open the user menu by clicking the 'MarvelsGrantMan136' button (id 68) to access profile or account settings.
+   executor: +1035 in / +237 out   (cumulative 2546)
+   proposed: click('68')
+   critic  : +1035 in / +278 out   (cumulative 3859)
+   critic  : approved -> click('68')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:9999/
+   planner : +1219 in / +404 out   (cumulative 5482)
+   plan    : Click the 'User settings' link in the account menu (element 89).
+   executor: +1229 in / +233 out   (cumulative 6944)
+   proposed: click('89')
+   critic  : +1229 in / +252 out   (cumulative 8425)
+   critic  : approved -> click('89')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:9999/user/MarvelsGrantMan136/preferences
+   planner : +1594 in / +229 out   (cumulative 10248)
+   plan    : Click the "Edit biography" link (element 749) to open the biography editor.
+   executor: +1606 in / +189 out   (cumulative 12043)
+   proposed: click('749')
+   critic  : +1606 in / +252 out   (cumulative 13901)
+   critic  : approved -> click('749')
+   result  : reward=0.0  (action accepted)
+
+ step 3
+   url     : http://localhost:9999/user/MarvelsGrantMan136/edit_biography
+   planner : +1256 in / +268 out   (cumulative 15425)
+   plan    : Fill the Biography textbox (116) with "Awesome Prompt Artist", then click the Save button (250).
+   executor: +1271 in / +278 out   (cumulative 16974)
+   proposed: fill('116', 'Awesome Prompt Artist')
+   critic  : +1276 in / +267 out   (cumulative 18517)
+   critic  : approved -> fill('116', 'Awesome Prompt Artist')
+   result  : reward=0.0  (action accepted)
+
+ step 4
+   url     : http://localhost:9999/user/MarvelsGrantMan136/edit_biography
+   planner : +1281 in / +467 out   (cumulative 20265)
+   plan    : Click the Save button to save the new biography (element 250).
+   executor: +1289 in / +155 out   (cumulative 21709)
+   proposed: click('250')
+   critic  : +1289 in / +114 out   (cumulative 23112)
+   critic  : approved -> click('250')
+   result  : reward=1.0  (action accepted)
+
+ --- B / reddit / task 403 ---
+   success               : True
+   termination_reason    : success
+   steps                 : 5
+   agent_calls           : 15
+   critic_revisions      : 0
+   input_tokens          : 19229
+   output_tokens         : 3883
+   total_tokens          : 23112
+   wall_clock_seconds    : 122.6
+   tokens_by_role        : {'planner': 7992, 'executor': 7522, 'critic': 7598}
+
+[batch] 15/45  reddit task 403 @ 2000   (elapsed 10m, eta 23m, ok 14, success 2, err 0)
+
+============================================================
+TASK 403  (site: reddit)  [B, budget 2000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Change my reddit bio to "Awesome Prompt Artist"
+Start URL: http://localhost:9999/
+
+
+ step 0: SKIPPED - est. 2619 tokens for a 3-agent step would exceed cap (used 0/2000)
+
+ --- B / reddit / task 403 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 16/45  shopping task 574 @ 8000   (elapsed 10m, eta 21m, ok 15, success 2, err 0)
+
+============================================================
+TASK 574  (site: shopping)  [B, budget 8000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1493 in / +290 out   (cumulative 1783)
+   plan    : Open the 'My Account' page by clicking the My Account link with id 227.
+   executor: +1505 in / +271 out   (cumulative 3559)
+   proposed: click('227')
+   critic  : +1505 in / +151 out   (cumulative 5215)
+   critic  : approved -> click('227')
+   result  : reward=0.0  (action accepted)
+
+ step 1: SKIPPED - est. 4404 tokens for a 3-agent step would exceed cap (used 5215/8000)
+
+ --- B / shopping / task 574 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 4503
+   output_tokens         : 712
+   total_tokens          : 5215
+   wall_clock_seconds    : 24.5
+   tokens_by_role        : {'planner': 1783, 'executor': 1776, 'critic': 1656}
+
+[batch] 17/45  shopping task 574 @ 4000   (elapsed 11m, eta 20m, ok 16, success 2, err 0)
+
+============================================================
+TASK 574  (site: shopping)  [B, budget 4000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1493 in / +576 out   (cumulative 2069)
+   plan    : Click the 'My Account' link (element 227) to open account settings and update the address.
+   executor: +1508 in / +203 out   (cumulative 3780)
+   proposed: click('227')
+   critic  : +1508 in / +237 out   (cumulative 5525)
+   critic  : approved -> click('227')
+
+ --- B / shopping / task 574 ---
+   success               : False
+   termination_reason    : safety_token_cap
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 4509
+   output_tokens         : 1016
+   total_tokens          : 5525
+   wall_clock_seconds    : 17.3
+   tokens_by_role        : {'planner': 2069, 'executor': 1711, 'critic': 1745}
+
+[batch] 18/45  shopping task 574 @ 2000   (elapsed 11m, eta 19m, ok 17, success 2, err 0)
+
+============================================================
+TASK 574  (site: shopping)  [B, budget 2000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly
+Start URL: http://localhost:7770/
+
+
+ step 0: SKIPPED - est. 3801 tokens for a 3-agent step would exceed cap (used 0/2000)
+
+ --- B / shopping / task 574 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 19/45  shopping task 574 @ 16000   (elapsed 12m, eta 17m, ok 18, success 2, err 0)
+
+============================================================
+TASK 574  (site: shopping)  [B, budget 16000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1493 in / +223 out   (cumulative 1716)
+   plan    : Click the My Account link in the top banner to open account/profile settings.
+   executor: +1502 in / +161 out   (cumulative 3379)
+   proposed: click('227')
+   critic  : +1502 in / +138 out   (cumulative 5019)
+   critic  : approved -> click('227')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7770/customer/account/
+   planner : +1720 in / +254 out   (cumulative 6993)
+   plan    : Click the Manage Addresses link (element 1498) to open the address book so you can edit the shipping/billing address.
+   executor: +1740 in / +359 out   (cumulative 9092)
+   proposed: click('1498')
+   critic  : +1741 in / +204 out   (cumulative 11037)
+   critic  : approved -> click('1498')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:7770/customer/address/
+   planner : +1694 in / +385 out   (cumulative 13116)
+   plan    : Click the Add New Address button (1510) to open the address form and enter 111 Magnolia Path, Atlanta, GA 30303.
+   executor: +1717 in / +194 out   (cumulative 15027)
+   proposed: click('1510')
+   critic  : +1718 in / +242 out   (cumulative 16987)
+   critic  : approved -> click('1510')
+
+ --- B / shopping / task 574 ---
+   success               : False
+   termination_reason    : safety_token_cap
+   steps                 : 3
+   agent_calls           : 9
+   critic_revisions      : 0
+   input_tokens          : 14827
+   output_tokens         : 2160
+   total_tokens          : 16987
+   wall_clock_seconds    : 61.9
+   tokens_by_role        : {'planner': 5769, 'executor': 5673, 'critic': 5545}
+
+[batch] 20/45  shopping task 574 @ 32000   (elapsed 13m, eta 17m, ok 19, success 2, err 0)
+
+============================================================
+TASK 574  (site: shopping)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1493 in / +215 out   (cumulative 1708)
+   plan    : Open the account settings by clicking the 'My Account' link (element 227).
+   executor: +1504 in / +198 out   (cumulative 3410)
+   proposed: click('227')
+   critic  : +1504 in / +288 out   (cumulative 5202)
+   critic  : approved -> click('227')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7770/customer/account/
+   planner : +1720 in / +333 out   (cumulative 7255)
+   plan    : Open the Address Book by clicking the 'Manage Addresses' link (element 1498).
+   executor: +1732 in / +134 out   (cumulative 9121)
+   proposed: click('1498')
+   critic  : +1733 in / +202 out   (cumulative 11056)
+   critic  : approved -> click('1498')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:7770/customer/address/
+   planner : +1694 in / +444 out   (cumulative 13194)
+   plan    : Open the Change Shipping Address form by clicking the 'Change Shipping Address' link (element 1501).
+   executor: +1709 in / +190 out   (cumulative 15093)
+   proposed: click('1501')
+   critic  : +1710 in / +121 out   (cumulative 16924)
+   critic  : approved -> click('1501')
+   result  : reward=0.0  (action accepted)
+
+ step 3
+   url     : http://localhost:7770/customer/address/edit/id/26/
+   planner : +1716 in / +397 out   (cumulative 19037)
+   plan    : Fill the Street Address textbox (1514) with '111 Magnolia Path'.
+   executor: +1726 in / +124 out   (cumulative 20887)
+   proposed: fill('1514', '111 Magnolia Path')
+   critic  : +1732 in / +122 out   (cumulative 22741)
+   critic  : approved -> fill('1514', '111 Magnolia Path')
+   result  : reward=0.0  (action accepted)
+
+ step 4
+   url     : http://localhost:7770/customer/address/edit/id/26/
+   planner : +1745 in / +1162 out   (cumulative 25648)
+   plan    : Scroll down to reveal the City, State/Region, Postal Code fields and the Save Address button so they can be filled and the form saved.
+   executor: +1768 in / +178 out   (cumulative 27594)
+   proposed: scroll(0,400)
+   critic  : +1770 in / +346 out   (cumulative 29710)
+   critic  : approved -> scroll(0,400)
+   result  : reward=0.0  (action accepted)
+
+ step 5: SKIPPED - est. 4392 tokens for a 3-agent step would exceed cap (used 29710/32000)
+
+ --- B / shopping / task 574 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 5
+   agent_calls           : 15
+   critic_revisions      : 0
+   input_tokens          : 25256
+   output_tokens         : 4454
+   total_tokens          : 29710
+   wall_clock_seconds    : 143.9
+   tokens_by_role        : {'planner': 10919, 'executor': 9263, 'critic': 9528}
+
+[batch] 21/45  shopping task 159 @ 32000   (elapsed 15m, eta 19m, ok 20, success 2, err 0)
+
+============================================================
+TASK 159  (site: shopping)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: I have a lot of Nintendo Switch game cards now, help me find the best storage option to fit all 31 cards
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1489 in / +466 out   (cumulative 1955)
+   plan    : Open the 'Video Games' category via the 'Video Games' menu item to look for Nintendo Switch game card storage cases.
+   executor: +1508 in / +322 out   (cumulative 3785)
+   proposed: click('1075')
+   critic  : +1509 in / +317 out   (cumulative 5611)
+   critic  : approved -> click('1075')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7770/video-games.html
+   planner : +1854 in / +415 out   (cumulative 7880)
+   plan    : Open the Nintendo Switch category by clicking the 'Nintendo Switch( 51 item )' link with element 1986.
+   executor: +1873 in / +161 out   (cumulative 9914)
+   proposed: click('1986')
+   critic  : +1874 in / +358 out   (cumulative 12146)
+   critic  : approved -> click('1986')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:7770/video-games.html?cat=71
+   planner : +1704 in / +596 out   (cumulative 14446)
+   plan    : Search the site for 'Nintendo Switch game card case' using the Search combobox (element 388).
+   executor: +1720 in / +289 out   (cumulative 16455)
+   proposed: fill('388', 'Nintendo Switch game card case')
+   critic  : +1727 in / +383 out   (cumulative 18565)
+   critic  : approved -> fill('388', 'Nintendo Switch game card case')
+   result  : reward=0.0  (action accepted)
+
+ step 3
+   url     : http://localhost:7770/video-games.html?cat=71
+   planner : +1742 in / +733 out   (cumulative 21040)
+   plan    : Click the first product in the results grid to open its detail page and check for capacity (look for '32', '30', or 'card slots' in the product title/description).
+   executor: +1775 in / +341 out   (cumulative 23156)
+   proposed: click('1513')
+   critic  : +1776 in / +302 out   (cumulative 25234)
+   critic  : approved -> click('1513')
+   result  : reward=0.0  (action accepted)
+
+ step 4
+   url     : http://localhost:7770/powera-1506261-01-wired-controller-for-nintendo-switch-mario.html
+   planner : +1581 in / +347 out   (cumulative 27162)
+   plan    : Click the 'Video Games' breadcrumb link (element 1505) to browse for Nintendo Switch game card cases.
+   executor: +1598 in / +296 out   (cumulative 29056)
+   proposed: click('1505')
+   critic  : +1599 in / +243 out   (cumulative 30898)
+   critic  : approved -> click('1505')
+   result  : reward=0.0  (action accepted)
+
+ step 5: SKIPPED - est. 4797 tokens for a 3-agent step would exceed cap (used 30898/32000)
+
+ --- B / shopping / task 159 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 5
+   agent_calls           : 15
+   critic_revisions      : 0
+   input_tokens          : 25329
+   output_tokens         : 5569
+   total_tokens          : 30898
+   wall_clock_seconds    : 131.0
+   tokens_by_role        : {'planner': 10927, 'executor': 9883, 'critic': 10088}
+
+[batch] 22/45  shopping task 159 @ 16000   (elapsed 18m, eta 20m, ok 21, success 2, err 0)
+
+============================================================
+TASK 159  (site: shopping)  [B, budget 16000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: I have a lot of Nintendo Switch game cards now, help me find the best storage option to fit all 31 cards
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1489 in / +254 out   (cumulative 1743)
+   plan    : Open the 'Video Games' category by clicking the menu item with id 1075.
+   executor: +1501 in / +170 out   (cumulative 3414)
+   proposed: click('1075')
+   critic  : +1502 in / +127 out   (cumulative 5043)
+   critic  : approved -> click('1075')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7770/video-games.html
+   planner : +1854 in / +316 out   (cumulative 7213)
+   plan    : Open the 'Nintendo Switch' category by clicking the Nintendo Switch filter link (element 1986).
+   executor: +1869 in / +166 out   (cumulative 9248)
+   proposed: click('1986')
+   critic  : +1870 in / +112 out   (cumulative 11230)
+   critic  : approved -> click('1986')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:7770/video-games.html?cat=71
+   planner : +1704 in / +453 out   (cumulative 13387)
+   plan    : Use the search combobox (id 388) to search for "Nintendo Switch game card case".
+   executor: +1719 in / +304 out   (cumulative 15410)
+   proposed: fill('388', 'Nintendo Switch game card case')
+   critic  : +1726 in / +150 out   (cumulative 17286)
+   critic  : approved -> fill('388', 'Nintendo Switch game card case')
+
+ --- B / shopping / task 159 ---
+   success               : False
+   termination_reason    : safety_token_cap
+   steps                 : 3
+   agent_calls           : 9
+   critic_revisions      : 0
+   input_tokens          : 15234
+   output_tokens         : 2052
+   total_tokens          : 17286
+   wall_clock_seconds    : 44.9
+   tokens_by_role        : {'planner': 6070, 'executor': 5729, 'critic': 5487}
+
+[batch] 23/45  shopping task 159 @ 8000   (elapsed 19m, eta 19m, ok 22, success 2, err 0)
+
+============================================================
+TASK 159  (site: shopping)  [B, budget 8000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: I have a lot of Nintendo Switch game cards now, help me find the best storage option to fit all 31 cards
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1489 in / +298 out   (cumulative 1787)
+   plan    : Click the 'Video Games' menu item (element 1075) to view accessories and storage options.
+   executor: +1504 in / +251 out   (cumulative 3542)
+   proposed: click('1075')
+   critic  : +1505 in / +168 out   (cumulative 5215)
+   critic  : approved -> click('1075')
+   result  : reward=0.0  (action accepted)
+
+ step 1: SKIPPED - est. 4551 tokens for a 3-agent step would exceed cap (used 5215/8000)
+
+ --- B / shopping / task 159 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 4498
+   output_tokens         : 717
+   total_tokens          : 5215
+   wall_clock_seconds    : 14.6
+   tokens_by_role        : {'planner': 1787, 'executor': 1755, 'critic': 1673}
+
+[batch] 24/45  shopping task 159 @ 2000   (elapsed 19m, eta 18m, ok 23, success 2, err 0)
+
+============================================================
+TASK 159  (site: shopping)  [B, budget 2000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: I have a lot of Nintendo Switch game cards now, help me find the best storage option to fit all 31 cards
+Start URL: http://localhost:7770/
+
+
+ step 0: SKIPPED - est. 3786 tokens for a 3-agent step would exceed cap (used 0/2000)
+
+ --- B / shopping / task 159 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 25/45  shopping task 159 @ 4000   (elapsed 19m, eta 17m, ok 24, success 2, err 0)
+
+============================================================
+TASK 159  (site: shopping)  [B, budget 4000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: I have a lot of Nintendo Switch game cards now, help me find the best storage option to fit all 31 cards
+Start URL: http://localhost:7770/
+
+
+ step 0
+   url     : http://localhost:7770/
+   planner : +1489 in / +337 out   (cumulative 1826)
+   plan    : Click the 'Video Games' category menu item to browse for game card storage or accessories (click 1075).
+   executor: +1506 in / +193 out   (cumulative 3525)
+   proposed: click('1075')
+   critic  : +1507 in / +115 out   (cumulative 5147)
+   critic  : approved -> click('1075')
+
+ --- B / shopping / task 159 ---
+   success               : False
+   termination_reason    : safety_token_cap
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 4502
+   output_tokens         : 645
+   total_tokens          : 5147
+   wall_clock_seconds    : 13.1
+   tokens_by_role        : {'planner': 1826, 'executor': 1699, 'critic': 1622}
+
+[batch] 26/45  shopping_admin task 216 @ 32000   (elapsed 20m, eta 16m, ok 25, success 2, err 0)
+
+============================================================
+TASK 216  (site: shopping_admin)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: What are the key aspects that the customers don't like about Electra Bra Top
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +1870 in / +474 out   (cumulative 2344)
+   plan    : Click the Catalog link (element 189) to open product listings so I can locate the Electra Bra Top and view its reviews/comments.
+   executor: +1892 in / +214 out   (cumulative 4450)
+   proposed: click('189')
+   critic  : +1892 in / +168 out   (cumulative 6510)
+   critic  : approved -> click('189')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +1977 in / +307 out   (cumulative 8794)
+   plan    : Open the Products listing via the 'Products' link (element 201) under the CATALOG menu to find the Electra Bra Top product and view its reviews or comments.
+   executor: +2006 in / +339 out   (cumulative 11139)
+   proposed: click('201')
+   critic  : +2006 in / +141 out   (cumulative 13286)
+   critic  : approved -> click('201')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:7780/admin/catalog/product/
+   planner : +1732 in / +271 out   (cumulative 15289)
+   plan    : Search for the product by entering 'Electra Bra Top' into the 'Search by keyword' textbox (element 1380) and click the 'Search' button (element 1381).
+   executor: +1765 in / +214 out   (cumulative 17268)
+   proposed: fill('1380', 'Electra Bra Top')
+   critic  : +1772 in / +141 out   (cumulative 19181)
+   critic  : approved -> fill('1380', 'Electra Bra Top')
+   result  : reward=0.0  (action accepted)
+
+ step 3
+   url     : http://localhost:7780/admin/catalog/product/
+   planner : +2296 in / +420 out   (cumulative 21897)
+   plan    : Click the Search button (element 1381) to run the search and reveal the Electra Bra Top product row.
+   executor: +2314 in / +103 out   (cumulative 24314)
+   proposed: click('1381')
+   critic  : +2315 in / +231 out   (cumulative 26860)
+   critic  : approved -> click('1381')
+   result  : reward=0.0  (action accepted)
+
+ step 4: SKIPPED - est. 5643 tokens for a 3-agent step would exceed cap (used 26860/32000)
+
+ --- B / shopping_admin / task 216 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 4
+   agent_calls           : 12
+   critic_revisions      : 0
+   input_tokens          : 23837
+   output_tokens         : 3023
+   total_tokens          : 26860
+   wall_clock_seconds    : 86.9
+   tokens_by_role        : {'planner': 9347, 'executor': 8847, 'critic': 8666}
+
+[batch] 27/45  shopping_admin task 216 @ 16000   (elapsed 21m, eta 16m, ok 26, success 2, err 0)
+
+============================================================
+TASK 216  (site: shopping_admin)  [B, budget 16000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: What are the key aspects that the customers don't like about Electra Bra Top
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +1869 in / +402 out   (cumulative 2271)
+   plan    : Click the CATALOG menu (element 189) to open the product listings so I can find and open the Electra Bra Top product page to view customer feedback.
+   executor: +1896 in / +125 out   (cumulative 4292)
+   proposed: click('189')
+   critic  : +1896 in / +153 out   (cumulative 6341)
+   critic  : approved -> click('189')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +1976 in / +421 out   (cumulative 8738)
+   plan    : Open the Products page via the 'Products' link in the CATALOG menu (click element 201).
+   executor: +1991 in / +129 out   (cumulative 10858)
+   proposed: click('201')
+   critic  : +1991 in / +137 out   (cumulative 12986)
+   critic  : approved -> click('201')
+   result  : reward=0.0  (action accepted)
+
+ step 2: SKIPPED - est. 4080 tokens for a 3-agent step would exceed cap (used 12986/16000)
+
+ --- B / shopping_admin / task 216 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 2
+   agent_calls           : 6
+   critic_revisions      : 0
+   input_tokens          : 11619
+   output_tokens         : 1367
+   total_tokens          : 12986
+   wall_clock_seconds    : 31.8
+   tokens_by_role        : {'planner': 4668, 'executor': 4141, 'critic': 4177}
+
+[batch] 28/45  shopping_admin task 216 @ 2000   (elapsed 22m, eta 15m, ok 27, success 2, err 0)
+
+============================================================
+TASK 216  (site: shopping_admin)  [B, budget 2000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: What are the key aspects that the customers don't like about Electra Bra Top
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0: SKIPPED - est. 5007 tokens for a 3-agent step would exceed cap (used 0/2000)
+
+ --- B / shopping_admin / task 216 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 29/45  shopping_admin task 216 @ 8000   (elapsed 22m, eta 13m, ok 28, success 2, err 0)
+
+============================================================
+TASK 216  (site: shopping_admin)  [B, budget 8000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: What are the key aspects that the customers don't like about Electra Bra Top
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +1869 in / +276 out   (cumulative 2145)
+   plan    : Click the CATALOG menu link to open the product list and locate the Electra Bra Top.
+   executor: +1882 in / +143 out   (cumulative 4170)
+   proposed: click('189')
+   critic  : +1882 in / +328 out   (cumulative 6380)
+   critic  : approved -> click('189')
+   result  : reward=0.0  (action accepted)
+
+ step 1: SKIPPED - est. 5262 tokens for a 3-agent step would exceed cap (used 6380/8000)
+
+ --- B / shopping_admin / task 216 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 5633
+   output_tokens         : 747
+   total_tokens          : 6380
+   wall_clock_seconds    : 35.6
+   tokens_by_role        : {'planner': 2145, 'executor': 2025, 'critic': 2210}
+
+[batch] 30/45  shopping_admin task 216 @ 4000   (elapsed 23m, eta 13m, ok 29, success 2, err 0)
+
+============================================================
+TASK 216  (site: shopping_admin)  [B, budget 4000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: What are the key aspects that the customers don't like about Electra Bra Top
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0: SKIPPED - est. 5004 tokens for a 3-agent step would exceed cap (used 0/4000)
+
+ --- B / shopping_admin / task 216 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 31/45  reddit task 724 @ 16000   (elapsed 23m, eta 12m, ok 30, success 2, err 0)
+
+============================================================
+TASK 724  (site: reddit)  [B, budget 16000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Like all submissions created by Hrekires in subreddit news
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1017 in / +461 out   (cumulative 1478)
+   plan    : Open the 'Submissions' tab by clicking the Submissions link (element 117).
+   executor: +1029 in / +91 out   (cumulative 2598)
+   proposed: click('117')
+   critic  : +1029 in / +117 out   (cumulative 3744)
+   critic  : approved -> click('117')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:9999/
+   planner : +1031 in / +385 out   (cumulative 5160)
+   plan    : Search for the user 'Hrekires' using the search box (element 54) to open their profile or list of submissions.
+   executor: +1053 in / +232 out   (cumulative 6445)
+   proposed: fill('54', 'Hrekires')
+   critic  : +1059 in / +122 out   (cumulative 7626)
+   critic  : approved -> fill('54', 'Hrekires')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:9999/
+   planner : +1063 in / +312 out   (cumulative 9001)
+   plan    : Click the 'Submissions' link (element 117) to view the user's submissions.
+   executor: +1075 in / +149 out   (cumulative 10225)
+   proposed: click('117')
+   critic  : +1075 in / +115 out   (cumulative 11415)
+   critic  : approved -> click('117')
+   result  : reward=0.0  (action accepted)
+
+ step 3
+   url     : http://localhost:9999/
+   planner : +1071 in / +458 out   (cumulative 12944)
+   plan    : press Enter on the search box element 54 to run the search for 'Hrekires'.
+   executor: +1085 in / +115 out   (cumulative 14144)
+   proposed: press('54', 'Enter')
+   critic  : +1088 in / +310 out   (cumulative 15542)
+   critic  : approved -> press('54', 'Enter')
+   result  : reward=0.0  (action accepted)
+
+ step 4: SKIPPED - est. 2382 tokens for a 3-agent step would exceed cap (used 15542/16000)
+
+ --- B / reddit / task 724 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 4
+   agent_calls           : 12
+   critic_revisions      : 0
+   input_tokens          : 12675
+   output_tokens         : 2867
+   total_tokens          : 15542
+   wall_clock_seconds    : 246.8
+   tokens_by_role        : {'planner': 5798, 'executor': 4829, 'critic': 4915}
+
+[batch] 32/45  reddit task 724 @ 4000   (elapsed 27m, eta 12m, ok 31, success 2, err 0)
+
+============================================================
+TASK 724  (site: reddit)  [B, budget 4000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Like all submissions created by Hrekires in subreddit news
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1017 in / +473 out   (cumulative 1490)
+   plan    : Click the 'Submissions' link in the main navigation (element 117) to view the submissions feed.
+   executor: +1033 in / +190 out   (cumulative 2713)
+   proposed: click('117')
+   critic  : +1033 in / +117 out   (cumulative 3863)
+   critic  : approved -> click('117')
+   result  : reward=0.0  (action accepted)
+
+ step 1: SKIPPED - est. 2655 tokens for a 3-agent step would exceed cap (used 3863/4000)
+
+ --- B / reddit / task 724 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 3083
+   output_tokens         : 780
+   total_tokens          : 3863
+   wall_clock_seconds    : 64.5
+   tokens_by_role        : {'planner': 1490, 'executor': 1223, 'critic': 1150}
+
+[batch] 33/45  reddit task 724 @ 8000   (elapsed 28m, eta 12m, ok 32, success 2, err 0)
+
+============================================================
+TASK 724  (site: reddit)  [B, budget 8000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Like all submissions created by Hrekires in subreddit news
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1017 in / +542 out   (cumulative 1559)
+   plan    : Use the search box (54) to search for: author:Hrekires subreddit:news
+   executor: +1030 in / +238 out   (cumulative 2827)
+   proposed: fill('54', 'author:Hrekires subreddit:news')
+   critic  : +1041 in / +204 out   (cumulative 4072)
+   critic  : approved -> fill('54', 'author:Hrekires subreddit:news')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:9999/
+   planner : +1054 in / +383 out   (cumulative 5509)
+   plan    : Press Enter on the search box (54) to execute the query and display Hrekires' submissions in subreddit news.
+   executor: +1073 in / +211 out   (cumulative 6793)
+   proposed: press('54', 'Enter')
+   critic  : +1076 in / +103 out   (cumulative 7972)
+   critic  : approved -> press('54', 'Enter')
+   result  : reward=0.0  (action accepted)
+
+ step 2: SKIPPED - est. 2562 tokens for a 3-agent step would exceed cap (used 7972/8000)
+
+ --- B / reddit / task 724 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 2
+   agent_calls           : 6
+   critic_revisions      : 0
+   input_tokens          : 6291
+   output_tokens         : 1681
+   total_tokens          : 7972
+   wall_clock_seconds    : 131.5
+   tokens_by_role        : {'planner': 2996, 'executor': 2552, 'critic': 2424}
+
+[batch] 34/45  reddit task 724 @ 2000   (elapsed 31m, eta 11m, ok 33, success 2, err 0)
+
+============================================================
+TASK 724  (site: reddit)  [B, budget 2000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Like all submissions created by Hrekires in subreddit news
+Start URL: http://localhost:9999/
+
+
+ step 0: SKIPPED - est. 2628 tokens for a 3-agent step would exceed cap (used 0/2000)
+
+ --- B / reddit / task 724 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 35/45  reddit task 724 @ 32000   (elapsed 31m, eta 10m, ok 34, success 2, err 0)
+
+============================================================
+TASK 724  (site: reddit)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Like all submissions created by Hrekires in subreddit news
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1017 in / +740 out   (cumulative 1757)
+   plan    : Fill the search box with a query targeting posts by Hrekires in the news subreddit (e.g., "author:Hrekires subreddit:news") so the Executor can run the search.
+   executor: +1051 in / +301 out   (cumulative 3109)
+   proposed: fill('54', 'author:Hrekires subreddit:news')
+   critic  : +1061 in / +110 out   (cumulative 4280)
+   critic  : approved -> fill('54', 'author:Hrekires subreddit:news')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:9999/
+   planner : +1054 in / +337 out   (cumulative 5671)
+   plan    : press('54', 'Enter')
+   executor: +1055 in / +167 out   (cumulative 6893)
+   proposed: press('54', 'Enter')
+   critic  : +1058 in / +153 out   (cumulative 8104)
+   critic  : approved -> press('54', 'Enter')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews
+   planner : +1003 in / +446 out   (cumulative 9553)
+   plan    : Open the subreddit 'news' page to look for Hrekires' submissions.
+   executor: +1014 in / +353 out   (cumulative 10920)
+   proposed: click('24')
+   critic  : +1014 in / +471 out   (cumulative 12405)
+   critic  : REVISED -> click('48')
+   why     : Clicking 'Home' (24) does not open the 'news' subreddit; there is no subreddit link on this page, so instead focus the search box to adjust the query or navigate—use the searchbox at id 48.
+   result  : reward=0.0  (action accepted)
+
+ step 3
+   url     : http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews
+   planner : +1039 in / +580 out   (cumulative 14024)
+   plan    : Replace the query in the main searchbox (id 112) with 'author:Hrekires' and submit the search using the Search button (id 115).
+   executor: +1067 in / +465 out   (cumulative 15556)
+   proposed: fill('112', 'author:Hrekires')
+   critic  : +1074 in / +137 out   (cumulative 16767)
+   critic  : approved -> fill('112', 'author:Hrekires')
+   result  : reward=0.0  (action accepted)
+
+ step 4
+   url     : http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews
+   planner : +1077 in / +469 out   (cumulative 18313)
+   plan    : Fill the main search box 112 with 'author:Hrekires subreddit:news'.
+   executor: +1089 in / +293 out   (cumulative 19695)
+   proposed: fill('112', 'author:Hrekires subreddit:news')
+   critic  : +1099 in / +139 out   (cumulative 20933)
+   critic  : approved -> fill('112', 'author:Hrekires subreddit:news')
+   result  : reward=0.0  (action accepted)
+
+ step 5
+   url     : http://localhost:9999/search?q=author%3AHrekires+subreddit%3Anews
+   planner : +1124 in / +722 out   (cumulative 22779)
+   plan    : Open the site's Home page via the 'Home' link (element 24).
+   executor: +1134 in / +185 out   (cumulative 24098)
+   proposed: click('24')
+   critic  : +1134 in / +135 out   (cumulative 25367)
+   critic  : approved -> click('24')
+   result  : reward=0.0  (action accepted)
+
+ step 6
+   url     : http://localhost:9999/
+   planner : +1214 in / +345 out   (cumulative 26926)
+   plan    : Click the 'Submissions' link (element 117) to view submissions.
+   executor: +1224 in / +99 out   (cumulative 28249)
+   proposed: click('117')
+   critic  : +1224 in / +156 out   (cumulative 29629)
+   critic  : approved -> click('117')
+   result  : reward=0.0  (action accepted)
+
+ step 7: SKIPPED - est. 3054 tokens for a 3-agent step would exceed cap (used 29629/32000)
+
+ --- B / reddit / task 724 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 7
+   agent_calls           : 21
+   critic_revisions      : 1
+   input_tokens          : 22826
+   output_tokens         : 6803
+   total_tokens          : 29629
+   wall_clock_seconds    : 461.3
+   tokens_by_role        : {'planner': 11167, 'executor': 9497, 'critic': 8965}
+
+[batch] 36/45  reddit task 407 @ 16000   (elapsed 39m, eta 11m, ok 35, success 2, err 0)
+
+============================================================
+TASK 407  (site: reddit)  [B, budget 16000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Upvote the newest post in deeplearning subreddit
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1015 in / +240 out   (cumulative 1255)
+   plan    : Click the 'Forums' link (element 42) to open the list of forums and locate the deeplearning subreddit.
+   executor: +1034 in / +264 out   (cumulative 2553)
+   proposed: click('42')
+   critic  : +1034 in / +109 out   (cumulative 3696)
+   critic  : approved -> click('42')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:9999/forums
+   planner : +1427 in / +404 out   (cumulative 5527)
+   plan    : Scroll down the forums list to find and open the 'deeplearning' forum by clicking its link.
+   executor: +1442 in / +218 out   (cumulative 7187)
+   proposed: scroll(0,400)
+   critic  : +1444 in / +348 out   (cumulative 8979)
+   critic  : approved -> scroll(0,400)
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:9999/forums
+   planner : +1289 in / +330 out   (cumulative 10598)
+   plan    : Scroll down the forums list to find and click the 'deeplearning' subreddit link.
+   executor: +1301 in / +171 out   (cumulative 12070)
+   proposed: scroll(0,400)
+   critic  : +1303 in / +248 out   (cumulative 13621)
+   critic  : approved -> scroll(0,400)
+   result  : reward=0.0  (action accepted)
+
+ step 3: SKIPPED - est. 3453 tokens for a 3-agent step would exceed cap (used 13621/16000)
+
+ --- B / reddit / task 407 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 3
+   agent_calls           : 9
+   critic_revisions      : 0
+   input_tokens          : 11289
+   output_tokens         : 2332
+   total_tokens          : 13621
+   wall_clock_seconds    : 59.3
+   tokens_by_role        : {'planner': 4705, 'executor': 4430, 'critic': 4486}
+
+[batch] 37/45  reddit task 407 @ 8000   (elapsed 40m, eta 10m, ok 36, success 2, err 0)
+
+============================================================
+TASK 407  (site: reddit)  [B, budget 8000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Upvote the newest post in deeplearning subreddit
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1015 in / +503 out   (cumulative 1518)
+   plan    : Use the search box element 54 to search for "deeplearning" to find the subreddit.
+   executor: +1029 in / +213 out   (cumulative 2760)
+   proposed: fill('54', 'deeplearning')
+   critic  : +1034 in / +134 out   (cumulative 3928)
+   critic  : approved -> fill('54', 'deeplearning')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:9999/
+   planner : +1042 in / +353 out   (cumulative 5323)
+   plan    : Press Enter in the search box to submit the query and open the deeplearning subreddit or results.
+   executor: +1056 in / +309 out   (cumulative 6688)
+   proposed: press('54', 'Enter')
+   critic  : +1059 in / +138 out   (cumulative 7885)
+   critic  : approved -> press('54', 'Enter')
+   result  : reward=0.0  (action accepted)
+
+ step 2: SKIPPED - est. 5394 tokens for a 3-agent step would exceed cap (used 7885/8000)
+
+ --- B / reddit / task 407 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 2
+   agent_calls           : 6
+   critic_revisions      : 0
+   input_tokens          : 6235
+   output_tokens         : 1650
+   total_tokens          : 7885
+   wall_clock_seconds    : 34.1
+   tokens_by_role        : {'planner': 2913, 'executor': 2607, 'critic': 2365}
+
+[batch] 38/45  reddit task 407 @ 2000   (elapsed 41m, eta 9m, ok 37, success 2, err 0)
+
+============================================================
+TASK 407  (site: reddit)  [B, budget 2000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Upvote the newest post in deeplearning subreddit
+Start URL: http://localhost:9999/
+
+
+ step 0: SKIPPED - est. 2619 tokens for a 3-agent step would exceed cap (used 0/2000)
+
+ --- B / reddit / task 407 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 39/45  reddit task 407 @ 32000   (elapsed 41m, eta 8m, ok 38, success 2, err 0)
+
+============================================================
+TASK 407  (site: reddit)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Upvote the newest post in deeplearning subreddit
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1015 in / +569 out   (cumulative 1584)
+   plan    : Navigate directly to the deeplearning subreddit page (open the URL https://old.reddit.com/r/deeplearning/).
+   executor: +1035 in / +143 out   (cumulative 2762)
+   proposed: goto('https://old.reddit.com/r/deeplearning/')
+   critic  : +1045 in / +182 out   (cumulative 3989)
+   critic  : approved -> goto('https://old.reddit.com/r/deeplearning/')
+   result  : reward=0  (action accepted)
+
+ --- B / reddit / task 407 ---
+   success               : False
+   termination_reason    : env_terminated
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 3095
+   output_tokens         : 894
+   total_tokens          : 3989
+   wall_clock_seconds    : 12.0
+   tokens_by_role        : {'planner': 1584, 'executor': 1178, 'critic': 1227}
+
+[batch] 40/45  reddit task 407 @ 4000   (elapsed 41m, eta 6m, ok 39, success 2, err 0)
+
+============================================================
+TASK 407  (site: reddit)  [B, budget 4000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Upvote the newest post in deeplearning subreddit
+Start URL: http://localhost:9999/
+
+
+ step 0
+   url     : http://localhost:9999/
+   planner : +1015 in / +303 out   (cumulative 1318)
+   plan    : Use the header search box to search for "deeplearning" and open the deeplearning subreddit/forum from the results.
+   executor: +1034 in / +273 out   (cumulative 2625)
+   proposed: fill('54', 'deeplearning')
+   critic  : +1039 in / +132 out   (cumulative 3796)
+   critic  : approved -> fill('54', 'deeplearning')
+   result  : reward=0.0  (action accepted)
+
+ step 1: SKIPPED - est. 2679 tokens for a 3-agent step would exceed cap (used 3796/4000)
+
+ --- B / reddit / task 407 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 3088
+   output_tokens         : 708
+   total_tokens          : 3796
+   wall_clock_seconds    : 21.2
+   tokens_by_role        : {'planner': 1318, 'executor': 1307, 'critic': 1171}
+
+[batch] 41/45  shopping_admin task 200 @ 4000   (elapsed 42m, eta 5m, ok 40, success 2, err 0)
+
+============================================================
+TASK 200  (site: shopping_admin)  [B, budget 4000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Get the billing name of the oldest complete order
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0: SKIPPED - est. 4983 tokens for a 3-agent step would exceed cap (used 0/4000)
+
+ --- B / shopping_admin / task 200 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 42/45  shopping_admin task 200 @ 16000   (elapsed 42m, eta 4m, ok 41, success 2, err 0)
+
+============================================================
+TASK 200  (site: shopping_admin)  [B, budget 16000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Get the billing name of the oldest complete order
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +1864 in / +282 out   (cumulative 2146)
+   plan    : Open the Sales menu by clicking the top menubar SALES link so I can navigate to Orders and view the full order list.
+   executor: +1883 in / +201 out   (cumulative 4230)
+   proposed: click('156')
+   critic  : +1883 in / +226 out   (cumulative 6339)
+   critic  : approved -> click('156')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +2065 in / +271 out   (cumulative 8675)
+   plan    : Open the Orders page by clicking the 'Orders' link (element 168).
+   executor: +2075 in / +147 out   (cumulative 10897)
+   proposed: click('168')
+   critic  : +2075 in / +138 out   (cumulative 13110)
+   critic  : approved -> click('168')
+   result  : reward=0.0  (action accepted)
+
+ step 2: SKIPPED - est. 4200 tokens for a 3-agent step would exceed cap (used 13110/16000)
+
+ --- B / shopping_admin / task 200 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 2
+   agent_calls           : 6
+   critic_revisions      : 0
+   input_tokens          : 11845
+   output_tokens         : 1265
+   total_tokens          : 13110
+   wall_clock_seconds    : 25.5
+   tokens_by_role        : {'planner': 4482, 'executor': 4306, 'critic': 4322}
+
+[batch] 43/45  shopping_admin task 200 @ 2000   (elapsed 42m, eta 3m, ok 42, success 2, err 0)
+
+============================================================
+TASK 200  (site: shopping_admin)  [B, budget 2000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Get the billing name of the oldest complete order
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0: SKIPPED - est. 4983 tokens for a 3-agent step would exceed cap (used 0/2000)
+
+ --- B / shopping_admin / task 200 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 0
+   agent_calls           : 0
+   critic_revisions      : 0
+   input_tokens          : 0
+   output_tokens         : 0
+   total_tokens          : 0
+   wall_clock_seconds    : 0.1
+   tokens_by_role        : {'planner': 0, 'executor': 0, 'critic': 0}
+
+[batch] 44/45  shopping_admin task 200 @ 8000   (elapsed 43m, eta 2m, ok 43, success 2, err 0)
+
+============================================================
+TASK 200  (site: shopping_admin)  [B, budget 8000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Get the billing name of the oldest complete order
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +1863 in / +385 out   (cumulative 2248)
+   plan    : Open the SALES menu by clicking the 'SALES' link in the top menubar to access the Orders list.
+   executor: +1880 in / +190 out   (cumulative 4318)
+   proposed: click('156')
+   critic  : +1880 in / +263 out   (cumulative 6461)
+   critic  : approved -> click('156')
+   result  : reward=0.0  (action accepted)
+
+ step 1: SKIPPED - est. 5487 tokens for a 3-agent step would exceed cap (used 6461/8000)
+
+ --- B / shopping_admin / task 200 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 1
+   agent_calls           : 3
+   critic_revisions      : 0
+   input_tokens          : 5623
+   output_tokens         : 838
+   total_tokens          : 6461
+   wall_clock_seconds    : 12.3
+   tokens_by_role        : {'planner': 2248, 'executor': 2070, 'critic': 2143}
+
+[batch] 45/45  shopping_admin task 200 @ 32000   (elapsed 43m, eta 1m, ok 44, success 2, err 0)
+
+============================================================
+TASK 200  (site: shopping_admin)  [B, budget 32000]
+============================================================
+Overriding the task's timeout parameter (10000 => 10000). This might change the task's behaviour and difficulty.
+Goal: Get the billing name of the oldest complete order
+Start URL: http://localhost:7780/admin/admin/dashboard/
+
+
+ step 0
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +1864 in / +369 out   (cumulative 2233)
+   plan    : Click the SALES menu (element id 156) to open its options and then go to the Orders page to locate the oldest completed order.
+   executor: +1886 in / +137 out   (cumulative 4256)
+   proposed: click('156')
+   critic  : +1886 in / +213 out   (cumulative 6355)
+   critic  : approved -> click('156')
+   result  : reward=0.0  (action accepted)
+
+ step 1
+   url     : http://localhost:7780/admin/admin/dashboard/
+   planner : +2065 in / +347 out   (cumulative 8767)
+   plan    : Click the Orders link in the Sales menu (element 168) to open the Orders listing page.
+   executor: +2079 in / +85 out   (cumulative 10931)
+   proposed: click('168')
+   critic  : +2079 in / +114 out   (cumulative 13124)
+   critic  : approved -> click('168')
+   result  : reward=0.0  (action accepted)
+
+ step 2
+   url     : http://localhost:7780/admin/sales/order/
+   planner : +1675 in / +311 out   (cumulative 15110)
+   plan    : Open the Filters panel by clicking the 'Filters' button (element 845) to add a Status = Complete filter.
+   executor: +1693 in / +198 out   (cumulative 17001)
+   proposed: click('845')
+   critic  : +1693 in / +135 out   (cumulative 18829)
+   critic  : approved -> click('845')
+   result  : reward=0.0  (action accepted)
+
+ step 3
+   url     : http://localhost:7780/admin/sales/order/
+   planner : +1702 in / +368 out   (cumulative 20899)
+   plan    : Set the Status filter to 'Complete' using the Status combobox (967) and then click the 'Apply Filters' button (1060).
+   executor: +1725 in / +255 out   (cumulative 22879)
+   proposed: select_option('967', 'Complete')
+   critic  : +1729 in / +132 out   (cumulative 24740)
+   critic  : approved -> select_option('967', 'Complete')
+   result  : reward=0.0  (action accepted)
+
+ step 4
+   url     : http://localhost:7780/admin/sales/order/
+   planner : +1731 in / +254 out   (cumulative 26725)
+   plan    : Go to the last page of the order list by clicking the 'next page' or pagination control to reach the oldest complete order and open that order's row to view the Bill-to Name.
+   executor: +1763 in / +300 out   (cumulative 28788)
+   proposed: click('1126')
+   critic  : +1764 in / +442 out   (cumulative 30994)
+   critic  : approved -> click('1126')
+   result  : reward=0.0  (action accepted)
+
+ step 5: SKIPPED - est. 4272 tokens for a 3-agent step would exceed cap (used 30994/32000)
+
+ --- B / shopping_admin / task 200 ---
+   success               : False
+   termination_reason    : budget_would_exceed
+   steps                 : 5
+   agent_calls           : 15
+   critic_revisions      : 0
+   input_tokens          : 27334
+   output_tokens         : 3660
+   total_tokens          : 30994
+   wall_clock_seconds    : 91.3
+   tokens_by_role        : {'planner': 10686, 'executor': 10121, 'critic': 10187}
+
+==============================================================================
+[batch] finished in 45 minutes
+[batch]   episodes ok : 45
+[batch]   successes   : 2  (4.4%)
+[batch]   errors      : 0
+[batch] results in ../data/raw/pilot_b.jsonl
