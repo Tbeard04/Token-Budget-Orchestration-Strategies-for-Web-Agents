@@ -300,3 +300,32 @@ def plot_success_by_site(df: pd.DataFrame, out_dir: Path) -> None:
     fig.savefig(path, dpi=150)
     print(f"   saved: {path}")
     plt.close()
+
+
+def plot_difficulty_curve(df: pd.DataFrame, out_dir: Path) -> None:
+    """Success rate by budget, split by difficulty tier (RQ2)."""
+    if "difficulty_tier" not in df.columns:
+        return
+    strategy = df["strategy"].iloc[0] if "strategy" in df.columns else "A"
+    tier_colours = {"Easy": "#4CAF50", "Medium": "#FF9800", "Hard": "#F44336"}
+
+    fig, ax = plt.subplots()
+    for tier in ["Easy", "Medium", "Hard"]:
+        sub = df[df["difficulty_tier"] == tier]
+        if sub.empty:
+            continue
+        tbl = sub.groupby("budget_level")["success"].mean()
+        ax.plot(tbl.index, tbl.values, "o-", label=tier,
+                color=tier_colours[tier], linewidth=2, markersize=7)
+    ax.set_xlabel("Token Budget")
+    ax.set_ylabel("Success Rate")
+    ax.set_title(f"Strategy {strategy}: Success by Difficulty Tier (RQ2)")
+    ax.set_xticks(sorted(df["budget_level"].unique()))
+    ax.set_xticklabels([f"{x//1000}k" for x in sorted(df["budget_level"].unique())])
+    ax.legend(title="Tier")
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / f"difficulty_curve_{strategy.lower()}.png"
+    fig.savefig(path, dpi=150)
+    print(f"   saved: {path}")
+    plt.close()
