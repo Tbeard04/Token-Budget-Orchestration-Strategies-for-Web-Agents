@@ -127,3 +127,12 @@ def task_solvability(df: pd.DataFrame) -> pd.DataFrame:
         print("   No tasks solved at any budget level.")
     
     return solved
+
+
+def termination_reasons(df: pd.DataFrame) -> pd.Series:
+    print_section("Termination Reasons")
+    counts = df["termination_reason"].value_counts()
+    total = len(df)
+    for reason, n in counts.items():
+        print(f"   {reason:30s} {n:4d}  ({n/total:.0%})")
+    return counts
