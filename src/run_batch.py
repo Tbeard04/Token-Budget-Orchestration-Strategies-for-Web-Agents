@@ -159,7 +159,6 @@ def main() -> None:
                     n_success += 1
             except KeyboardInterrupt:
                 print("\n[batch] interrupted - completed episodes are saved.")
-                print(f"[batch] rerun the same command to resume from {idx}/{len(todo)}")
                 raise
             except Exception as e:
                 import traceback
