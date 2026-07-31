@@ -19,3 +19,20 @@ COLOURS = {
     "B": "#FF9800",   # orange
     "C": "#4CAF50",   # green (for later)
 }
+
+def load(path: str) -> pd.DataFrame:
+    rows = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    df = pd.DataFrame(rows)
+    # Drop error-only rows (crashes, not real episodes)
+    if "error" in df.columns:
+        df = df[df["error"].isna()].copy()
+    return df
