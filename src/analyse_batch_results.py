@@ -150,3 +150,14 @@ def token_distribution(df: pd.DataFrame) -> None:
     succ = df.loc[df["success"] == True, "total_tokens"]
     if len(succ):
         print(f"   median of successes: {succ.median():.0f}  (n={len(succ)})")
+
+
+def per_step_cost(df: pd.DataFrame) -> None:
+    print_section("Per-step Token Cost")
+    df_valid = df[df["steps"] > 0].copy()
+    df_valid["tok_per_step"] = df_valid["total_tokens"] / df_valid["steps"]
+    by_site = df_valid.groupby("site")["tok_per_step"].agg(["median", "mean", "std"])
+    print(by_site.to_string())
+    overall = df_valid["tok_per_step"]
+    print(f"\n   overall median: {overall.median():.0f}  "
+          f"mean: {overall.mean():.0f}  std: {overall.std():.0f}")
