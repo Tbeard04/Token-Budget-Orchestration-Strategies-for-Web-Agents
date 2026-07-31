@@ -36,3 +36,6 @@ def load(path: str) -> pd.DataFrame:
     if "error" in df.columns:
         df = df[df["error"].isna()].copy()
     return df
+
+def print_section(title: str) -> None:
+    print(f"\n{'=' * 70}\n{title}\n{'=' * 70}")
