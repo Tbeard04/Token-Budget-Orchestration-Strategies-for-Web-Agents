@@ -1,0 +1,1 @@
+This directory contains files on the LLM evaluator "guessing" the difficulty of the task based on the rubric scale as a baseline. 
