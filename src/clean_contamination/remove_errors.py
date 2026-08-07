@@ -1,0 +1,1 @@
+# This script is used to remove errors from the data (not action errors)
