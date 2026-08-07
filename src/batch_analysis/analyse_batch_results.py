@@ -335,7 +335,7 @@ def plot_difficulty_curve(df: pd.DataFrame, out_dir: Path) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--file", default="../data/raw/pilot_b.jsonl",
+    ap.add_argument("--file", default="../data/raw/5 budgets_201_tasks_batch/67_batch_Strategy_A/strategy_a.jsonl",
                     help="path to the JSONL results file")
     ap.add_argument("--tiers", default=None,
                     help="path to task_metadata.jsonl for difficulty breakdown")
