@@ -241,6 +241,23 @@ planner = W.make_agent(PLANNER_INSTRUCTIONS, PlannerPlan, label="planner")
 executor = W.make_agent(EXECUTOR_INSTRUCTIONS, ExecutorAction, label="executor")
 critic = W.make_agent(CRITIC_INSTRUCTIONS, CriticVerdict, label="critic")
 
+# QUICK CHECK ON INSTANCE TO SEE IF ACTION VOCABULARY IS VISIBLE TO AGENTS
+for _label, _instr in [("planner", PLANNER_INSTRUCTIONS),
+                       ("executor", EXECUTOR_INSTRUCTIONS),
+                       ("critic", CRITIC_INSTRUCTIONS)]:
+    if "click('a31')" not in _instr:
+        raise RuntimeError(
+            f"{_label} instructions do not contain the action vocabulary. "
+            f"Check for doubled braces: {{_ACTION_VOCAB}} escapes the "
+            f"f-string interpolation and must be {{_ACTION_VOCAB}} singly."
+        )
+
+_INSTRUCTION_TOKENS = (
+    len(PLANNER_INSTRUCTIONS)
+    + len(EXECUTOR_INSTRUCTIONS)
+    + len(CRITIC_INSTRUCTIONS)
+) // 4
+_OUTPUT_MARGIN = 900
 
 # ----------------------------------------------------------------------------
 def run_episode(task_id: int, budget: int | None = None) -> dict:
@@ -302,7 +319,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         # so estimate three prompts plus a margin for the appended plan/action
         # text and the three outputs.
         spent = in_tok + out_tok
-        est_step = (len(base) // 4) * 3 + 1500
+        est_step = (len(base) // 4) * 3 + _INSTRUCTION_TOKENS + _OUTPUT_MARGIN
         if spent + est_step > cap:
             reason = "budget_would_exceed"
             print(f"\n step {i}: SKIPPED - est. {est_step} tokens for a 3-agent "
