@@ -156,3 +156,25 @@ def revision_state_profile(df: pd.DataFrame) -> None:
         print("\n By difficulty tier:")
         for tier, grp in rev.groupby("difficulty_tier"):
             print(f" {str(tier):10s}: {len(grp):>3} revisions")
+
+
+def critic_revision_details(df: pd.DataFrame, limit: int | None = 20) -> None:
+    """Print individual revisions."""
+    revisions = _extract_revisions(df)
+    if not revisions:
+        return
+    print_section(f"Critic Revision Details"
+                  f"{f' (first {limit})' if limit else ''}")
+
+    shown = revisions if limit is None else revisions[:limit]
+    for i, r in enumerate(shown, 1):
+        outcome = "SUCCESS" if r["episode_success"] else "failed"
+        worked = "worked" if r["revision_worked"] else "also failed"
+        err = "after error" if r["prev_step_had_error"] else "clean state"
+        print(f"\n   [{i}] task {r['task_id']} @ {r['budget_level']} "
+              f"step {r['step']}  ({r['site']}, {err})")
+        print(f" proposed: {str(r['proposed'])[:66]}")
+        print(f" revised: {str(r['revised_to'])[:66]}")
+        print(f" outcome: revision {worked}, episode {outcome}")
+        print(f" reason: {str(r['reasoning'])[:110]}")
+
