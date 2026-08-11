@@ -242,3 +242,20 @@ def per_role_cost(df: pd.DataFrame) -> None:
         for role, tok in totals.items():
             print(f" {role:9s}: {tok/total_steps:>6.0f}")
         print(f" {'TOTAL':9s}: {grand/total_steps:>6.0f}")
+
+
+def planner_value_analysis(df: pd.DataFrame) -> None:
+    print_section("Planner vs Critic Value")
+
+    no_rev = df[df["critic_revisions"] == 0]
+    with_rev = df[df["critic_revisions"] > 0]
+
+    no_rev_succ = no_rev[no_rev["success"] == True]
+    with_rev_succ = with_rev[with_rev["success"] == True]
+
+    print(f" successes with NO critic revision : {len(no_rev_succ)}")
+    print(f" successes WITH critic revision    : {len(with_rev_succ)}")
+
+    if len(no_rev_succ) + len(with_rev_succ):
+        share = len(no_rev_succ) / (len(no_rev_succ) + len(with_rev_succ))
+        print(f"\n {share:.0%} of Strategy B's successes involved no Critic")
