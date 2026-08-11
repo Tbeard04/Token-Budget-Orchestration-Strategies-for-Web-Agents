@@ -159,7 +159,6 @@ def revision_state_profile(df: pd.DataFrame) -> None:
 
 
 def critic_revision_details(df: pd.DataFrame, limit: int | None = 20) -> None:
-    """Print individual revisions."""
     revisions = _extract_revisions(df)
     if not revisions:
         return
@@ -177,4 +176,37 @@ def critic_revision_details(df: pd.DataFrame, limit: int | None = 20) -> None:
         print(f" revised: {str(r['revised_to'])[:66]}")
         print(f" outcome: revision {worked}, episode {outcome}")
         print(f" reason: {str(r['reasoning'])[:110]}")
+
+def rubber_stamp_cost(df: pd.DataFrame) -> None:
+    print_section("Rubber-Stamp Cost (Strategy C savings ceiling)")
+
+    if "tokens_by_role" not in df.columns:
+        print("   tokens_by_role not present.")
+        return
+
+    total_calls = 0
+    approval_calls = 0
+    critic_tokens_total = 0
+    approval_tokens = 0
+
+    for row, s in _critic_steps(df):
+        total_calls += 1
+        call_tokens = s.get("input_tokens", 0) + s.get("output_tokens", 0)
+        critic_tokens_total += call_tokens
+        if not s.get("revised"):
+            approval_calls += 1
+            approval_tokens += call_tokens
+
+    episode_tokens = df["total_tokens"].sum()
+
+    print(f" total critic calls        : {total_calls}")
+    print(f" approval-only calls       : {approval_calls} "
+          f"({approval_calls/max(total_calls,1):.0%})")
+    print(f"\n all critic tokens         : {critic_tokens_total:,}")
+    print(f" tokens on approvals only  : {approval_tokens:,}")
+    print(f" total episode tokens      : {episode_tokens:,}")
+    print(f"\n critic share of all spend : "
+          f"{critic_tokens_total/max(episode_tokens,1):.1%}")
+    print(f" RECOVERABLE by perfect routing: "
+          f"{approval_tokens/max(episode_tokens,1):.1%} of all tokens")
 
