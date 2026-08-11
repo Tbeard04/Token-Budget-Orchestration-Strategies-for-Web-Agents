@@ -232,3 +232,146 @@ def difficulty_breakdown(df: pd.DataFrame) -> None:
         })
     tbl = pd.DataFrame(rows).set_index(["tier", "budget"])
     print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
+
+# ── Shared plots ────────────────────────────────────────────────────────
+
+def _strategy_of(df: pd.DataFrame) -> str:
+    return df["strategy"].iloc[0] if "strategy" in df.columns else "?"
+
+
+def plot_cost_curve(df: pd.DataFrame, out_dir: Path) -> None:
+    """Success rate vs budget level, episode-level and task-level."""
+    strategy = _strategy_of(df)
+    colour = COLOURS.get(strategy, "#333")
+
+    rows = []
+    for budget, grp in df.groupby("budget_level"):
+        solved = grp.loc[grp["success"] == True, "task_id"].nunique()
+        total = grp["task_id"].nunique()
+        rows.append({
+            "budget": budget,
+            "episode_SR": grp["success"].mean(),
+            "task_SR": solved / total if total else 0,
+        })
+    tbl = pd.DataFrame(rows)
+
+    fig, ax = plt.subplots()
+    ax.plot(tbl["budget"], tbl["episode_SR"], "o-", color=colour,
+            linewidth=2, markersize=8, label="Episode SR")
+    ax.plot(tbl["budget"], tbl["task_SR"], "s--", color=colour,
+            linewidth=1.5, markersize=7, alpha=0.6, label="Task SR (distinct)")
+    ax.set_xlabel("Token Budget")
+    ax.set_ylabel("Success Rate")
+    ax.set_title(f"Strategy {strategy}: Success Rate vs Token Budget")
+    ax.set_ylim(-0.02, max(tbl[["episode_SR", "task_SR"]].max().max() * 1.3, 0.25))
+    ax.set_xticks(tbl["budget"])
+    ax.set_xticklabels([f"{x//1000}k" for x in tbl["budget"]])
+    ax.legend()
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / f"cost_curve_{strategy.lower()}.png"
+    fig.savefig(path, dpi=150)
+    print(f"   saved: {path}")
+    plt.close()
+
+
+def plot_termination_reasons(df: pd.DataFrame, out_dir: Path) -> None:
+    strategy = _strategy_of(df)
+    counts = df["termination_reason"].value_counts()
+
+    fig, ax = plt.subplots()
+    colours = []
+    for reason in counts.index:
+        if reason == "success":
+            colours.append("#4CAF50")
+        elif reason in BUDGET_TERMINATIONS:
+            colours.append("#FF9800")
+        elif reason in STUCK_TERMINATIONS:
+            colours.append("#F44336")
+        else:
+            colours.append("#9E9E9E")
+    ax.barh(counts.index, counts.values, color=colours)
+    ax.set_xlabel("Episode Count")
+    ax.set_title(f"Strategy {strategy}: Termination Reasons")
+    ax.invert_yaxis()
+    fig.tight_layout()
+    path = out_dir / f"termination_reasons_{strategy.lower()}.png"
+    fig.savefig(path, dpi=150)
+    print(f"   saved: {path}")
+    plt.close()
+
+
+def plot_tokens_by_budget(df: pd.DataFrame, out_dir: Path) -> None:
+    strategy = _strategy_of(df)
+    budgets = sorted(df["budget_level"].unique())
+    data = [df.loc[df["budget_level"] == b, "total_tokens"].values for b in budgets]
+
+    fig, ax = plt.subplots()
+    bp = ax.boxplot(data, tick_labels=[f"{b//1000}k" for b in budgets],
+                    patch_artist=True)
+    colour = COLOURS.get(strategy, "#333")
+    for patch in bp["boxes"]:
+        patch.set_facecolor(colour)
+        patch.set_alpha(0.4)
+    ax.set_xlabel("Token Budget")
+    ax.set_ylabel("Actual Tokens Consumed")
+    ax.set_title(f"Strategy {strategy}: Token Consumption by Budget Level")
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / f"token_boxplot_{strategy.lower()}.png"
+    fig.savefig(path, dpi=150)
+    print(f"   saved: {path}")
+    plt.close()
+
+
+def plot_success_by_site(df: pd.DataFrame, out_dir: Path) -> None:
+    strategy = _strategy_of(df)
+    pivot = df.pivot_table(
+        values="success", index="budget_level", columns="site", aggfunc="mean"
+    )
+    fig, ax = plt.subplots()
+    pivot.plot(kind="bar", ax=ax, width=0.7)
+    ax.set_xlabel("Token Budget")
+    ax.set_ylabel("Success Rate")
+    ax.set_title(f"Strategy {strategy}: Success Rate by Site and Budget")
+    ax.set_xticklabels([f"{x//1000}k" for x in pivot.index], rotation=0)
+    ax.legend(title="Site")
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / f"success_by_site_{strategy.lower()}.png"
+    fig.savefig(path, dpi=150)
+    print(f"   saved: {path}")
+    plt.close()
+
+
+def plot_difficulty_curve(df: pd.DataFrame, out_dir: Path) -> None:
+    if "difficulty_tier" not in df.columns:
+        return
+    strategy = _strategy_of(df)
+    tier_colours = {"Easy": "#4CAF50", "Medium": "#FF9800", "Hard": "#F44336"}
+
+    fig, ax = plt.subplots()
+    plotted = False
+    for tier in ["Easy", "Medium", "Hard"]:
+        sub = df[df["difficulty_tier"] == tier]
+        if sub.empty:
+            continue
+        tbl = sub.groupby("budget_level")["success"].mean()
+        ax.plot(tbl.index, tbl.values, "o-", label=tier,
+                color=tier_colours[tier], linewidth=2, markersize=7)
+        plotted = True
+    if not plotted:
+        plt.close()
+        return
+    ax.set_xlabel("Token Budget")
+    ax.set_ylabel("Success Rate")
+    ax.set_title(f"Strategy {strategy}: Success by Difficulty Tier (RQ2)")
+    ax.set_xticks(sorted(df["budget_level"].unique()))
+    ax.set_xticklabels([f"{x//1000}k" for x in sorted(df["budget_level"].unique())])
+    ax.legend(title="Tier")
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / f"difficulty_curve_{strategy.lower()}.png"
+    fig.savefig(path, dpi=150)
+    print(f"   saved: {path}")
+    plt.close()
