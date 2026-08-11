@@ -34,3 +34,26 @@ def budget_as_binding_constraint(df: pd.DataFrame) -> None:
         bd = grp["termination_reason"].isin(BUDGET_TERMINATIONS).sum()
         print(f" {budget:>6}: {bd:>4}/{len(grp):<4} budget-driven ({bd/len(grp):.0%})")
 
+
+def cost_floor_profile(df: pd.DataFrame) -> None:
+    print_section("Cost Floor Profile (Strategy C target)")
+
+    valid = df[df["steps"] > 0].copy()
+    if valid.empty:
+        print("   no episodes with steps > 0")
+        return
+
+    valid["tok_per_step"] = valid["total_tokens"] / valid["steps"]
+
+    print(f" median tokens per step (all): {valid['tok_per_step'].median():.0f}")
+    succ = valid[valid["success"] == True]
+    if len(succ):
+        print(f" median tokens per step (successes): {succ['tok_per_step'].median():.0f}")
+        print(f" median total tokens to succeed : {succ['total_tokens'].median():.0f}")
+        print(f" median steps to succeed: {succ['steps'].median():.0f}")
+
+    print("\n Per-step cost by budget level:")
+    for budget, grp in valid.groupby("budget_level"):
+        print(f" {budget:>6}: {grp['tok_per_step'].median():>6.0f} tokens/step")
+    # Strategy C should match this per-step cost when routing to the Executor alone, and exceed it only when invoking more agents.
+
