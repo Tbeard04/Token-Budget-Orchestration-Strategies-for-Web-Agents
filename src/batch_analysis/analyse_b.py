@@ -210,3 +210,35 @@ def rubber_stamp_cost(df: pd.DataFrame) -> None:
     print(f" RECOVERABLE by perfect routing: "
           f"{approval_tokens/max(episode_tokens,1):.1%} of all tokens")
 
+
+def per_role_cost(df: pd.DataFrame) -> None:
+    print_section("Per-Role Token Cost")
+
+    if "tokens_by_role" not in df.columns:
+        print(" tokens_by_role not present.")
+        return
+
+    totals = {"planner": 0, "executor": 0, "critic": 0}
+    for _, row in df.iterrows():
+        tbr = row.get("tokens_by_role")
+        if isinstance(tbr, dict):
+            for role in totals:
+                totals[role] += tbr.get(role, 0)
+
+    grand = sum(totals.values())
+    if not grand:
+        print(" no role token data")
+        return
+
+    print(f" role  |  tokens  |  share")
+    for role, tok in totals.items():
+        print(f" {role:9s} | {tok:>10,}  |  {tok/grand:.1%}")
+    print(f" {'TOTAL':9s} | {grand:>10,}  |  100.0%")
+
+    # Per-step averages
+    total_steps = df["steps"].sum()
+    if total_steps:
+        print(f"\n Average tokens per logical step:")
+        for role, tok in totals.items():
+            print(f" {role:9s}: {tok/total_steps:>6.0f}")
+        print(f" {'TOTAL':9s}: {grand/total_steps:>6.0f}")
