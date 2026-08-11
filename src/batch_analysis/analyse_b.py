@@ -94,3 +94,65 @@ def critic_analysis(df: pd.DataFrame) -> None:
         revs = int(grp["critic_revisions"].sum())
         rate = revs / calls if calls else 0
         print(f" {budget:>6}: {calls:>5} calls  {revs:>3} revisions  ({rate:.1%})")
+
+
+def revision_state_profile(df: pd.DataFrame) -> None:
+    print_section("Revision State Profile (Strategy C routing signal)")
+
+    revisions = _extract_revisions(df)
+    if not revisions:
+        print("No revisions to profile.")
+        return
+
+    rev = pd.DataFrame(revisions)
+    n = len(rev)
+
+    print(f"revisions analysed: {n}\n")
+
+    with_err = rev["prev_step_had_error"].sum()
+    print(f" preceded by an action error : {with_err:>4}  ({with_err/n:.0%})")
+    print(f" preceded by a clean step: {n-with_err:>4}  ({(n-with_err)/n:.0%})")
+
+    all_calls = 0
+    calls_after_error = 0
+    for row, s in _critic_steps(df):
+        all_calls += 1
+        steps = row["step_log"]
+        prev = [x for x in steps if x["step"] == s["step"] - 1]
+        if prev and any(x.get("action_error") not in (None, "None") for x in prev):
+            calls_after_error += 1
+    base_rate = calls_after_error / all_calls if all_calls else 0
+    print(f"\n base rate of post-error critic calls: {base_rate:.0%}")
+    if base_rate:
+        lift = (with_err / n) / base_rate
+        print(f" lift from conditioning on action_error: {lift:.2f}x")
+        if lift > 1.3:
+            print(" action_error is a STRONG predictor of a useful Critic call.")
+            print(" Strategy C should invoke the Critic after errors.")
+        else:
+            print(" action_error is a weak predictor. Revisions happen in")
+            print(" clean states too, which makes them harder to route for.")
+
+    print(f"\n Step number at revision:")
+    print(f" median: {rev['step'].median():.0f}   "
+          f"min: {rev['step'].min()}   max: {rev['step'].max()}")
+
+    print(f"\n Budget remaining at revision:")
+    print(f" median: {rev['budget_frac_remaining'].median():.0%}")
+
+    worked = rev["revision_worked"].sum()
+    print(f"\n Revised action executed without error: {worked}/{n} ({worked/n:.0%})")
+    led_to_success = rev["episode_success"].sum()
+    print(f" Revisions in episodes that succeeded : {led_to_success}/{n} "
+          f"({led_to_success/n:.0%})")
+
+    print("\n By site:")
+    for site, grp in rev.groupby("site"):
+        w = grp["revision_worked"].sum()
+        print(f" {site:16s}: {len(grp):>3} revisions, {w} worked, "
+              f"{int(grp['episode_success'].sum())} in successful episodes")
+
+    if "difficulty_tier" in rev.columns and rev["difficulty_tier"].notna().any():
+        print("\n By difficulty tier:")
+        for tier, grp in rev.groupby("difficulty_tier"):
+            print(f" {str(tier):10s}: {len(grp):>3} revisions")
