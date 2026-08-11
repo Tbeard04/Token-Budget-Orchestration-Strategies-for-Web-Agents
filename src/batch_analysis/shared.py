@@ -30,3 +30,41 @@ BUDGET_TERMINATIONS = {
 STUCK_TERMINATIONS = {
     "navigation_cycle", "repeated_action_failure",
 }
+
+
+def print_section(title: str) -> None:
+    print(f"\n{'=' * 70}\n{title}\n{'=' * 70}")
+
+
+# Loading
+
+def load(path: str) -> pd.DataFrame:
+    """Load a JSONL results file, dropping error-only rows."""
+    rows = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    df = pd.DataFrame(rows)
+    if "error" in df.columns:
+        df = df[df["error"].isna()].copy()
+    return df
+
+
+def join_tiers(df: pd.DataFrame, tiers_path: str) -> pd.DataFrame:
+    """Left-join difficulty tiers and task categories onto episode data."""
+    if not tiers_path or not Path(tiers_path).exists():
+        return df
+    tiers = pd.read_json(tiers_path, lines=True)
+    cols = [c for c in ["task_id", "difficulty_tier", "task_category",
+                        "rubric_total"] if c in tiers.columns]
+    df = df.merge(tiers[cols], on="task_id", how="left")
+    matched = df["difficulty_tier"].notna().sum()
+    print(f"Joined difficulty tiers: {matched}/{len(df)} episodes matched")
+    return df
+
