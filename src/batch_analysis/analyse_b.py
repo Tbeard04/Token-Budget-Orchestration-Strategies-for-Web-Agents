@@ -60,3 +60,37 @@ def _extract_revisions(df: pd.DataFrame) -> list[dict]:
             "difficulty_tier": row.get("difficulty_tier", "Unknown"),
         })
     return revisions
+
+
+# ── Critic tables ───────────────────────────────────────────────────────
+
+def critic_analysis(df: pd.DataFrame) -> None:
+    print_section("Critic Analysis: Rate and Outcome")
+
+    total_calls = sum(1 for _ in _critic_steps(df))
+    total_revisions = int(df["critic_revisions"].sum())
+    eps_with = int((df["critic_revisions"] > 0).sum())
+
+    print(f" episodes: {len(df)}")
+    print(f" episodes with revisions: {eps_with}  ({eps_with/len(df):.1%})")
+    print(f" total critic calls: {total_calls}")
+    print(f" total revisions: {total_revisions}")
+    if total_calls:
+        print(f" revision rate: {total_revisions/total_calls:.1%}")
+        print(f" rubber-stamp rate: "
+              f"{(total_calls-total_revisions)/total_calls:.1%}")
+
+    revised = df[df["critic_revisions"] > 0]
+    unrevised = df[df["critic_revisions"] == 0]
+    r_sr = revised["success"].mean() if len(revised) else 0
+    u_sr = unrevised["success"].mean() if len(unrevised) else 0
+
+    print(f"\n SR of episodes WITH revisions   : {r_sr:.1%}  (n={len(revised)})")
+    print(f" SR of episodes WITHOUT revisions: {u_sr:.1%}  (n={len(unrevised)})")
+
+    print("\n By budget level:")
+    for budget, grp in df.groupby("budget_level"):
+        calls = sum(1 for _ in _critic_steps(grp))
+        revs = int(grp["critic_revisions"].sum())
+        rate = revs / calls if calls else 0
+        print(f" {budget:>6}: {calls:>5} calls  {revs:>3} revisions  ({rate:.1%})")
