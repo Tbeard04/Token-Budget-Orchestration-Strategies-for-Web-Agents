@@ -375,3 +375,21 @@ def plot_difficulty_curve(df: pd.DataFrame, out_dir: Path) -> None:
     fig.savefig(path, dpi=150)
     print(f"   saved: {path}")
     plt.close()
+
+
+def run_shared_analysis(df: pd.DataFrame, out_dir: Path, verbose_tasks: bool = False) -> None:
+    success_by_budget(df)
+    success_by_site(df)
+    task_solvability(df, verbose=verbose_tasks)
+    termination_reasons(df)
+    token_distribution(df)
+    per_step_cost(df)
+    #stop_signal_analysis(df)
+    difficulty_breakdown(df)
+
+    print_section("Plots")
+    plot_cost_curve(df, out_dir)
+    plot_termination_reasons(df, out_dir)
+    plot_tokens_by_budget(df, out_dir)
+    plot_success_by_site(df, out_dir)
+    plot_difficulty_curve(df, out_dir)
