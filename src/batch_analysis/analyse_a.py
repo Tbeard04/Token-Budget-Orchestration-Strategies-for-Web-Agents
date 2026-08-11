@@ -97,3 +97,33 @@ def budget_utilisation(df: pd.DataFrame) -> None:
         print(f" {budget:>6}  |   {grp['utilisation'].median():>5.0%}   |"
               f" {succ_str:>5}    |   {fail_str:>5}")
 
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--file", required=True, help="Strategy A JSONL")
+    ap.add_argument("--tiers", default=None, help="task_metadata.jsonl")
+    ap.add_argument("--out", default="../data/processed/strategy_a")
+    ap.add_argument("--verbose-tasks", action="store_true", help="print the full per-task solvability table")
+    args = ap.parse_args()
+
+    df = load(args.file)
+    print(f"Loaded {len(df)} Strategy A episodes from {args.file}")
+    df = join_tiers(df, args.tiers)
+
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    #Shared analysis
+    run_shared_analysis(df, out_dir, verbose_tasks=args.verbose_tasks)
+
+    #Strategy A specific
+    budget_as_binding_constraint(df)
+    cost_floor_profile(df)
+    answer_failure_analysis(df)
+    budget_utilisation(df)
+
+    print(f"\nDone. {len(df)} episodes analysed.")
+
+
+if __name__ == "__main__":
+    main()
