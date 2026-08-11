@@ -68,3 +68,167 @@ def join_tiers(df: pd.DataFrame, tiers_path: str) -> pd.DataFrame:
     print(f"Joined difficulty tiers: {matched}/{len(df)} episodes matched")
     return df
 
+
+# Shared tables
+
+def success_by_budget(df: pd.DataFrame) -> pd.DataFrame:
+    """The cost curve: success rate at each budget level.
+
+    Reports both episode-level SR and distinct-task-level solvability.
+    The pooled 'overall' rate is deliberately NOT shown as it conflates
+    budget levels that are different experimental conditions.
+    """
+    print_section("Success Rate by Budget Level (Cost Curve)")
+
+    rows = []
+    for budget, grp in df.groupby("budget_level"):
+        distinct_solved = grp.loc[grp["success"] == True, "task_id"].nunique()
+        distinct_total = grp["task_id"].nunique()
+        rows.append({
+            "budget_level": budget,
+            "episodes": len(grp),
+            "successes": int(grp["success"].sum()),
+            "episode_SR": grp["success"].mean(),
+            "tasks_solved": distinct_solved,
+            "tasks_total": distinct_total,
+            "task_SR": distinct_solved / distinct_total if distinct_total else 0,
+            "median_tokens": grp["total_tokens"].median(),
+            "median_steps": grp["steps"].median(),
+        })
+
+    tbl = pd.DataFrame(rows).set_index("budget_level")
+    print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
+
+    any_success = df.loc[df["success"] == True, "task_id"].nunique()
+    total_tasks = df["task_id"].nunique()
+    print(f"\n   Distinct tasks solved at ANY budget: {any_success}/{total_tasks}"
+          f" ({any_success/total_tasks:.0%})")
+    print("   NOTE: per-budget episode_SR is the valid metric for RQ1.")
+    print("   Do NOT pool across budget levels into a single headline figure.")
+
+    return tbl
+
+
+def success_by_site(df: pd.DataFrame) -> pd.DataFrame:
+    print_section("Success Rate by Site")
+    rows = []
+    for site, grp in df.groupby("site"):
+        distinct_solved = grp.loc[grp["success"] == True, "task_id"].nunique()
+        distinct_total = grp["task_id"].nunique()
+        rows.append({
+            "site": site,
+            "episodes": len(grp),
+            "episode_SR": grp["success"].mean(),
+            "tasks_solved": distinct_solved,
+            "tasks_total": distinct_total,
+            "task_SR": distinct_solved / distinct_total if distinct_total else 0,
+            "median_tokens": grp["total_tokens"].median(),
+            "median_steps": grp["steps"].median(),
+        })
+    tbl = pd.DataFrame(rows).set_index("site")
+    print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
+    return tbl
+
+
+def task_solvability(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
+    """Which tasks are solvable, and at which minimum budget?"""
+    print_section("Task Solvability")
+
+    solved = df[df["success"] == True].groupby("task_id").agg(
+        site=("site", "first"),
+        min_budget=("budget_level", "min"),
+        max_budget=("budget_level", "max"),
+        times_solved=("success", "sum"),
+        budgets_tested=("budget_level", "nunique"),
+    ).sort_values("min_budget")
+
+    total_tasks = df["task_id"].nunique()
+    print(f"   {len(solved)}/{total_tasks} tasks solved at least once "
+          f"({len(solved)/total_tasks:.0%})\n")
+
+    if len(solved):
+        if verbose:
+            print(solved.to_string())
+        else:
+            # Summarise by minimum budget rather than listing every task
+            by_min = solved.groupby("min_budget").size()
+            print("   Tasks first solved at each budget level:")
+            for budget, n in by_min.items():
+                print(f"     {budget:>6}: {n:>3} tasks")
+        print(f"\n   Minimum budget needed (median of solved tasks): "
+              f"{solved['min_budget'].median():.0f}")
+    else:
+        print("   No tasks solved at any budget level.")
+
+    return solved
+
+
+def termination_reasons(df: pd.DataFrame) -> pd.Series:
+    print_section("Termination Reasons")
+    counts = df["termination_reason"].value_counts()
+    total = len(df)
+    for reason, n in counts.items():
+        print(f"   {reason:30s} {n:5d}  ({n/total:.0%})")
+
+    budget_driven = df["termination_reason"].isin(BUDGET_TERMINATIONS).sum()
+    stuck = df["termination_reason"].isin(STUCK_TERMINATIONS).sum()
+    print(f"\n   budget-driven total: {budget_driven:5d}  ({budget_driven/total:.0%})")
+    print(f"   stuck (guard-fired): {stuck:5d}  ({stuck/total:.0%})")
+    return counts
+
+
+def token_distribution(df: pd.DataFrame) -> None:
+    print_section("Token Distribution")
+    toks = df["total_tokens"].dropna()
+    print(f"episodes           : {len(toks)}")
+    print(f"min                : {toks.min():.0f}")
+    print(f"25th percentile    : {toks.quantile(0.25):.0f}")
+    print(f"median             : {toks.median():.0f}")
+    print(f"75th percentile    : {toks.quantile(0.75):.0f}")
+    print(f"max                : {toks.max():.0f}")
+    succ = df.loc[df["success"] == True, "total_tokens"]
+    if len(succ):
+        print(f"   median of successes: {succ.median():.0f}  (n={len(succ)})")
+
+
+def per_step_cost(df: pd.DataFrame) -> None:
+    print_section("Per-step Token Cost")
+    df_valid = df[df["steps"] > 0].copy()
+    if df_valid.empty:
+        print("   no episodes with steps > 0")
+        return
+    df_valid["tok_per_step"] = df_valid["total_tokens"] / df_valid["steps"]
+    by_site = df_valid.groupby("site")["tok_per_step"].agg(["median", "mean", "std"])
+    print(by_site.to_string())
+    overall = df_valid["tok_per_step"]
+    print(f"\n   overall median: {overall.median():.0f}  "
+          f"mean: {overall.mean():.0f}  std: {overall.std():.0f}")
+
+
+def difficulty_breakdown(df: pd.DataFrame) -> None:
+    """Only runs if tier data has been joined."""
+    if "difficulty_tier" not in df.columns:
+        return
+    print_section("Success Rate by Difficulty Tier (RQ2)")
+    tier_order = ["Easy", "Medium", "Hard"]
+    df = df.copy()
+    df["difficulty_tier"] = pd.Categorical(
+        df["difficulty_tier"], categories=tier_order, ordered=True
+    )
+
+    rows = []
+    for (tier, budget), grp in df.groupby(["difficulty_tier", "budget_level"],
+                                           observed=True):
+        distinct_solved = grp.loc[grp["success"] == True, "task_id"].nunique()
+        distinct_total = grp["task_id"].nunique()
+        rows.append({
+            "tier": tier,
+            "budget": budget,
+            "episodes": len(grp),
+            "episode_SR": grp["success"].mean(),
+            "tasks_solved": distinct_solved,
+            "tasks_total": distinct_total,
+            "task_SR": distinct_solved / distinct_total if distinct_total else 0,
+        })
+    tbl = pd.DataFrame(rows).set_index(["tier", "budget"])
+    print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
