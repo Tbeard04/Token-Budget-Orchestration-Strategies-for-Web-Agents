@@ -10,9 +10,8 @@ import shutil
 from collections import Counter
 from pathlib import Path
  
- 
+ # Group an error message into a readable category.
 def classify_error(msg: str) -> str:
-    """Group an error message into a readable category."""
     m = (msg or "").lower()
     if "timeout" in m and "goto" in m:
         return "page load timeout"
