@@ -337,3 +337,44 @@ def plot_role_cost_breakdown(df: pd.DataFrame, out_dir: Path) -> None:
     fig.savefig(path, dpi=150)
     print(f" saved: {path}")
     plt.close()
+
+
+# Main
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--file", required=True, help="Strategy B JSONL")
+    ap.add_argument("--tiers", default=None, help="task_metadata.jsonl")
+    ap.add_argument("--out", default="../data/processed/strategy_b")
+    ap.add_argument("--verbose-tasks", action="store_true")
+    ap.add_argument("--list-revisions", action="store_true",
+                    help="print every Critic revision, not just the first 20")
+    args = ap.parse_args()
+
+    df = load(args.file)
+    print(f"Loaded {len(df)} Strategy B episodes from {args.file}")
+    df = join_tiers(df, args.tiers)
+
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Shared analysis
+    run_shared_analysis(df, out_dir, verbose_tasks=args.verbose_tasks)
+
+    # Strategy B specific
+    critic_analysis(df)
+    revision_state_profile(df)
+    rubber_stamp_cost(df)
+    per_role_cost(df)
+    planner_value_analysis(df)
+    critic_revision_details(df, limit=None if args.list_revisions else 20)
+
+    print_section("Strategy B Plots")
+    plot_critic_revision_rate(df, out_dir)
+    plot_role_cost_breakdown(df, out_dir)
+
+    print(f"\nDone. {len(df)} episodes analysed.")
+
+
+if __name__ == "__main__":
+    main()
