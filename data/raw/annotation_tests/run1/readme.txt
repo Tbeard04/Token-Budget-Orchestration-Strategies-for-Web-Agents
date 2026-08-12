@@ -1,1 +1,2 @@
-This directory contains files on the LLM evaluator "guessing" the difficulty of the task based on the rubric scale as a baseline. 
+This directory contains files on the LLM evaluator "guessing" the difficulty of the task based on the rubric scale as a baseline (this output version does not 
+take into account the task_intents.json file)
