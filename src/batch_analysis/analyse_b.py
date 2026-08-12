@@ -303,7 +303,6 @@ def plot_critic_revision_rate(df: pd.DataFrame, out_dir: Path) -> None:
 
 
 def plot_role_cost_breakdown(df: pd.DataFrame, out_dir: Path) -> None:
-    """Stacked bar: how the budget splits three ways at each budget level."""
     if "tokens_by_role" not in df.columns:
         return
 
