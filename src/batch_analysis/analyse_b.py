@@ -62,7 +62,7 @@ def _extract_revisions(df: pd.DataFrame) -> list[dict]:
     return revisions
 
 
-# ── Critic tables ───────────────────────────────────────────────────────
+# Critic tables
 
 def critic_analysis(df: pd.DataFrame) -> None:
     print_section("Critic Analysis: Rate and Outcome")
@@ -259,3 +259,81 @@ def planner_value_analysis(df: pd.DataFrame) -> None:
     if len(no_rev_succ) + len(with_rev_succ):
         share = len(no_rev_succ) / (len(no_rev_succ) + len(with_rev_succ))
         print(f"\n {share:.0%} of Strategy B's successes involved no Critic")
+
+
+# Plots
+
+def plot_critic_revision_rate(df: pd.DataFrame, out_dir: Path) -> None:
+    if "critic_revisions" not in df.columns:
+        return
+    rows = []
+    for budget, grp in df.groupby("budget_level"):
+        calls = sum(1 for _ in _critic_steps(grp))
+        revs = int(grp["critic_revisions"].sum())
+        revised_eps = grp[grp["critic_revisions"] > 0]
+        rows.append({
+            "budget": budget,
+            "revision_rate": revs / calls if calls else 0,
+            "overall_sr": grp["success"].mean(),
+            "revised_sr": revised_eps["success"].mean() if len(revised_eps) else 0,
+        })
+    tbl = pd.DataFrame(rows)
+
+    fig, ax = plt.subplots()
+    x = range(len(tbl))
+    w = 0.25
+    ax.bar([i - w for i in x], tbl["revision_rate"], w,
+           label="Critic revision rate", color="#F44336", alpha=0.75)
+    ax.bar(list(x), tbl["overall_sr"], w,
+           label="Overall SR", color="#FF9800", alpha=0.75)
+    ax.bar([i + w for i in x], tbl["revised_sr"], w,
+           label="SR of revised episodes", color="#4CAF50", alpha=0.75)
+    ax.set_xlabel("Token Budget")
+    ax.set_ylabel("Rate")
+    ax.set_title("Strategy B: Critic Revision Rate vs Success")
+    ax.set_xticks(list(x))
+    ax.set_xticklabels([f"{b//1000}k" for b in tbl["budget"]])
+    ax.legend()
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / "critic_analysis_b.png"
+    fig.savefig(path, dpi=150)
+    print(f" saved: {path}")
+    plt.close()
+
+
+def plot_role_cost_breakdown(df: pd.DataFrame, out_dir: Path) -> None:
+    """Stacked bar: how the budget splits three ways at each budget level."""
+    if "tokens_by_role" not in df.columns:
+        return
+
+    rows = []
+    for budget, grp in df.groupby("budget_level"):
+        totals = {"planner": 0, "executor": 0, "critic": 0}
+        for _, row in grp.iterrows():
+            tbr = row.get("tokens_by_role")
+            if isinstance(tbr, dict):
+                for role in totals:
+                    totals[role] += tbr.get(role, 0)
+        n = len(grp)
+        rows.append({
+            "budget": budget,
+            "planner": totals["planner"] / n,
+            "executor": totals["executor"] / n,
+            "critic": totals["critic"] / n,
+        })
+    tbl = pd.DataFrame(rows).set_index("budget")
+
+    fig, ax = plt.subplots()
+    tbl.plot(kind="bar", stacked=True, ax=ax, color=["#9C27B0", "#2196F3", "#F44336"], alpha=0.8)
+    ax.set_xlabel("Token Budget")
+    ax.set_ylabel("Mean Tokens per Episode")
+    ax.set_title("Strategy B: Token Cost by Role")
+    ax.set_xticklabels([f"{b//1000}k" for b in tbl.index], rotation=0)
+    ax.legend(title="Role")
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / "role_cost_breakdown_b.png"
+    fig.savefig(path, dpi=150)
+    print(f" saved: {path}")
+    plt.close()
