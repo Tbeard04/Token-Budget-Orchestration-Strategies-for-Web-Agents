@@ -93,3 +93,51 @@ def cost_ratio(a: pd.DataFrame, b: pd.DataFrame) -> None:
     print(f"median B/A cost ratio: {statistics.median(ratios):.2f}x")
     print(f"mean B/A cost ratio: {statistics.mean(ratios):.2f}x")
     print(f"range: {min(ratios):.2f}x - {max(ratios):.2f}x")
+
+
+def task_level_comparison(a: pd.DataFrame, b: pd.DataFrame) -> None:
+    print_section("A vs B: Task-Level Comparison")
+ 
+    all_tasks = set(a["task_id"]) | set(b["task_id"])
+    a_solved = set(a.loc[a["success"] == True, "task_id"])
+    b_solved = set(b.loc[b["success"] == True, "task_id"])
+ 
+    both = a_solved & b_solved
+    a_only = a_solved - b_solved
+    b_only = b_solved - a_solved
+    neither = all_tasks - a_solved - b_solved
+ 
+    print(f"solved by both   : {len(both)}")
+    print(f"solved by A only : {len(a_only)}")
+    print(f"solved by B only : {len(b_only)}")
+    print(f"solved by neither: {len(neither)}")
+ 
+    if b_only:
+        print(f"\n   Tasks B solved that A could not "
+              f"(the pipeline's capability advantage):")
+        with_rev = 0
+        for tid in sorted(b_only):
+            eps = b[(b["task_id"] == tid) & (b["success"] == True)]
+            if eps.empty:
+                continue
+            ep = eps.loc[eps["budget_level"].idxmin()]
+            revs = int(ep.get("critic_revisions", 0))
+            if revs:
+                with_rev += 1
+            # What did A do on this task at its best budget?
+            a_eps = a[a["task_id"] == tid]
+            a_reason = "not run"
+            if len(a_eps):
+                a_best = a_eps.loc[a_eps["budget_level"].idxmax()]
+                a_reason = a_best["termination_reason"]
+            print(f"task {tid:>4} @ {ep['budget_level']:>6}: "
+                  f"{ep['steps']} steps, {revs} revisions   "
+                  f"(A failed: {a_reason})")
+ 
+        print(f"\n {with_rev}/{len(b_only)} involved a Critic revision")
+        print(f" {len(b_only)-with_rev}/{len(b_only)} succeeded with the Planner alone")
+ 
+    if a_only:
+        shown = sorted(a_only)[:15]
+        print(f"\n Tasks A solved that B could not: {shown}"
+              f"{f' ... +{len(a_only)-15} more' if len(a_only) > 15 else ''}")
