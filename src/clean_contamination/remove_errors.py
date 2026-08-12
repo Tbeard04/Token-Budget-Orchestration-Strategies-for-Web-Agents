@@ -27,3 +27,17 @@ def classify_error(msg: str) -> str:
     if "keyboardinterrupt" in m:
         return "interrupted"
     return "other"
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--file", required=True)
+    ap.add_argument("--backup", default=None, help="backup path (default: <file>.bak)")
+    ap.add_argument("--yes", action="store_true", help="skip the confirmation prompt")
+    ap.add_argument("--dry-run", action="store_true", help="report what would be removed, change nothing")
+    args = ap.parse_args()
+ 
+    path = Path(args.file)
+    if not path.exists():
+        raise SystemExit(f"File not found: {path}")
+
