@@ -52,3 +52,18 @@ def comparison_table(a: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
     with pd.option_context("display.float_format", lambda x: f"{x:.3f}"):
         print(tbl.to_string())
     return tbl
+
+
+def equivalent_budget(a: pd.DataFrame, b: pd.DataFrame) -> None:
+    print_section("A vs B: Equivalent Budget")
+ 
+    a_sr = a.groupby("budget_level")["success"].mean()
+    b_sr = b.groupby("budget_level")["success"].mean()
+ 
+    for b_budget, b_val in b_sr.items():
+        closest = (a_sr - b_val).abs().idxmin()
+        ratio = b_budget / closest if closest else float("inf")
+        print(f"   B @ {b_budget//1000:>2}k ({b_val:>5.1%})  "
+              f"~=  A @ {closest//1000:>2}k ({a_sr[closest]:>5.1%})   "
+              f"[B needs {ratio:.1f}x the budget]")
+
