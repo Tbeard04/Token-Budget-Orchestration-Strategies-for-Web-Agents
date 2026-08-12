@@ -1,5 +1,5 @@
 """
-Since the AWS instance crashed sometimes, re-running the "run_batch.py" resulted in some tasks/budgets being completed later.
+Since the AWS instance crashed sometimes or there were errors, re-running the "run_batch.py" resulted in some tasks/budgets being completed later.
 i.e. 6 completed budgets for task 1, 
 5 completed budgets for task 2, 
 instance crashes & re-run batch script, 
