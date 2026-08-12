@@ -1,10 +1,8 @@
 """
-extract_task_intents.py - extract task IDs and intents for the three target
-sites, grouped by site and by task type. Produces a readable JSON file for
-reviewing what the agent prompts need to cover.
+extract_task_intents.py - extract task IDs and intents for the three target sites, grouped by site and by task type. Produces a readable JSON file for reviewing what the agent prompts need to cover.
 
 Run:
-    python extract_task_intents.py --input test_raw.json --output task_intents.json
+    python extract_task_intents.py --input test.raw.json --output ../data/task_list/task_intents.json
 """
 import json
 import argparse
@@ -14,7 +12,6 @@ TARGET_SITES = {"shopping", "shopping_admin", "reddit"}
 
 
 def categorise(intent: str) -> str:
-    """Rough categorisation by intent text."""
     i = intent.lower()
     if any(w in i for w in ["what is", "tell me", "how much", "how many",
                              "list out", "presents", "get the", "count of",
