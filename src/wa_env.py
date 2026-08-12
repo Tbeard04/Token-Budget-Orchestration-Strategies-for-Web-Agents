@@ -3,15 +3,8 @@
 """
 wa_env.py - shared WebArena/BrowserGym environment layer.
 
-Everything here is used by ALL strategies. Nothing here decides what action to
-take; that is the strategies' job. Keeping it in one module means Strategy A,
-B and C cannot drift apart on observation format, guards or configuration -
-which is what makes the cross-strategy comparison valid.
-
-IMPORT ORDER IS LOAD-BEARING. The environment variables and the openai
-compatibility patches must be applied before browsergym is imported. Because
-this module performs the browsergym import itself, any module that does
-`import wa_env` inherits the correct ordering automatically.
+Everything here is used by ALL strategies. Nothing here decides what action to take; that is the strategies' job. Keeping it in one module means Strategy A,
+B and C cannot drift apart on observation format, guards or configuration -- which is what makes the cross-strategy comparison valid.
 
 Contents:
     - .env loading and WA_* -> bare env var mapping
@@ -33,9 +26,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()   # MUST precede the browsergym import
+load_dotenv()
 
-# --- WA_* -> bare names BrowserGym/WebArena expects --------------------------
+# WA_* --> bare names BrowserGym/WebArena expects
 for _wa, _bare in [
     ("WA_SHOPPING", "SHOPPING"),
     ("WA_SHOPPING_ADMIN", "SHOPPING_ADMIN"),
@@ -48,7 +41,7 @@ for _wa, _bare in [
     if os.getenv(_wa) and not os.getenv(_bare):
         os.environ[_bare] = os.environ[_wa]
 
-# --- openai>=1.0 compatibility ----------------------------------------------
+# openai>=1.0 compatibility
 # WebArena's codebase targets openai 0.x. pydantic-ai requires openai 1.x.
 # Rather than downgrade, shim the removed surfaces WebArena still references.
 import openai
@@ -174,7 +167,6 @@ ACTION_HISTORY_LEN = 8
 # Task configs
 # ----------------------------------------------------------------------------
 def config_dir() -> Path:
-    """Locate WebArena's task config files, handling namespace packages."""
     import webarena
 
     candidates: list[Path] = []
@@ -189,7 +181,6 @@ def config_dir() -> Path:
                 return sub
 
     raise FileNotFoundError(
-        "Could not find WebArena config files. Searched: "
         + ", ".join(str(c) for c in candidates)
     )
 
@@ -198,7 +189,6 @@ _CONFIG_CACHE: list[dict] | None = None
 
 
 def load_configs() -> list[dict]:
-    """All task configs, cached (this is read very often)."""
     global _CONFIG_CACHE
     if _CONFIG_CACHE is None:
         d = config_dir()
@@ -219,11 +209,6 @@ def site_of(task_id: int) -> str:
 
 
 def single_site_tasks(sites: list[str] | None = None) -> dict[str, list[int]]:
-    """Task ids that need exactly one of the given sites.
-
-    Single-site only: guarantees no episode requires a website that is not
-    currently hosted, which is what makes site-by-site batching viable.
-    """
     sites = sites or SITES
     out: dict[str, list[int]] = {s: [] for s in sites}
     for cfg in load_configs():
@@ -234,18 +219,11 @@ def single_site_tasks(sites: list[str] | None = None) -> dict[str, list[int]]:
 
 
 # ----------------------------------------------------------------------------
-# Observation -> prompt
+# Observation --> prompt
 # ----------------------------------------------------------------------------
 def build_prompt(obs: dict,
                  history: list[str] | None = None,
                  urls: list[str] | None = None) -> str:
-    """Render the current observation as the text an agent sees.
-
-    Static content first, dynamic last, so the provider's prompt cache can
-    reuse the stable prefix. The AXTree is filtered to visible, actionable
-    elements: unfiltered trees cost 3-5x more tokens and, at tight budgets,
-    make otherwise-solvable tasks unsolvable.
-    """
     goal = obs.get("goal") or " ".join(
         p.get("text", "") for p in obs.get("goal_object", [])
     )
@@ -307,12 +285,6 @@ def goal_of(obs: dict) -> str:
 # Agent construction and invocation
 # ----------------------------------------------------------------------------
 def make_agent(instructions: str, output_type, label: str = "agent") -> Agent:
-    """Pydantic AI agent with reasoning_effort pinned.
-
-    Pinning matters for reproducibility: GPT-5 Mini's hidden reasoning tokens
-    are billed as output, so an unpinned effort setting would let per-episode
-    token totals vary for reasons unrelated to the strategy under test.
-    """
     try:
         from pydantic_ai.models.openai import (
             OpenAIResponsesModel,
