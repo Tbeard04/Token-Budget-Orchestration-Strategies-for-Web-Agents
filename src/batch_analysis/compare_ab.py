@@ -198,3 +198,71 @@ def strategy_c_ceiling(a: pd.DataFrame, b: pd.DataFrame) -> None:
         print(f"--> recoverable by perfect Critic routing")
  
 
+# Plots
+def plot_cost_curves_overlay(a: pd.DataFrame, b: pd.DataFrame, out_dir: Path) -> None:
+    a_tbl = a.groupby("budget_level")["success"].mean()
+    b_tbl = b.groupby("budget_level")["success"].mean()
+ 
+    fig, ax = plt.subplots()
+    ax.plot(a_tbl.index, a_tbl.values, "o-", color=COLOURS["A"], linewidth=2, markersize=8, label="Strategy A (single agent)")
+    ax.plot(b_tbl.index, b_tbl.values, "s--", color=COLOURS["B"], linewidth=2, markersize=8, label="Strategy B (fixed pipeline)")
+    ax.set_xlabel("Token Budget")
+    ax.set_ylabel("Success Rate")
+    ax.set_title("Success Rate vs Token Budget: A vs B")
+    budgets = sorted(set(a_tbl.index) | set(b_tbl.index))
+    ax.set_xticks(budgets)
+    ax.set_xticklabels([f"{x//1000}k" for x in budgets])
+    ax.legend()
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / "cost_curve_a_vs_b.png"
+    fig.savefig(path, dpi=150)
+    print(f"saved: {path}")
+    plt.close()
+
+def plot_per_step_cost_comparison(a: pd.DataFrame, b: pd.DataFrame, out_dir: Path) -> None:
+    av = a[a["steps"] > 0].copy()
+    bv = b[b["steps"] > 0].copy()
+    av["tps"] = av["total_tokens"] / av["steps"]
+    bv["tps"] = bv["total_tokens"] / bv["steps"]
+ 
+    fig, ax = plt.subplots()
+    bp = ax.boxplot([av["tps"].values, bv["tps"].values], tick_labels=["Strategy A", "Strategy B"], patch_artist=True, showfliers=False)
+    bp["boxes"][0].set_facecolor(COLOURS["A"]); bp["boxes"][0].set_alpha(0.5)
+    bp["boxes"][1].set_facecolor(COLOURS["B"]); bp["boxes"][1].set_alpha(0.5)
+    ax.set_ylabel("Tokens per Step")
+    ax.set_title("Per-Step Token Cost: A vs B")
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / "per_step_cost_a_vs_b.png"
+    fig.savefig(path, dpi=150)
+    print(f"saved: {path}")
+    plt.close()
+ 
+ 
+def plot_token_efficiency(a: pd.DataFrame, b: pd.DataFrame, out_dir: Path) -> None:
+    rows = []
+    for label, df, colour in [("A", a, COLOURS["A"]), ("B", b, COLOURS["B"])]:
+        for budget, grp in df.groupby("budget_level"):
+            mean_tok = grp["total_tokens"].mean()
+            eff = grp["success"].mean() / mean_tok * 1000 if mean_tok else 0
+            rows.append({"strategy": label, "budget": budget, "eff": eff})
+    tbl = pd.DataFrame(rows)
+ 
+    fig, ax = plt.subplots()
+    for label, colour, marker in [("A", COLOURS["A"], "o-"), ("B", COLOURS["B"], "s--")]:
+        sub = tbl[tbl["strategy"] == label]
+        ax.plot(sub["budget"], sub["eff"], marker, color=colour, linewidth=2, markersize=8, label=f"Strategy {label}")
+    ax.set_xlabel("Token Budget")
+    ax.set_ylabel("Token Efficiency (SR per 1k tokens)")
+    ax.set_title("Token Efficiency by Budget Level")
+    budgets = sorted(tbl["budget"].unique())
+    ax.set_xticks(budgets)
+    ax.set_xticklabels([f"{x//1000}k" for x in budgets])
+    ax.legend()
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / "token_efficiency_a_vs_b.png"
+    fig.savefig(path, dpi=150)
+    print(f"saved: {path}")
+    plt.close()
