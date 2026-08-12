@@ -25,7 +25,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from analysis.shared import (
+from batch_analysis.shared import (
     load, join_tiers, print_section, COLOURS,
     BUDGET_TERMINATIONS, STUCK_TERMINATIONS,
 )

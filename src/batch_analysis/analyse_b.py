@@ -9,7 +9,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from analysis.shared import (
+from batch_analysis.shared import (
     load, join_tiers, print_section, run_shared_analysis, COLOURS,
 )
 
