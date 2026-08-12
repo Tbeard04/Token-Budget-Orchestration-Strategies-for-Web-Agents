@@ -141,3 +141,27 @@ def task_level_comparison(a: pd.DataFrame, b: pd.DataFrame) -> None:
         shown = sorted(a_only)[:15]
         print(f"\n Tasks A solved that B could not: {shown}"
               f"{f' ... +{len(a_only)-15} more' if len(a_only) > 15 else ''}")
+
+
+def failure_mode_shift(a: pd.DataFrame, b: pd.DataFrame) -> None:
+    """Does the pipeline change HOW episodes fail, not just how often?"""
+    print_section("A vs B: Failure Mode Shift")
+ 
+    def profile(df, label):
+        fails = df[df["success"] == False]
+        if fails.empty:
+            return
+        budget = fails["termination_reason"].isin(BUDGET_TERMINATIONS).sum()
+        stuck = fails["termination_reason"].isin(STUCK_TERMINATIONS).sum()
+        wrong = (fails["termination_reason"] == "env_terminated").sum()
+        n = len(fails)
+        print(f"   {label}: {n} failures")
+        print(f"     budget exhausted : {budget:>5}  ({budget/n:.0%})")
+        print(f"     stuck (guards)   : {stuck:>5}  ({stuck/n:.0%})")
+        print(f"     wrong answer     : {wrong:>5}  ({wrong/n:.0%})")
+ 
+    profile(a, "Strategy A")
+    print()
+    profile(b, "Strategy B")
+ 
+ 
