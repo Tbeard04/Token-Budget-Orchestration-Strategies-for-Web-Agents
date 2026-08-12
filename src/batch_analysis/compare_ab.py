@@ -67,3 +67,29 @@ def equivalent_budget(a: pd.DataFrame, b: pd.DataFrame) -> None:
               f"~=  A @ {closest//1000:>2}k ({a_sr[closest]:>5.1%})   "
               f"[B needs {ratio:.1f}x the budget]")
 
+
+def cost_ratio(a: pd.DataFrame, b: pd.DataFrame) -> None:
+    print_section("A vs B: Cost Ratio on Shared Successes")
+ 
+    a_solved = set(a.loc[a["success"] == True, "task_id"])
+    b_solved = set(b.loc[b["success"] == True, "task_id"])
+    both = a_solved & b_solved
+ 
+    if not both:
+        print("No shared successes to compare.")
+        return
+ 
+    ratios = []
+    for tid in both:
+        a_cost = a.loc[(a["task_id"] == tid) & (a["success"] == True), "total_tokens"].min()
+        b_cost = b.loc[(b["task_id"] == tid) & (b["success"] == True), "total_tokens"].min()
+        if a_cost and a_cost > 0:
+            ratios.append(b_cost / a_cost)
+ 
+    if not ratios:
+        return
+ 
+    print(f"tasks solved by both: {len(ratios)}")
+    print(f"median B/A cost ratio: {statistics.median(ratios):.2f}x")
+    print(f"mean B/A cost ratio: {statistics.mean(ratios):.2f}x")
+    print(f"range: {min(ratios):.2f}x - {max(ratios):.2f}x")
