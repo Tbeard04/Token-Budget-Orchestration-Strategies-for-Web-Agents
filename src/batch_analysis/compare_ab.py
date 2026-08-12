@@ -266,3 +266,52 @@ def plot_token_efficiency(a: pd.DataFrame, b: pd.DataFrame, out_dir: Path) -> No
     fig.savefig(path, dpi=150)
     print(f"saved: {path}")
     plt.close()
+
+
+# Main
+ 
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--a", required=True, help="Strategy A JSONL")
+    ap.add_argument("--b", required=True, help="Strategy B JSONL")
+    ap.add_argument("--tiers", default=None, help="task_metadata.jsonl")
+    ap.add_argument("--out", default="../data/processed/comparison")
+    args = ap.parse_args()
+ 
+    a = load(args.a)
+    b = load(args.b)
+    print(f"Loaded {len(a)} A episodes and {len(b)} B episodes")
+ 
+    if args.tiers:
+        a = join_tiers(a, args.tiers)
+        b = join_tiers(b, args.tiers)
+ 
+    # Restrict to tasks present in both, so the comparison is like for like
+    shared = set(a["task_id"]) & set(b["task_id"])
+    if len(shared) < max(a["task_id"].nunique(), b["task_id"].nunique()):
+        print(f"\n[compare] restricting to {len(shared)} tasks present in BOTH "
+              f"datasets (A has {a['task_id'].nunique()}, "
+              f"B has {b['task_id'].nunique()})")
+        a = a[a["task_id"].isin(shared)]
+        b = b[b["task_id"].isin(shared)]
+ 
+    comparison_table(a, b)
+    equivalent_budget(a, b)
+    cost_ratio(a, b)
+    task_level_comparison(a, b)
+    failure_mode_shift(a, b)
+    strategy_c_ceiling(a, b)
+ 
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+ 
+    print_section("Comparison Plots")
+    plot_cost_curves_overlay(a, b, out_dir)
+    plot_per_step_cost_comparison(a, b, out_dir)
+    plot_token_efficiency(a, b, out_dir)
+ 
+    print("\nDone.")
+ 
+if __name__ == "__main__":
+    main()
+ 
