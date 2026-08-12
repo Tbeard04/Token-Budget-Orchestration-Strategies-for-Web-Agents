@@ -96,3 +96,38 @@ def main() -> None:
         print(f" task {str(r.get('task_id','?')):>5} @ "
               f"{str(r.get('budget_level','?')):>6}  "
               f"[{r.get('strategy','?')}] {r.get('site','?'):16s} {msg}")
+
+    #Safety check: these rows must not contain real episode data
+    suspicious = [r for r in error_rows if r.get("step_log") or r.get("total_tokens")]
+    if suspicious:
+        print(f"\n!! WARNING: {len(suspicious)} rows have an 'error' key but " f"also contain step_log or token data.")
+        print("Inspection:")
+        for r in suspicious[:5]:
+            print(f"task {r.get('task_id')} @ {r.get('budget_level')}")
+ 
+    if args.dry_run:
+        print("\n--dry-run: no changes made.")
+        return
+ 
+    # Confirm
+    if not args.yes:
+        reply = input("\nProceed? [y/N] ").strip().lower()
+        if reply not in ("y", "yes"):
+            print("Aborted. No changes made.")
+            return
+ 
+    # Back up, then write
+    backup = Path(args.backup) if args.backup else path.with_suffix(
+        path.suffix + ".bak")
+    shutil.copy2(path, backup)
+    print(f"\nBackup written to {backup}")
+ 
+    with path.open("w") as f:
+        f.writelines(keep_lines)
+ 
+    print(f"Removed {len(error_rows)} error episodes")
+    print(f"{path} now contains {len(keep_lines)} episodes")
+ 
+ 
+if __name__ == "__main__":
+    main()
