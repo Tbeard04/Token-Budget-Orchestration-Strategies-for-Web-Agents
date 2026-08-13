@@ -151,3 +151,28 @@ def plot_risk_groups(by_category: dict, out_dir: Path) -> None:
     print(f"saved: {path}")
     plt.close()
 
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--input", required=True, help="task_intents.json from extract_task_intents.py")
+    ap.add_argument("--out", default="../../data/processed/diagrams/task_list")
+    args = ap.parse_args()
+
+    with open(args.input) as f:
+        data = json.load(f)
+
+    by_category = data["summary"]["by_category"]
+    sites = data.get("sites", {})
+
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"\n{'=' * 60}\nPlots\n{'=' * 60}")
+    plot_overall(by_category, out_dir)
+    plot_by_site(sites, out_dir)
+    plot_risk_groups(by_category, out_dir)
+
+    print(f"\nDone.")
+
+
+if __name__ == "__main__":
+    main()
