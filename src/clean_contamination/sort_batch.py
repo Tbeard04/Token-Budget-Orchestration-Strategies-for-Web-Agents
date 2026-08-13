@@ -36,3 +36,32 @@ def sort_episodes(episodes: list[dict]) -> list[dict]:
     )
  
     return [ep for tid in ordered_tasks for ep in by_task[tid]]
+
+
+def find_late_arrivals(episodes: list[dict],
+                       gap_minutes: int = 30) -> list[tuple]:
+    """Episodes separated from their task's previous episode by a large gap.
+ 
+    These are the ones collected after a crash and re-run. Reported so you
+    can confirm the sort put them where you expect.
+    """
+    from datetime import datetime
+ 
+    by_task: dict[int, list[dict]] = defaultdict(list)
+    for ep in episodes:
+        by_task[ep.get("task_id")].append(ep)
+ 
+    late = []
+    for tid, eps in by_task.items():
+        eps = sorted(eps, key=lambda e: e.get("timestamp", ""))
+        for prev, cur in zip(eps, eps[1:]):
+            try:
+                t0 = datetime.fromisoformat(prev.get("timestamp", ""))
+                t1 = datetime.fromisoformat(cur.get("timestamp", ""))
+            except ValueError:
+                continue
+            gap = (t1 - t0).total_seconds() / 60
+            if gap > gap_minutes:
+                late.append((tid, cur.get("budget_level"),
+                             cur.get("timestamp"), gap))
+    return sorted(late, key=lambda x: -x[3])
