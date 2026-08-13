@@ -1,290 +1,38 @@
-"""
-annotate_tasks.py - derive a difficulty tier and category for each task.
-
-WebArena ships no difficulty labels. RQ2 in this study asks how the three
-strategies differ in sensitivity to task difficulty, so those labels must be
-derived here. Two properties make them defensible:
-
-1. Scored from the TASK TEXT ONLY, never from episode outcomes. If difficulty
-   were defined by "Strategy A failed", then "harder tasks have lower success"
-   would be true by construction and useless as a finding. The rubric is
-   applied before, and independently of, any results.
-
-2. Scored on four CONCRETE dimensions rather than a holistic judgement. This
-   makes the LLM far more consistent across tasks and the instrument far
-   easier to justify in the methodology.
-
-
-THE RUBRIC (each dimension scored 0-2, total 0-8)
-==================================================
-
-  PAGES TO TRAVERSE - how many distinct pages must be visited?
-    0  single page             everything needed is on the starting page
-    1  two or three pages      moderate navigation
-    2  four or more pages      unbounded search, or deep hierarchy
-
-  RETRIEVAL TYPE - what must be done with the information found?
-    0  read one value          a single stated fact
-    1  compare or filter       a small number of items
-    2  aggregate over a set    count, sum, or reason over many items
-
-  INTERACTION - what changes on the site?
-    0  read-only               nothing changes; pure information task
-    1  one form or click       a single state change
-    2  multi-step state change create, edit, delete, configure a resource
-
-  TARGET LOCATABILITY - how hard is the target to find?
-    0  named explicitly        e.g. "the Sprite Stasis Ball"
-    1  derivable from context  can be worked out from what is on the page
-    2  must be discovered      requires searching or scanning
-
-BAND TOTALS TO TIERS
-  0-2  Easy      simple, single-step lookups
-  3-5  Medium    moderate navigation or reasoning
-  6-8  Hard      multi-hop traversal plus aggregation or state change
-
-
-Validation (before relying on the output)
------------------------------------------
-  a) Hand-label roughly 50 tasks, then run the annotator over the same tasks and report Cohen's kappa.
-
-  b) After collection, check the tiers correlate with observed median tokens
-     and step counts. Correlation with COST (not success) is the honest test:
-     success is the thing being explained, so validating against it would be
-     circular.
-
-
-Run
----
-    # annotate exactly the tasks run_batch samples (same seed, same logic)
-    python annotate_tasks.py --n 67
-
-    # or a specific list, e.g. a hand-labelled gold set
-    python annotate_tasks.py --tasks 47 276 623 109
-"""
 from __future__ import annotations
-
+ 
 import argparse
 import json
 import random
-from collections import Counter
+import re
+import statistics
+from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Literal
-
+ 
 from pydantic import BaseModel, Field
+ 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import wa_env as W
 
-# Task categories - six buckets that cover the observed range of WebArena tasks on the three target sites.
-# ---------------------------------------------------------------------------
-TaskCategory = Literal[
-    "navigation",       # reach a target page or UI state
-    "single_query",     # retrieve a fact from one page
-    "multi_hop_query",  # retrieve a fact requiring traversal across pages
-    "form_fill",        # complete and submit a form
-    "crud_operation",   # create / update / delete a resource
-    "composite",        # two or more of the above in sequence
-]
-
-# Structured output - the model is constrained to return these four rubric
-# scores (0-2 each) plus derived labels. Storing the individual dimensions,
-# not just the final tier, means the bands can be adjusted later without
-# re-annotating: just re-band from the stored dimension scores.
-# ---------------------------------------------------------------------------
+#Rubric output
+#The LLM scores four dimensions and nothing else. Category comes from extract_task_intents.py, which is regex-based, self-tested and consistent.
+ 
 class TaskAnnotation(BaseModel):
-    pages_to_traverse: int = Field(
-        ge=0, le=2,
-        description="0 single page, 1 two-to-three pages, 2 four-plus or unbounded",
-    )
-    retrieval_type: int = Field(
-        ge=0, le=2,
+    pages_to_traverse: int = Field(ge=0, le=2,
+        description="0 single page, 1 two-to-three pages, 2 four-plus or unbounded")
+    retrieval_type: int = Field(ge=0, le=2,
         description="0 read one value, 1 compare or filter a few, "
-                    "2 aggregate or count over a set",
-    )
-    interaction: int = Field(
-        ge=0, le=2,
+                    "2 aggregate or count over a set")
+    interaction: int = Field(ge=0, le=2,
         description="0 read-only, 1 one form or click sequence, "
-                    "2 multi-step state change",
-    )
-    target_locatability: int = Field(
-        ge=0, le=2,
-        description="0 target named explicitly in the task, "
-                    "1 derivable from the page, 2 must be discovered by scanning",
-    )
-    task_category: TaskCategory
-    interaction_types: list[str] = Field(
-        description="UI interactions involved, e.g. ['search', 'click', 'form_fill']"
-    )
-    confidence: float = Field(
-        ge=0.0, le=1.0,
-        description="Honest confidence in this classification",
-    )
+                    "2 multi-step state change")
+    target_locatability: int = Field(ge=0, le=2,
+        description="0 target named explicitly, 1 derivable from the page, "
+                    "2 must be discovered by scanning")
+    confidence: float = Field(ge=0.0, le=1.0,
+        description="Honest confidence. Use below 0.7 when the task text is "
+                    "ambiguous about how much navigation it requires.")
     justification: str = Field(
-        description="One sentence explaining the scores"
-    )
+        description="One sentence explaining the scores")
 
-
-ANNOTATOR_INSTRUCTIONS = """\
-You classify WebArena web-agent tasks for a study of token budgets. You are
-given a task's natural-language intent, its evaluation criteria, and the site
-it runs on. Score it on four dimensions, each 0-2.
-
-PAGES TO TRAVERSE - how many distinct pages must be visited?
-  0 = everything needed is on the starting page
-  1 = two or three pages
-  2 = four or more, or an unbounded search across pages
-
-RETRIEVAL TYPE - what must be done with the information?
-  0 = read a single stated value
-  1 = compare or filter a small number of items
-  2 = aggregate, count, or reason over a set of items
-
-INTERACTION - what must be done to the site?
-  0 = read-only; nothing on the site changes
-  1 = one form submission or click sequence
-  2 = a multi-step state change (create, edit, delete, configure)
-
-TARGET LOCATABILITY - how hard is the target to find?
-  0 = named explicitly in the task, e.g. "the Sprite Stasis Ball"
-  1 = derivable from what is on the page
-  2 = must be discovered by scanning or searching
-
-Score from the task description alone. Do NOT guess how well an agent would
-perform - you are measuring the task's structural demands, not an agent's
-capability. Judge on the number of distinct interactions and the reasoning
-depth required, not on surface wording or sentence length.
-
-Also assign one task_category, list the UI interaction types involved, give
-an honest confidence between 0 and 1, and justify the scores in one sentence.
-"""
-
-def tier_of(total: int) -> str:
-    """Band a rubric total (0-8) into Easy/Medium/Hard.
-
-    Cut-points are 2 and 5. Adjust here if the initial distribution comes
-    out lopsided; because dimension scores are stored per task, re-banding
-    is a one-liner over the JSONL and does not need re-annotation.
-    """
-    if total <= 2:
-        return "Easy"
-    if total <= 5:
-        return "Medium"
-    return "Hard"
-
-annotator = W.make_agent(ANNOTATOR_INSTRUCTIONS, TaskAnnotation, label="annotator")
-
-
-
-def sample_tasks(n: int, sites: list[str], seed: int) -> list[int]:
-    pools = W.single_site_tasks(sites)
-    rng = random.Random(seed)
-    ids: list[int] = []
-    for site in sites:
-        pool = pools.get(site, [])
-        if pool:
-            ids.extend(rng.sample(pool, min(n, len(pool))))
-    return sorted(ids)
-
-def annotate(cfg: dict) -> dict:
-    """Run one task through the rubric, return a flat dict for JSONL."""
-    intent = cfg.get("intent", "")
-    eval_criteria = json.dumps(cfg.get("eval", {}))[:1200]
-    sites = cfg.get("sites", [])
-    site = sites[0] if sites else "unknown"
-
-    prompt = (f"SITE: {site}\n"
-              f"INTENT: {intent}\n"
-              f"EVALUATION CRITERIA: {eval_criteria}")
-
-    a = W.call_agent(annotator, prompt).output
-    total = (a.pages_to_traverse + a.retrieval_type
-             + a.interaction + a.target_locatability)
-
-    return {
-        "task_id": cfg.get("task_id"),
-        "site": site,
-        "intent": intent,
-        "pages_to_traverse": a.pages_to_traverse,
-        "retrieval_type": a.retrieval_type,
-        "interaction": a.interaction,
-        "target_locatability": a.target_locatability,
-        "rubric_total": total,
-        "difficulty_tier": tier_of(total),
-        "task_category": a.task_category,
-        "interaction_types": a.interaction_types,
-        "confidence": a.confidence,
-        "justification": a.justification,
-    }
-
-
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--tasks", nargs="*", type=int,
-                    help="explicit task ids; otherwise sample like run_batch")
-    ap.add_argument("--n", type=int, default=67, help="tasks per site")
-    ap.add_argument("--sites", nargs="+", default=W.SITES)
-    ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--review-threshold", type=float, default=0.7,
-                    help="rows below this confidence get flagged for hand review")
-    ap.add_argument("--out", default="../data/raw/tasks_annotated.jsonl")
-    args = ap.parse_args()
-
-    out_path = Path(args.out)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    task_ids = args.tasks or sample_tasks(args.n, args.sites, args.seed)
-    by_id = {c["task_id"]: c for c in W.load_configs() if "task_id" in c}
-
-    print(f"[annotate] tasks     : {len(task_ids)}")
-    print(f"[annotate] seed      : {args.seed}")
-    print(f"[annotate] output    : {out_path}\n")
-
-    rows: list[dict] = []
-    with out_path.open("w") as fh:
-        for i, tid in enumerate(task_ids, 1):
-            cfg = by_id.get(tid)
-            if cfg is None:
-                print(f"[annotate] {i}/{len(task_ids)} task {tid}: NOT FOUND")
-                continue
-            try:
-                row = annotate(cfg)
-            except Exception as e:
-                print(f"[annotate] {i}/{len(task_ids)} task {tid}: "
-                      f"{type(e).__name__}: {e}")
-                continue
-
-            row["needs_review"] = row["confidence"] < args.review_threshold
-            rows.append(row)
-            fh.write(json.dumps(row) + "\n")
-            fh.flush()
-
-            flag = "  <-- REVIEW" if row["needs_review"] else ""
-            print(f"[annotate] {i}/{len(task_ids)} task {tid:>4} "
-                  f"{row['site']:15s} {row['rubric_total']}/8 "
-                  f"{row['difficulty_tier']:6s} {row['task_category']}{flag}")
-
-    print(f"\n{'=' * 70}\nTIER DISTRIBUTION\n{'=' * 70}")
-    tiers = Counter(r["difficulty_tier"] for r in rows)
-    for t in ("Easy", "Medium", "Hard"):
-        n = tiers.get(t, 0)
-        print(f"   {t:8s} {n:4d}  ({n / max(len(rows), 1):.0%})")
-
-    print(f"\n{'=' * 70}\nTIER BY SITE\n{'=' * 70}")
-    for site in args.sites:
-        rs = [r for r in rows if r["site"] == site]
-        c = Counter(r["difficulty_tier"] for r in rs)
-        print(f"   {site:16s} E:{c.get('Easy',0):3d}  "
-              f"M:{c.get('Medium',0):3d}  H:{c.get('Hard',0):3d}")
-
-    print(f"\n{'=' * 70}\nCATEGORY DISTRIBUTION\n{'=' * 70}")
-    for cat, n in Counter(r["task_category"] for r in rows).most_common():
-        print(f"   {cat:18s} {n:4d}")
-
-    n_review = sum(1 for r in rows if r["needs_review"])
-    print(f"\n[annotate] wrote {len(rows)} rows to {out_path}")
-    print(f"[annotate] {n_review} flagged for manual review "
-          f"(confidence < {args.review_threshold})")
-
-
-if __name__ == "__main__":
-    main()
