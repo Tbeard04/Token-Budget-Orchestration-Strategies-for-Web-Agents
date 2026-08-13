@@ -66,8 +66,6 @@ of navigation genuinely ambiguous.
 """
 
 def tier_of(total: int) -> str:
-    """Band a rubric total (0-8). Dimension scores are stored separately so
-    the bands can be changed later with --reband, no re-annotation needed."""
     if total <= 2:
         return "Easy"
     if total <= 5:
@@ -78,3 +76,19 @@ def tier_of(total: int) -> str:
 annotator = W.make_agent(ANNOTATOR_INSTRUCTIONS, TaskAnnotation, label="annotator")
  
 DIMENSIONS = ["pages_to_traverse", "retrieval_type", "interaction", "target_locatability"]
+
+
+#Template normalisation
+ 
+def normalise_template(intent: str) -> str:
+    t = intent
+    t = re.sub(r'"[^"]*"', "X", t)
+    t = re.sub(r"'[^']*'", "X", t)
+    t = re.sub(r"\b[A-Z][a-z]+_[A-Z][a-z]+\d*\b", "USER", t)
+    t = re.sub(r"\b[a-zA-Z]+\d+\b", "USER", t)
+    t = re.sub(r"\$?\d[\d,.]*\b", "N", t)
+    t = re.sub(r"\bsubreddit \w+", "subreddit X", t)
+    t = re.sub(r"\bforum \w+", "forum X", t)
+    t = re.sub(r"\br/\w+", "r/X", t)
+    return re.sub(r"\s+", " ", t).strip().lower()
+
