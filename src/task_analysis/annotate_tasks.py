@@ -137,3 +137,15 @@ def load_observed_cost(episodes_path: str | None) -> dict:
         }
     return observed
 
+def format_observed(obs) -> str:
+    if not obs:
+        return ""
+    return (
+        f"\n Observed cost (a baseline single agent, across budget levels):\n"
+        f"median steps taken: {obs['median_steps']:.0f}\n"
+        f"maximum steps taken: {obs['max_steps']}\n"
+        f"distinct pages visited: {obs['distinct_urls']}\n"
+        f"median tokens: {obs['median_tokens']:.0f}\n"
+        f"Use this to calibrate PAGES TO TRAVERSE only. The agent may have wandered, so distinct pages is an upper bound."
+    )
+
