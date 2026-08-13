@@ -364,3 +364,99 @@ def do_gold_set(n: int, out: str, seed: int) -> None:
  
     print(f"Wrote {len(chosen)} tasks to {out_path}")
 
+
+# Main
+ 
+def _sample(n: int, sites: list, seed: int) -> list:
+    pools = W.single_site_tasks(sites)
+    rng = random.Random(seed)
+    ids = []
+    for site in sites:
+        pool = pools.get(site, [])
+        if pool:
+            ids.extend(rng.sample(pool, min(n, len(pool))))
+    return sorted(ids)
+ 
+ 
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tasks", nargs="*", type=int)
+    ap.add_argument("--n", type=int, default=999, help="tasks per site")
+    ap.add_argument("--sites", nargs="+", default=W.SITES)
+    ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--intents", default=None, help="task_intents.json from extract_task_intents.py")
+    ap.add_argument("--episodes", default=None, help="e.g. ../data/raw/strategy_a.jsonl")
+    ap.add_argument("--review-threshold", type=float, default=0.75)
+    ap.add_argument("--no-harmonise", action="store_true", help="skip template harmonisation (not recommended)")
+    ap.add_argument("--out", default="../data/tasks/task_metadata.jsonl")
+    ap.add_argument("--reband", default=None, help="re-derive tiers in an existing file and exit")
+    ap.add_argument("--gold-set", type=int, default=None, help="write N tasks for hand-labelling and exit")
+    args = ap.parse_args()
+ 
+    if args.reband:
+        do_reband(args.reband)
+        return
+    if args.gold_set:
+        do_gold_set(args.gold_set, args.out, args.seed)
+        return
+ 
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+ 
+    #Categories from extract_task_intents.py
+    categories = {}
+    if args.intents and Path(args.intents).exists():
+        data = json.load(open(args.intents))
+        for site_data in data.get("sites", {}).values():
+            for cat, info in site_data.get("categories", {}).items():
+                for t in info.get("tasks", []):
+                    categories[t["task_id"]] = cat
+        print(f"[annotate] categories loaded for {len(categories)} tasks")
+ 
+    observed = load_observed_cost(args.episodes)
+    if observed:
+        print(f"[annotate] observed cost loaded for {len(observed)} tasks from {args.episodes}")
+ 
+    task_ids = args.tasks or _sample(args.n, args.sites, args.seed)
+    by_id = {c["task_id"]: c for c in W.load_configs() if "task_id" in c}
+ 
+    print(f"[annotate] tasks: {len(task_ids)}")
+    print(f"[annotate] output: {out_path}\n")
+ 
+    rows = []
+    for i, tid in enumerate(task_ids, 1):
+        cfg = by_id.get(tid)
+        if cfg is None:
+            print(f"[annotate] {i}/{len(task_ids)} task {tid}: NOT FOUND")
+            continue
+        try:
+            row = annotate(cfg, categories.get(tid, "unknown"),
+                           observed.get(tid))
+        except Exception as e:
+            print(f"[annotate] {i}/{len(task_ids)} task {tid}: "
+                  f"{type(e).__name__}: {e}")
+            continue
+ 
+        rows.append(row)
+        obs_mark = "*" if row.get("observed") else " "
+        print(f"[annotate] {i}/{len(task_ids)} task {tid:>4} "
+              f"{row['site']:15s} {row['rubric_total']}/8 "
+              f"{row['difficulty_tier']:6s} {obs_mark} {row['task_category']}")
+ 
+    #Post-process
+    if not args.no_harmonise:
+        adjusted = harmonise_templates(rows)
+        print(f"\n[annotate] harmonised {adjusted} rows to their template median")
+ 
+    flag_for_review(rows, args.review_threshold)
+ 
+    with out_path.open("w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+ 
+    report(rows, args.sites, args.review_threshold)
+    print(f"\n[annotate] wrote {len(rows)} rows to {out_path}")
+ 
+ 
+if __name__ == "__main__":
+    main()
