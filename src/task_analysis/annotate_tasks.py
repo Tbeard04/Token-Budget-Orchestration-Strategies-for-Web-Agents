@@ -92,3 +92,48 @@ def normalise_template(intent: str) -> str:
     t = re.sub(r"\br/\w+", "r/X", t)
     return re.sub(r"\s+", " ", t).strip().lower()
 
+
+
+#Observed cost from a collection file
+ 
+def load_observed_cost(episodes_path: str | None) -> dict:
+    if not episodes_path or not Path(episodes_path).exists():
+        return {}
+ 
+    by_task = defaultdict(list)
+    with open(episodes_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                ep = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if "error" in ep:
+                continue
+            by_task[ep.get("task_id")].append(ep)
+ 
+    observed = {}
+    for tid, eps in by_task.items():
+        acting = [e for e in eps if e.get("steps", 0) > 0]
+        if not acting:
+            continue
+ 
+        urls = set()
+        for e in acting:
+            for s in e.get("step_log") or []:
+                if s.get("url"):
+                    urls.add(s["url"])
+                if s.get("next_url"):
+                    urls.add(s["next_url"])
+ 
+        observed[tid] = {
+            "median_steps": statistics.median(e["steps"] for e in acting),
+            "max_steps": max(e["steps"] for e in acting),
+            "median_tokens": statistics.median(e["total_tokens"] for e in acting),
+            "distinct_urls": len(urls),
+            "episodes": len(acting),
+        }
+    return observed
+
