@@ -239,3 +239,74 @@ def flag_for_review(rows: list, threshold: float) -> None:
         r["needs_review"] = bool(reasons)
         r["review_reasons"] = reasons
 
+
+#Reporting
+ 
+def report(rows: list, sites: list, threshold: float) -> None:
+    n = len(rows)
+    if not n:
+        print("No rows annotated.")
+        return
+ 
+    print(f"\n{'=' * 70}\nTier distribution\n{'=' * 70}")
+    tiers = Counter(r["difficulty_tier"] for r in rows)
+    for t in ("Easy", "Medium", "Hard"):
+        c = tiers.get(t, 0)
+        bar = "#" * int(40 * c / n)
+        print(f"{t:8s} {c:4d}  ({c/n:>4.0%})  {bar}")
+
+ 
+    print(f"\n{'=' * 70}\nTier by site\n{'=' * 70}")
+    for site in sites:
+        rs = [r for r in rows if r["site"] == site]
+        if not rs:
+            continue
+        c = Counter(r["difficulty_tier"] for r in rs)
+        print(f"   {site:16s} E:{c.get('Easy',0):>3}  "
+              f"M:{c.get('Medium',0):>3}  H:{c.get('Hard',0):>3}   "
+              f"(n={len(rs)})")
+ 
+    print(f"\n{'=' * 70}\nCategory distribution\n{'=' * 70}")
+    for cat, c in Counter(r["task_category"] for r in rows).most_common():
+        print(f"   {cat:25s} {c:>4}")
+ 
+    print(f"\n{'=' * 70}\nDimension scores\n{'=' * 70}")
+    for d in DIMENSIONS:
+        dist = Counter(r[d] for r in rows)
+        print(f"   {d:22s} 0:{dist.get(0,0):>4}  1:{dist.get(1,0):>4}  "
+              f"2:{dist.get(2,0):>4}")
+ 
+    # Observed-cost correlation - the honest validity check
+    with_obs = [r for r in rows if r.get("observed")]
+    if len(with_obs) >= 10:
+        print(f"\n{'=' * 70}\nTier vs Observed cost (validity check)\n{'=' * 70}")
+        for t in ("Easy", "Medium", "Hard"):
+            sub = [r for r in with_obs if r["difficulty_tier"] == t]
+            if not sub:
+                continue
+            print(f"   {t:8s} n={len(sub):>3}  "
+                  f"median steps {statistics.median(r['observed']['median_steps'] for r in sub):>5.1f}  "
+                  f"median tokens {statistics.median(r['observed']['median_tokens'] for r in sub):>8.0f}  "
+                  f"median pages {statistics.median(r['observed']['distinct_urls'] for r in sub):>4.1f}")
+ 
+    n_review = sum(1 for r in rows if r.get("needs_review"))
+    n_adjusted = sum(1 for r in rows if r.get("template_adjusted"))
+    print(f"\n{'=' * 70}\nReview queue\n{'=' * 70}")
+    print(f"harmonised to template median: {n_adjusted}")
+    print(f"flagged for review: {n_review}  "
+          f"({n_review/n:.0%})")
+    if n_review:
+        print(f"\nReasons:")
+        all_reasons = Counter()
+        for r in rows:
+            for reason in r.get("review_reasons", []):
+                key = reason.split("(")[0].strip()
+                all_reasons[key] += 1
+        for reason, c in all_reasons.most_common():
+            print(f" {reason:45s} {c:>4}")
+        print(f"\n First 15 flagged tasks:")
+        for r in [x for x in rows if x.get("needs_review")][:15]:
+            print(f"{r['task_id']:>4} {r['difficulty_tier']:6s} "
+                  f"{r['intent'][:44]}")
+            print(f"{'; '.join(r['review_reasons'])[:66]}")
+
