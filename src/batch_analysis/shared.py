@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-# ── Styling ─────────────────────────────────────────────────────────────
+#Styling
 plt.rcParams.update({
     "figure.figsize": (10, 6),
     "axes.spines.top": False,
@@ -23,13 +23,9 @@ COLOURS = {
 }
 
 # Terminations caused by running out of budget rather than by agent behaviour
-BUDGET_TERMINATIONS = {
-    "safety_token_cap", "budget_would_exceed", "budget_exhausted_mid_step",
-}
-# Terminations caused by the agent getting stuck - these are Stop examples
-STUCK_TERMINATIONS = {
-    "navigation_cycle", "repeated_action_failure",
-}
+BUDGET_TERMINATIONS = {"safety_token_cap", "budget_would_exceed", "budget_exhausted_mid_step",}
+#terminations caused by the agent getting stuck -- these are Stop examples
+STUCK_TERMINATIONS = {"navigation_cycle", "repeated_action_failure",}
 
 
 def print_section(title: str) -> None:
@@ -39,7 +35,6 @@ def print_section(title: str) -> None:
 # Loading
 
 def load(path: str) -> pd.DataFrame:
-    """Load a JSONL results file, dropping error-only rows."""
     rows = []
     with open(path) as f:
         for line in f:
@@ -57,12 +52,10 @@ def load(path: str) -> pd.DataFrame:
 
 
 def join_tiers(df: pd.DataFrame, tiers_path: str) -> pd.DataFrame:
-    """Left-join difficulty tiers and task categories onto episode data."""
     if not tiers_path or not Path(tiers_path).exists():
         return df
     tiers = pd.read_json(tiers_path, lines=True)
-    cols = [c for c in ["task_id", "difficulty_tier", "task_category",
-                        "rubric_total"] if c in tiers.columns]
+    cols = [c for c in ["task_id", "difficulty_tier", "task_category", "rubric_total"] if c in tiers.columns]
     df = df.merge(tiers[cols], on="task_id", how="left")
     matched = df["difficulty_tier"].notna().sum()
     print(f"Joined difficulty tiers: {matched}/{len(df)} episodes matched")
@@ -72,12 +65,6 @@ def join_tiers(df: pd.DataFrame, tiers_path: str) -> pd.DataFrame:
 # Shared tables
 
 def success_by_budget(df: pd.DataFrame) -> pd.DataFrame:
-    """The cost curve: success rate at each budget level.
-
-    Reports both episode-level SR and distinct-task-level solvability.
-    The pooled 'overall' rate is deliberately NOT shown as it conflates
-    budget levels that are different experimental conditions.
-    """
     print_section("Success Rate by Budget Level (Cost Curve)")
 
     rows = []
@@ -103,9 +90,6 @@ def success_by_budget(df: pd.DataFrame) -> pd.DataFrame:
     total_tasks = df["task_id"].nunique()
     print(f"\n   Distinct tasks solved at ANY budget: {any_success}/{total_tasks}"
           f" ({any_success/total_tasks:.0%})")
-    print("   NOTE: per-budget episode_SR is the valid metric for RQ1.")
-    print("   Do NOT pool across budget levels into a single headline figure.")
-
     return tbl
 
 
@@ -131,7 +115,6 @@ def success_by_site(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def task_solvability(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
-    """Which tasks are solvable, and at which minimum budget?"""
     print_section("Task Solvability")
 
     solved = df[df["success"] == True].groupby("task_id").agg(
@@ -152,13 +135,13 @@ def task_solvability(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
         else:
             # Summarise by minimum budget rather than listing every task
             by_min = solved.groupby("min_budget").size()
-            print("   Tasks first solved at each budget level:")
+            print(" Tasks first solved at each budget level:")
             for budget, n in by_min.items():
                 print(f"     {budget:>6}: {n:>3} tasks")
-        print(f"\n   Minimum budget needed (median of solved tasks): "
+        print(f"\n Minimum budget needed (median of solved tasks): "
               f"{solved['min_budget'].median():.0f}")
     else:
-        print("   No tasks solved at any budget level.")
+        print(" No tasks solved at any budget level.")
 
     return solved
 
@@ -172,53 +155,49 @@ def termination_reasons(df: pd.DataFrame) -> pd.Series:
 
     budget_driven = df["termination_reason"].isin(BUDGET_TERMINATIONS).sum()
     stuck = df["termination_reason"].isin(STUCK_TERMINATIONS).sum()
-    print(f"\n   budget-driven total: {budget_driven:5d}  ({budget_driven/total:.0%})")
-    print(f"   stuck (guard-fired): {stuck:5d}  ({stuck/total:.0%})")
+    print(f"\n budget-driven total: {budget_driven:5d}  ({budget_driven/total:.0%})")
+    print(f"stuck (guard-fired): {stuck:5d}  ({stuck/total:.0%})")
     return counts
 
 
 def token_distribution(df: pd.DataFrame) -> None:
     print_section("Token Distribution")
     toks = df["total_tokens"].dropna()
-    print(f"episodes           : {len(toks)}")
-    print(f"min                : {toks.min():.0f}")
-    print(f"25th percentile    : {toks.quantile(0.25):.0f}")
-    print(f"median             : {toks.median():.0f}")
-    print(f"75th percentile    : {toks.quantile(0.75):.0f}")
-    print(f"max                : {toks.max():.0f}")
+    print(f"episodes: {len(toks)}")
+    print(f"min: {toks.min():.0f}")
+    print(f"25th percentile: {toks.quantile(0.25):.0f}")
+    print(f"median: {toks.median():.0f}")
+    print(f"75th percentile: {toks.quantile(0.75):.0f}")
+    print(f"max: {toks.max():.0f}")
     succ = df.loc[df["success"] == True, "total_tokens"]
     if len(succ):
-        print(f"   median of successes: {succ.median():.0f}  (n={len(succ)})")
+        print(f" median of successes: {succ.median():.0f}  (n={len(succ)})")
 
 
 def per_step_cost(df: pd.DataFrame) -> None:
     print_section("Per-step Token Cost")
     df_valid = df[df["steps"] > 0].copy()
     if df_valid.empty:
-        print("   no episodes with steps > 0")
+        print("no episodes with steps > 0")
         return
     df_valid["tok_per_step"] = df_valid["total_tokens"] / df_valid["steps"]
     by_site = df_valid.groupby("site")["tok_per_step"].agg(["median", "mean", "std"])
     print(by_site.to_string())
     overall = df_valid["tok_per_step"]
-    print(f"\n   overall median: {overall.median():.0f}  "
+    print(f"\n overall median: {overall.median():.0f}  "
           f"mean: {overall.mean():.0f}  std: {overall.std():.0f}")
 
 
 def difficulty_breakdown(df: pd.DataFrame) -> None:
-    """Only runs if tier data has been joined."""
     if "difficulty_tier" not in df.columns:
         return
     print_section("Success Rate by Difficulty Tier (RQ2)")
     tier_order = ["Easy", "Medium", "Hard"]
     df = df.copy()
-    df["difficulty_tier"] = pd.Categorical(
-        df["difficulty_tier"], categories=tier_order, ordered=True
-    )
+    df["difficulty_tier"] = pd.Categorical(df["difficulty_tier"], categories=tier_order, ordered=True)
 
     rows = []
-    for (tier, budget), grp in df.groupby(["difficulty_tier", "budget_level"],
-                                           observed=True):
+    for (tier, budget), grp in df.groupby(["difficulty_tier", "budget_level"],observed=True):
         distinct_solved = grp.loc[grp["success"] == True, "task_id"].nunique()
         distinct_total = grp["task_id"].nunique()
         rows.append({
@@ -233,14 +212,13 @@ def difficulty_breakdown(df: pd.DataFrame) -> None:
     tbl = pd.DataFrame(rows).set_index(["tier", "budget"])
     print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
 
-# ── Shared plots ────────────────────────────────────────────────────────
+#Shared plots
 
 def _strategy_of(df: pd.DataFrame) -> str:
     return df["strategy"].iloc[0] if "strategy" in df.columns else "?"
 
 
 def plot_cost_curve(df: pd.DataFrame, out_dir: Path) -> None:
-    """Success rate vs budget level, episode-level and task-level."""
     strategy = _strategy_of(df)
     colour = COLOURS.get(strategy, "#333")
 
@@ -256,10 +234,8 @@ def plot_cost_curve(df: pd.DataFrame, out_dir: Path) -> None:
     tbl = pd.DataFrame(rows)
 
     fig, ax = plt.subplots()
-    ax.plot(tbl["budget"], tbl["episode_SR"], "o-", color=colour,
-            linewidth=2, markersize=8, label="Episode SR")
-    ax.plot(tbl["budget"], tbl["task_SR"], "s--", color=colour,
-            linewidth=1.5, markersize=7, alpha=0.6, label="Task SR (distinct)")
+    ax.plot(tbl["budget"], tbl["episode_SR"], "o-", color=colour, linewidth=2, markersize=8, label="Episode SR")
+    ax.plot(tbl["budget"], tbl["task_SR"], "s--", color=colour, linewidth=1.5, markersize=7, alpha=0.6, label="Task SR (distinct)")
     ax.set_xlabel("Token Budget")
     ax.set_ylabel("Success Rate")
     ax.set_title(f"Strategy {strategy}: Success Rate vs Token Budget")
@@ -271,7 +247,7 @@ def plot_cost_curve(df: pd.DataFrame, out_dir: Path) -> None:
     fig.tight_layout()
     path = out_dir / f"cost_curve_{strategy.lower()}.png"
     fig.savefig(path, dpi=150)
-    print(f"   saved: {path}")
+    print(f"saved: {path}")
     plt.close()
 
 
@@ -297,7 +273,7 @@ def plot_termination_reasons(df: pd.DataFrame, out_dir: Path) -> None:
     fig.tight_layout()
     path = out_dir / f"termination_reasons_{strategy.lower()}.png"
     fig.savefig(path, dpi=150)
-    print(f"   saved: {path}")
+    print(f"saved: {path}")
     plt.close()
 
 
@@ -307,8 +283,7 @@ def plot_tokens_by_budget(df: pd.DataFrame, out_dir: Path) -> None:
     data = [df.loc[df["budget_level"] == b, "total_tokens"].values for b in budgets]
 
     fig, ax = plt.subplots()
-    bp = ax.boxplot(data, tick_labels=[f"{b//1000}k" for b in budgets],
-                    patch_artist=True)
+    bp = ax.boxplot(data, tick_labels=[f"{b//1000}k" for b in budgets], patch_artist=True)
     colour = COLOURS.get(strategy, "#333")
     for patch in bp["boxes"]:
         patch.set_facecolor(colour)
@@ -320,15 +295,13 @@ def plot_tokens_by_budget(df: pd.DataFrame, out_dir: Path) -> None:
     fig.tight_layout()
     path = out_dir / f"token_boxplot_{strategy.lower()}.png"
     fig.savefig(path, dpi=150)
-    print(f"   saved: {path}")
+    print(f" saved: {path}")
     plt.close()
 
 
 def plot_success_by_site(df: pd.DataFrame, out_dir: Path) -> None:
     strategy = _strategy_of(df)
-    pivot = df.pivot_table(
-        values="success", index="budget_level", columns="site", aggfunc="mean"
-    )
+    pivot = df.pivot_table(values="success", index="budget_level", columns="site", aggfunc="mean")
     fig, ax = plt.subplots()
     pivot.plot(kind="bar", ax=ax, width=0.7)
     ax.set_xlabel("Token Budget")
@@ -340,7 +313,7 @@ def plot_success_by_site(df: pd.DataFrame, out_dir: Path) -> None:
     fig.tight_layout()
     path = out_dir / f"success_by_site_{strategy.lower()}.png"
     fig.savefig(path, dpi=150)
-    print(f"   saved: {path}")
+    print(f"saved: {path}")
     plt.close()
 
 
@@ -373,7 +346,7 @@ def plot_difficulty_curve(df: pd.DataFrame, out_dir: Path) -> None:
     fig.tight_layout()
     path = out_dir / f"difficulty_curve_{strategy.lower()}.png"
     fig.savefig(path, dpi=150)
-    print(f"   saved: {path}")
+    print(f"saved: {path}")
     plt.close()
 
 

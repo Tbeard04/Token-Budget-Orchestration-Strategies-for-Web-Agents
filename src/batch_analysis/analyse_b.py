@@ -181,7 +181,7 @@ def rubber_stamp_cost(df: pd.DataFrame) -> None:
     print_section("Rubber-Stamp Cost (Strategy C savings ceiling)")
 
     if "tokens_by_role" not in df.columns:
-        print("   tokens_by_role not present.")
+        print("tokens_by_role not present.")
         return
 
     total_calls = 0
@@ -199,13 +199,13 @@ def rubber_stamp_cost(df: pd.DataFrame) -> None:
 
     episode_tokens = df["total_tokens"].sum()
 
-    print(f" total critic calls        : {total_calls}")
-    print(f" approval-only calls       : {approval_calls} "
+    print(f" total critic calls: {total_calls}")
+    print(f" approval-only calls: {approval_calls} "
           f"({approval_calls/max(total_calls,1):.0%})")
-    print(f"\n all critic tokens         : {critic_tokens_total:,}")
-    print(f" tokens on approvals only  : {approval_tokens:,}")
-    print(f" total episode tokens      : {episode_tokens:,}")
-    print(f"\n critic share of all spend : "
+    print(f"\n all critic tokens: {critic_tokens_total:,}")
+    print(f" tokens on approvals only: {approval_tokens:,}")
+    print(f" total episode tokens: {episode_tokens:,}")
+    print(f"\n critic share of all spend: "
           f"{critic_tokens_total/max(episode_tokens,1):.1%}")
     print(f" RECOVERABLE by perfect routing: "
           f"{approval_tokens/max(episode_tokens,1):.1%} of all tokens")
@@ -215,7 +215,7 @@ def per_role_cost(df: pd.DataFrame) -> None:
     print_section("Per-Role Token Cost")
 
     if "tokens_by_role" not in df.columns:
-        print(" tokens_by_role not present.")
+        print("tokens_by_role not present.")
         return
 
     totals = {"planner": 0, "executor": 0, "critic": 0}
@@ -253,8 +253,8 @@ def planner_value_analysis(df: pd.DataFrame) -> None:
     no_rev_succ = no_rev[no_rev["success"] == True]
     with_rev_succ = with_rev[with_rev["success"] == True]
 
-    print(f" successes with NO critic revision : {len(no_rev_succ)}")
-    print(f" successes WITH critic revision    : {len(with_rev_succ)}")
+    print(f"successes with NO critic revision : {len(no_rev_succ)}")
+    print(f"successes WITH critic revision: {len(with_rev_succ)}")
 
     if len(no_rev_succ) + len(with_rev_succ):
         share = len(no_rev_succ) / (len(no_rev_succ) + len(with_rev_succ))
@@ -298,7 +298,7 @@ def plot_critic_revision_rate(df: pd.DataFrame, out_dir: Path) -> None:
     fig.tight_layout()
     path = out_dir / "critic_analysis_b.png"
     fig.savefig(path, dpi=150)
-    print(f" saved: {path}")
+    print(f"saved: {path}")
     plt.close()
 
 
@@ -346,8 +346,7 @@ def main() -> None:
     ap.add_argument("--tiers", default=None, help="task_metadata.jsonl")
     ap.add_argument("--out", default="../data/processed/strategy_b")
     ap.add_argument("--verbose-tasks", action="store_true")
-    ap.add_argument("--list-revisions", action="store_true",
-                    help="print every Critic revision, not just the first 20")
+    ap.add_argument("--list-revisions", action="store_true", help="print every Critic revision, not just the first 20")
     args = ap.parse_args()
 
     df = load(args.file)

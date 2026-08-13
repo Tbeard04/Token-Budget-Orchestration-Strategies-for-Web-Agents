@@ -107,14 +107,13 @@ def task_level_comparison(a: pd.DataFrame, b: pd.DataFrame) -> None:
     b_only = b_solved - a_solved
     neither = all_tasks - a_solved - b_solved
  
-    print(f"solved by both   : {len(both)}")
-    print(f"solved by A only : {len(a_only)}")
-    print(f"solved by B only : {len(b_only)}")
+    print(f"solved by both: {len(both)}")
+    print(f"solved by A only: {len(a_only)}")
+    print(f"solved by B only: {len(b_only)}")
     print(f"solved by neither: {len(neither)}")
  
     if b_only:
-        print(f"\n   Tasks B solved that A could not "
-              f"(the pipeline's capability advantage):")
+        print(f"\nTasks B solved that A could not: ")
         with_rev = 0
         for tid in sorted(b_only):
             eps = b[(b["task_id"] == tid) & (b["success"] == True)]
@@ -124,7 +123,7 @@ def task_level_comparison(a: pd.DataFrame, b: pd.DataFrame) -> None:
             revs = int(ep.get("critic_revisions", 0))
             if revs:
                 with_rev += 1
-            # What did A do on this task at its best budget?
+            # What did A do on this task at its best budget
             a_eps = a[a["task_id"] == tid]
             a_reason = "not run"
             if len(a_eps):
@@ -144,7 +143,6 @@ def task_level_comparison(a: pd.DataFrame, b: pd.DataFrame) -> None:
 
 
 def failure_mode_shift(a: pd.DataFrame, b: pd.DataFrame) -> None:
-    """Does the pipeline change HOW episodes fail, not just how often?"""
     print_section("A vs B: Failure Mode Shift")
  
     def profile(df, label):
@@ -155,10 +153,10 @@ def failure_mode_shift(a: pd.DataFrame, b: pd.DataFrame) -> None:
         stuck = fails["termination_reason"].isin(STUCK_TERMINATIONS).sum()
         wrong = (fails["termination_reason"] == "env_terminated").sum()
         n = len(fails)
-        print(f"   {label}: {n} failures")
-        print(f"     budget exhausted : {budget:>5}  ({budget/n:.0%})")
-        print(f"     stuck (guards)   : {stuck:>5}  ({stuck/n:.0%})")
-        print(f"     wrong answer     : {wrong:>5}  ({wrong/n:.0%})")
+        print(f" {label}: {n} failures")
+        print(f" budget exhausted: {budget:>5}  ({budget/n:.0%})")
+        print(f" stuck (guards): {stuck:>5}  ({stuck/n:.0%})")
+        print(f"wrong answer: {wrong:>5}  ({wrong/n:.0%})")
  
     profile(a, "Strategy A")
     print()
