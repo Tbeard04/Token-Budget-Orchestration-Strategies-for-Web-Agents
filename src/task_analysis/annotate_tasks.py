@@ -276,7 +276,7 @@ def report(rows: list, sites: list, threshold: float) -> None:
         print(f"   {d:22s} 0:{dist.get(0,0):>4}  1:{dist.get(1,0):>4}  "
               f"2:{dist.get(2,0):>4}")
  
-    # Observed-cost correlation - the honest validity check
+    # Observed-cost correlation
     with_obs = [r for r in rows if r.get("observed")]
     if len(with_obs) >= 10:
         print(f"\n{'=' * 70}\nTier vs Observed cost (validity check)\n{'=' * 70}")
@@ -309,4 +309,58 @@ def report(rows: list, sites: list, threshold: float) -> None:
             print(f"{r['task_id']:>4} {r['difficulty_tier']:6s} "
                   f"{r['intent'][:44]}")
             print(f"{'; '.join(r['review_reasons'])[:66]}")
+
+
+
+#Modes
+ 
+def do_reband(path: str) -> None:
+    rows = [json.loads(l) for l in open(path) if l.strip()]
+    changed = 0
+    for r in rows:
+        r["rubric_total"] = sum(r[d] for d in DIMENSIONS)
+        new_tier = tier_of(r["rubric_total"])
+        if new_tier != r.get("difficulty_tier"):
+            changed += 1
+        r["difficulty_tier"] = new_tier
+    with open(path, "w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+    print(f"Re-banded {len(rows)} tasks, {changed} tiers changed")
+    tiers = Counter(r["difficulty_tier"] for r in rows)
+    for t in ("Easy", "Medium", "Hard"):
+        c = tiers.get(t, 0)
+        print(f"{t:8s} {c:>4}  ({c/len(rows):.0%})")
+ 
+ 
+def do_gold_set(n: int, out: str, seed: int) -> None:
+    configs = W.load_configs()
+    pools = W.single_site_tasks()
+    rng = random.Random(seed)
+ 
+    per_site = max(1, n // len(pools))
+    chosen = []
+    for site, ids in pools.items():
+        chosen.extend(rng.sample(ids, min(per_site, len(ids))))
+ 
+    by_id = {c["task_id"]: c for c in configs if "task_id" in c}
+    out_path = Path(out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+ 
+    with out_path.open("w") as f:
+        for tid in sorted(chosen):
+            cfg = by_id.get(tid)
+            if not cfg:
+                continue
+            f.write(json.dumps({
+                "task_id": tid,
+                "site": cfg["sites"][0],
+                "intent": cfg.get("intent", ""),
+                "pages_to_traverse": None,
+                "retrieval_type": None,
+                "interaction": None,
+                "target_locatability": None,
+            }) + "\n")
+ 
+    print(f"Wrote {len(chosen)} tasks to {out_path}")
 
