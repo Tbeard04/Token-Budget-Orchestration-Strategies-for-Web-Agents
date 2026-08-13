@@ -1,17 +1,7 @@
 """
 strategy_a.py - Strategy A: single-agent baseline.
 
-One LLM call per step. Establishes the cost-performance floor against which
-Strategies B and C are measured.
-
-This is a token-minimised adaptation of WebArena's chain-of-thought baseline
-agent: few-shot exemplars are omitted and reasoning length is constrained,
-because a two-shot CoT prompt costs 1-2k tokens per call and is therefore
-unaffordable under the lower budget conditions this study examines.
-
-Run:
-    python strategy_a.py 276              # one task at the default budget
-    python strategy_a.py --budget 8000 47 276
+One LLM call per step. Establishes the cost-performance floor against which Strategies B and C are measured.
 """
 from __future__ import annotations
 
@@ -103,7 +93,6 @@ agent = W.make_agent(INSTRUCTIONS, AgentAction, label="strategy_a")
 
 # ----------------------------------------------------------------------------
 def run_episode(task_id: int, budget: int | None = None) -> dict:
-    """Run one Strategy A episode under a hard token budget."""
     cap = budget if budget is not None else DEFAULT_BUDGET
     site = W.site_of(task_id)
     print(f"\n{'=' * 60}\nTASK {task_id}  (site: {site})  [A, budget {cap}]\n{'=' * 60}")
@@ -153,13 +142,13 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         pair_n = url_action_counts[pair]
 
         print(f"\n step {i}")
-        print(f"   reason : {decided.reasoning}")
-        print(f"   action : {decided.action}")
-        print(f"   url    : {obs.get('url', '')[:90]}")
-        print(f"   tokens : +{u.input_tokens} in / +{u.output_tokens} out"
-              f"   (cumulative {total})")
+        print(f"reason: {decided.reasoning}")
+        print(f"action: {decided.action}")
+        print(f"url: {obs.get('url', '')[:90]}")
+        print(f"tokens: +{u.input_tokens} in / +{u.output_tokens} out"
+              f"(cumulative {total})")
         if getattr(u, "details", None):
-            print(f"   detail : {u.details}")
+            print(f"detail: {u.details}")
 
         steps.append({
             "step": i,
@@ -187,8 +176,8 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         steps[-1]["step_reward"] = reward
         steps[-1]["next_url"] = obs.get("url", "")
 
-        print(f"   result : reward={reward}"
-              f"{'  ERROR: ' + str(err) if err else '  (action accepted)'}")
+        print(f"result: reward={reward}"
+              f"{'ERROR: ' + str(err) if err else '  (action accepted)'}")
 
         if reward >= 1.0:
             success, reason = True, "success"
@@ -203,11 +192,11 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         # on a single URL for many steps.
         if consecutive_errors >= W.MAX_CONSECUTIVE_ERRORS:
             reason = "repeated_action_failure"
-            print(f"   STALL  : {consecutive_errors} consecutive failed actions")
+            print(f"STALL: {consecutive_errors} consecutive failed actions")
             break
         if pair_n >= W.MAX_SAME_ACTION_FROM_PAGE:
             reason = "navigation_cycle"
-            print(f"   CYCLE  : same action from same page {pair_n}x")
+            print(f"CYCLE: same action from same page {pair_n}x")
             break
 
     env.close()
@@ -232,18 +221,15 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
     }
 
     print(f"\n --- A / {site} / task {task_id} ---")
-    for k in ("success", "termination_reason", "steps",
-              "input_tokens", "output_tokens", "total_tokens",
-              "wall_clock_seconds"):
-        print(f"   {k:20s}: {record[k]}")
+    for k in ("success", "termination_reason", "steps", "input_tokens", "output_tokens", "total_tokens", "wall_clock_seconds"):
+        print(f" {k:20s}: {record[k]}")
     return record
 
 
-# ----------------------------------------------------------------------------
+#main
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("tasks", nargs="*", type=int,
-                    help="task ids; default is one per site")
+    ap.add_argument("tasks", nargs="*", type=int, help="task ids; default is one per site")
     ap.add_argument("--budget", type=int, default=None)
     ap.add_argument("--out", default="../data/raw/strategy_a_results.jsonl")
     args = ap.parse_args()
@@ -265,13 +251,12 @@ def main() -> None:
             except Exception as e:
                 import traceback
                 traceback.print_exc()
-                rec = {"strategy": "A", "task_id": tid, "site": W.site_of(tid),
-                       "error": f"{type(e).__name__}: {e}"}
+                rec = {"strategy": "A", "task_id": tid, "site": W.site_of(tid), "error": f"{type(e).__name__}: {e}"}
             results.append(rec)
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
 
-    print(f"\n{'=' * 78}\nSUMMARY\n{'=' * 78}")
+    print(f"\n{'=' * 78}\nSummary\n{'=' * 78}")
     print(f"{'site':16s}{'task':>6s}{'ok':>7s}{'steps':>7s}{'tokens':>9s}"
           f"{'secs':>8s}  reason")
     for r in results:

@@ -1,32 +1,7 @@
 """
-run_batch.py - full data collection with checkpointing and resume.
+run_batch.py - full data collection with checkpointing and resume (just in case of a crash/errors)
 
-Runs a strategy across a task subset and all budget levels, writing every
-episode to JSONL immediately and tracking completed (strategy, task, budget)
-triples so an interrupted run resumes instead of restarting.
-
-Designed to run unattended under tmux:
-    tmux new -s collect
-    python run_batch.py --strategy A --sites reddit --n 67
-    # detach: Ctrl-b then d       reattach: tmux attach -t collect
-
-Recommended sequence:
-    # 1. pilot: validate the schema
-    python run_batch.py --strategy A --n 3 --out ../data/raw/pilot_a.jsonl
-
-    # 2. real collection, one site at a time (only one is hosted at once)
-    python run_batch.py --strategy A --sites reddit --n 67
-    python run_batch.py --strategy A --sites shopping --n 67
-    python run_batch.py --strategy A --sites shopping_admin --n 66
-
-    # 3. after a crash, rerun the identical command - finished episodes skip
-    python run_batch.py --strategy A --sites reddit --n 67
-
-Budget order is shuffled with a fixed seed. State-change tasks ("update my
-address", "delete all reviews") alter the site, so a task run at several budget
-levels may be contaminated by its own earlier runs. This means resetting the sites to its original state before re-running this script.
-Shuffling spreads any such order effect evenly across conditions rather than letting it always favour the
-last budget run.
+Runs a strategy across a task subset and all budget levels, writing every episode to JSONL immediately and tracking completed (strategy, task, budget) triples so an interrupted run resumes instead of restarting.
 """
 
 from __future__ import annotations
@@ -44,12 +19,6 @@ import strategy_b
 
 
 def sample_tasks(n: int, sites: list[str], seed: int) -> dict[str, list[int]]:
-    """Randomly sample n single-site task ids per site, reproducibly.
-
-    Random rather than first-n: WebArena tasks are template generated, so
-    consecutive ids are often variants of the same question and would give an
-    unrepresentative subset.
-    """
     pools = W.single_site_tasks(sites)
     rng = random.Random(seed)
     out: dict[str, list[int]] = {}
@@ -67,10 +36,6 @@ def sample_tasks(n: int, sites: list[str], seed: int) -> dict[str, list[int]]:
 
 
 def load_completed(path: Path) -> set[tuple]:
-    """Read an existing results file and return the finished episodes.
-
-    Tolerates a truncated final line, which is what a hard interrupt leaves.
-    """
     done: set[tuple] = set()
     if not path.exists():
         return done
@@ -114,7 +79,7 @@ def main() -> None:
             for b in args.budgets
             if (args.strategy, tid, b) not in done]
 
-    # Group by (site, task_id), shuffle budgets within each group, then shuffle the group order. This keeps a task's budget conditions adjacent while still spreading order effects.
+    #group by (site, task_id), shuffle budgets within each group, then shuffle the group order. This keeps a task's budget conditions adjacent while still spreading order effects
     todo.sort(key=lambda x: (x[0], x[1]))
     rng = random.Random(args.seed)
     groups = [list(g) for _, g in groupby(todo, key=lambda x: (x[0], x[1]))]
@@ -124,14 +89,14 @@ def main() -> None:
     todo = [item for g in groups for item in g]
 
     planned = sum(len(ids) for ids in plan.values()) * len(args.budgets)
-    print(f"\n[batch] strategy    : {args.strategy}")
-    print(f"[batch] sites       : {args.sites}")
-    print(f"[batch] budgets     : {args.budgets}")
-    print(f"[batch] seed        : {args.seed}")
-    print(f"[batch] output      : {out_path}")
-    print(f"[batch] planned     : {planned} episodes")
+    print(f"\n[batch] strategy: {args.strategy}")
+    print(f"[batch] sites: {args.sites}")
+    print(f"[batch] budgets: {args.budgets}")
+    print(f"[batch] seed: {args.seed}")
+    print(f"[batch] output: {out_path}")
+    print(f"[batch] planned: {planned} episodes")
     print(f"[batch] already done: {len(done)}")
-    print(f"[batch] to run      : {len(todo)}")
+    print(f"[batch] to run: {len(todo)}")
     for site, ids in plan.items():
         print(f"[batch]   {site:16s} {len(ids)} tasks")
 
@@ -142,14 +107,14 @@ def main() -> None:
     t_start = time.time()
     n_ok = n_err = n_success = 0
 
-    # Append: never truncate an existing results file.
+    #append: never truncate an existing results file
     with out_path.open("a") as fh:
         for idx, (site, tid, budget) in enumerate(todo, 1):
             elapsed = time.time() - t_start
             rate = elapsed / max(idx - 1, 1)
             eta_min = (len(todo) - idx + 1) * rate / 60
             print(f"\n[batch] {idx}/{len(todo)}  {site} task {tid} @ {budget}"
-                  f"   (elapsed {elapsed/60:.0f}m, eta {eta_min:.0f}m,"
+                  f"(elapsed {elapsed/60:.0f}m, eta {eta_min:.0f}m,"
                   f" ok {n_ok}, success {n_success}, err {n_err})")
 
             try:
@@ -164,7 +129,7 @@ def main() -> None:
                 import traceback
                 traceback.print_exc()
                 n_err += 1
-                # Record the failure so a resume does not retry it forever.
+                #record the failure so a resume does not retry it forever
                 rec = {
                     "strategy": args.strategy,
                     "site": site,
@@ -174,17 +139,17 @@ def main() -> None:
                     "error": f"{type(e).__name__}: {e}",
                 }
 
-            # Write immediately: an interrupt must never lose finished work.
+            #Write immediately: an interrupt must never lose finished work
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
 
     mins = (time.time() - t_start) / 60
     print(f"\n{'=' * 78}")
     print(f"[batch] finished in {mins:.0f} minutes")
-    print(f"[batch]   episodes ok : {n_ok}")
-    print(f"[batch]   successes   : {n_success}"
+    print(f"[batch] episodes ok: {n_ok}")
+    print(f"[batch] successes: {n_success}"
           f"  ({n_success / max(n_ok, 1):.1%})")
-    print(f"[batch]   errors      : {n_err}")
+    print(f"[batch] errors: {n_err}")
     print(f"[batch] results in {out_path}")
 
 
