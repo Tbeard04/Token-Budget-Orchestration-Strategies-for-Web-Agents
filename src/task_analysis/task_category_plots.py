@@ -16,8 +16,6 @@ plt.rcParams.update({
     "font.size": 11,
 })
 
-# Colour by what the task does to the site, so the palette itself carries
-# meaning rather than being arbitrary.
 CATEGORY_COLOURS = {
     "information_retrieval":"#2196F3",
     "navigation":"#03A9F4",
@@ -29,7 +27,7 @@ CATEGORY_COLOURS = {
     "purchase":"#9C27B0",
 }
 
-# Which categories can be contaminated by an earlier successful run
+#Which categories can be contaminated by an earlier successful run
 RISK_GROUPS = {
     "read-only (no contamination possible)": [
         "information_retrieval", "navigation", "other",
