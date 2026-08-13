@@ -213,3 +213,29 @@ def harmonise_templates(rows: list) -> int:
             adjusted += 1
     return adjusted
 
+
+def flag_for_review(rows: list, threshold: float) -> None:
+    for r in rows:
+        reasons = []
+ 
+        if r["confidence"] < threshold:
+            reasons.append(f"low confidence ({r['confidence']:.2f})")
+ 
+        if r.get("template_adjusted"):
+            reasons.append(
+                f"disagreed with template median on "
+                f"{', '.join(r.get('adjusted_dimensions', []))}")
+ 
+        #Score contradicts observed navigation
+        obs = r.get("observed")
+        if obs:
+            pages = r["pages_to_traverse"]
+            urls = obs["distinct_urls"]
+            if pages == 0 and urls >= 3:
+                reasons.append(f"scored 0 pages but agent visited {urls}")
+            elif pages == 2 and urls <= 1:
+                reasons.append(f"scored 2 pages but agent visited {urls}")
+ 
+        r["needs_review"] = bool(reasons)
+        r["review_reasons"] = reasons
+
