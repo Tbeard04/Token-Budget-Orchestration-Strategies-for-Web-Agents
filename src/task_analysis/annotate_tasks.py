@@ -149,3 +149,39 @@ def format_observed(obs) -> str:
         f"Use this to calibrate PAGES TO TRAVERSE only. The agent may have wandered, so distinct pages is an upper bound."
     )
 
+
+#Annotation
+ 
+def annotate(cfg: dict, category: str, observed) -> dict:
+    intent = cfg.get("intent", "")
+    eval_criteria = json.dumps(cfg.get("eval", {}))[:1200]
+    sites = cfg.get("sites", [])
+    site = sites[0] if sites else "unknown"
+ 
+    prompt = (f"Site: {site}\n"
+              f"Intent: {intent}\n"
+              f"Evaluation criteria: {eval_criteria}"
+              f"{format_observed(observed)}")
+ 
+    a = W.call_agent(annotator, prompt).output
+    total = sum(getattr(a, d) for d in DIMENSIONS)
+ 
+    row = {
+        "task_id": cfg.get("task_id"),
+        "site": site,
+        "intent": intent,
+        "template": normalise_template(intent),
+        "pages_to_traverse": a.pages_to_traverse,
+        "retrieval_type": a.retrieval_type,
+        "interaction": a.interaction,
+        "target_locatability": a.target_locatability,
+        "rubric_total": total,
+        "difficulty_tier": tier_of(total),
+        "task_category": category,
+        "confidence": a.confidence,
+        "justification": a.justification,
+    }
+    if observed:
+        row["observed"] = observed
+    return row
+
