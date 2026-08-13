@@ -185,3 +185,31 @@ def annotate(cfg: dict, category: str, observed) -> dict:
         row["observed"] = observed
     return row
 
+
+#Post-processing
+ 
+def harmonise_templates(rows: list) -> int:
+    groups = defaultdict(list)
+    for r in rows:
+        groups[r["template"]].append(r)
+ 
+    adjusted = 0
+    for tmpl, grp in groups.items():
+        if len(grp) < 2:
+            continue
+        medians = {d: int(statistics.median(r[d] for r in grp))
+                   for d in DIMENSIONS}
+        for r in grp:
+            changed = [d for d in DIMENSIONS if r[d] != medians[d]]
+            if not changed:
+                r["template_adjusted"] = False
+                continue
+            for d in changed:
+                r[d] = medians[d]
+            r["rubric_total"] = sum(r[d] for d in DIMENSIONS)
+            r["difficulty_tier"] = tier_of(r["rubric_total"])
+            r["template_adjusted"] = True
+            r["adjusted_dimensions"] = changed
+            adjusted += 1
+    return adjusted
+
