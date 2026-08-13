@@ -64,3 +64,17 @@ bound on what the task requires, not the exact number.
 Give an honest confidence. Use below 0.7 when the task text leaves the amount
 of navigation genuinely ambiguous.
 """
+
+def tier_of(total: int) -> str:
+    """Band a rubric total (0-8). Dimension scores are stored separately so
+    the bands can be changed later with --reband, no re-annotation needed."""
+    if total <= 2:
+        return "Easy"
+    if total <= 5:
+        return "Medium"
+    return "Hard"
+ 
+
+annotator = W.make_agent(ANNOTATOR_INSTRUCTIONS, TaskAnnotation, label="annotator")
+ 
+DIMENSIONS = ["pages_to_traverse", "retrieval_type", "interaction", "target_locatability"]
