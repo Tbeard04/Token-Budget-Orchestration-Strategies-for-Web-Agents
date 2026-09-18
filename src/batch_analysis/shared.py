@@ -88,7 +88,7 @@ def success_by_budget(df: pd.DataFrame) -> pd.DataFrame:
 
     any_success = df.loc[df["success"] == True, "task_id"].nunique()
     total_tasks = df["task_id"].nunique()
-    print(f"\n   Distinct tasks solved at ANY budget: {any_success}/{total_tasks}"
+    print(f"\n Distinct tasks solved at ANY budget: {any_success}/{total_tasks}"
           f" ({any_success/total_tasks:.0%})")
     return tbl
 
@@ -126,7 +126,7 @@ def task_solvability(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     ).sort_values("min_budget")
 
     total_tasks = df["task_id"].nunique()
-    print(f"   {len(solved)}/{total_tasks} tasks solved at least once "
+    print(f"{len(solved)}/{total_tasks} tasks solved at least once "
           f"({len(solved)/total_tasks:.0%})\n")
 
     if len(solved):
