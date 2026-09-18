@@ -199,15 +199,15 @@ def rubber_stamp_cost(df: pd.DataFrame) -> None:
 
     episode_tokens = df["total_tokens"].sum()
 
-    print(f" total critic calls: {total_calls}")
-    print(f" approval-only calls: {approval_calls} "
+    print(f"total critic calls: {total_calls}")
+    print(f"approval-only calls: {approval_calls} "
           f"({approval_calls/max(total_calls,1):.0%})")
     print(f"\n all critic tokens: {critic_tokens_total:,}")
-    print(f" tokens on approvals only: {approval_tokens:,}")
-    print(f" total episode tokens: {episode_tokens:,}")
+    print(f"tokens on approvals only: {approval_tokens:,}")
+    print(f"total episode tokens: {episode_tokens:,}")
     print(f"\n critic share of all spend: "
           f"{critic_tokens_total/max(episode_tokens,1):.1%}")
-    print(f" RECOVERABLE by perfect routing: "
+    print(f"Recoverable by perfect routing: "
           f"{approval_tokens/max(episode_tokens,1):.1%} of all tokens")
 
 
@@ -282,12 +282,9 @@ def plot_critic_revision_rate(df: pd.DataFrame, out_dir: Path) -> None:
     fig, ax = plt.subplots()
     x = range(len(tbl))
     w = 0.25
-    ax.bar([i - w for i in x], tbl["revision_rate"], w,
-           label="Critic revision rate", color="#F44336", alpha=0.75)
-    ax.bar(list(x), tbl["overall_sr"], w,
-           label="Overall SR", color="#FF9800", alpha=0.75)
-    ax.bar([i + w for i in x], tbl["revised_sr"], w,
-           label="SR of revised episodes", color="#4CAF50", alpha=0.75)
+    ax.bar([i - w for i in x], tbl["revision_rate"], w, label="Critic revision rate", color="#F44336", alpha=0.75)
+    ax.bar(list(x), tbl["overall_sr"], w, label="Overall SR", color="#FF9800", alpha=0.75)
+    ax.bar([i + w for i in x], tbl["revised_sr"], w, label="SR of revised episodes", color="#4CAF50", alpha=0.75)
     ax.set_xlabel("Token Budget")
     ax.set_ylabel("Rate")
     ax.set_title("Strategy B: Critic Revision Rate vs Success")
@@ -334,7 +331,7 @@ def plot_role_cost_breakdown(df: pd.DataFrame, out_dir: Path) -> None:
     fig.tight_layout()
     path = out_dir / "role_cost_breakdown_b.png"
     fig.savefig(path, dpi=150)
-    print(f" saved: {path}")
+    print(f"saved: {path}")
     plt.close()
 
 
