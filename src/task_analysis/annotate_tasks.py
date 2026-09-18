@@ -28,28 +28,27 @@ class TaskAnnotation(BaseModel):
 
 
 ANNOTATOR_INSTRUCTIONS = """\
-You score WebArena web-agent tasks on four difficulty dimensions for a study
-of token budgets.
+You score WebArena web-agent tasks on four difficulty dimensions for a study of token budgets.
  
 PAGES TO TRAVERSE - how many distinct pages must be visited?
-  0 = everything needed is on the starting page
-  1 = two or three pages
-  2 = four or more, or an unbounded search across pages
+    0 = everything needed is on the starting page
+    1 = two or three pages
+    2 = four or more, or an unbounded search across pages
  
 RETRIEVAL TYPE - what must be done with the information?
-  0 = read a single stated value
-  1 = compare or filter a small number of items
-  2 = aggregate, count, or reason over a set of items
+    0 = read a single stated value
+    1 = compare or filter a small number of items
+    2 = aggregate, count, or reason over a set of items
  
 INTERACTION - what must be done to the site?
-  0 = read-only; nothing on the site changes
-  1 = one form submission or click sequence
-  2 = a multi-step state change (create, edit, delete, configure)
+    0 = read-only; nothing on the site changes
+    1 = one form submission or click sequence
+    2 = a multi-step state change (create, edit, delete, configure)
  
 TARGET LOCATABILITY - how hard is the target to find?
-  0 = named explicitly in the task, e.g. "the Sprite Stasis Ball"
-  1 = derivable from what is on the page
-  2 = must be discovered by scanning or searching
+    0 = named explicitly in the task, e.g. "the Sprite Stasis Ball"
+    1 = derivable from what is on the page
+    2 = must be discovered by scanning or searching
  
 You measure the task's STRUCTURAL DEMANDS, not an agent's capability. Judge on
 the number of distinct interactions and the reasoning depth required, not on
