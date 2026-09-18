@@ -29,12 +29,8 @@ CATEGORY_COLOURS = {
 
 #Which categories can be contaminated by an earlier successful run
 RISK_GROUPS = {
-    "read-only (no contamination possible)": [
-        "information_retrieval", "navigation", "other",
-    ],
-    "state-change (contamination possible)": [
-        "create", "modify_value", "bulk_action", "delete", "purchase",
-    ],
+    "read-only (no contamination possible)": ["information_retrieval", "navigation", "other",],
+    "state-change (contamination possible)": ["create", "modify_value", "bulk_action", "delete", "purchase",],
 }
 
 
@@ -71,9 +67,7 @@ def plot_by_site(sites: dict, out_dir: Path) -> None:
     site_names = ["shopping", "shopping_admin", "reddit"]
     all_cats = sorted(
         {c for s in site_names for c in sites.get(s, {}).get("categories", {})},
-        key=lambda c: -sum(sites.get(s, {}).get("categories", {})
-                           .get(c, {}).get("count", 0) for s in site_names)
-    )
+        key=lambda c: -sum(sites.get(s, {}).get("categories", {}).get(c, {}).get("count", 0) for s in site_names))
 
     fig, ax = plt.subplots(figsize=(12, 6))
     n_cats = len(all_cats)
@@ -81,12 +75,9 @@ def plot_by_site(sites: dict, out_dir: Path) -> None:
     x = range(len(site_names))
 
     for i, cat in enumerate(all_cats):
-        counts = [sites.get(s, {}).get("categories", {})
-                  .get(cat, {}).get("count", 0) for s in site_names]
+        counts = [sites.get(s, {}).get("categories", {}).get(cat, {}).get("count", 0) for s in site_names]
         offset = (i - n_cats / 2 + 0.5) * width
-        ax.bar([p + offset for p in x], counts, width,
-               label=cat.replace("_", " "),
-               color=CATEGORY_COLOURS.get(cat, "#90A4AE"), alpha=0.85)
+        ax.bar([p + offset for p in x], counts, width, label=cat.replace("_", " "), color=CATEGORY_COLOURS.get(cat, "#90A4AE"), alpha=0.85)
 
     ax.set_ylabel("Number of Tasks")
     ax.set_title("Task Categories by Site")
@@ -98,7 +89,7 @@ def plot_by_site(sites: dict, out_dir: Path) -> None:
 
     path = out_dir / "task_categories_by_site.png"
     fig.savefig(path, dpi=150)
-    print(f"   saved: {path}")
+    print(f"saved: {path}")
     plt.close()
 
 
@@ -115,14 +106,10 @@ def plot_risk_groups(by_category: dict, out_dir: Path) -> None:
             n = by_category.get(cat, 0)
             if not n:
                 continue
-            bar = ax.bar(0, n, bottom=bottom, width=0.5,
-                         color=CATEGORY_COLOURS.get(cat, "#90A4AE"),
-                         alpha=0.85, edgecolor="white", linewidth=1.5)
+            bar = ax.bar(0, n, bottom=bottom, width=0.5, color=CATEGORY_COLOURS.get(cat, "#90A4AE"), alpha=0.85, edgecolor="white", linewidth=1.5)
             #Label inside the segment if there is room
             if n >= total * 0.04:
-                ax.text(0, bottom + n / 2, f"{cat.replace('_',' ')}  {n}",
-                        ha="center", va="center", fontsize=9,
-                        color="white", fontweight="bold")
+                ax.text(0, bottom + n / 2, f"{cat.replace('_',' ')}  {n}", ha="center", va="center", fontsize=9, color="white", fontweight="bold")
             bottom += n
             group_total += n
 
