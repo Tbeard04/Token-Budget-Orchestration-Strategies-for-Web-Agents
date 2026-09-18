@@ -36,8 +36,7 @@ from pathlib import Path
 
 import tasks
 from annotator import annotate_one, build_annotator, load_categories
-from gold_set import (apply_gold, format_exemplars, load_gold_labels,
-                      split_exemplars, write_gold_set)
+from gold_set import (apply_gold, format_exemplars, load_gold_labels, split_exemplars, write_gold_set)
 from observed_cost import load_observed_cost
 from postprocess import flag_for_review, harmonise_templates, reband
 from reporting import report
@@ -157,8 +156,7 @@ def main() -> None:
     if args.gold_set:
         if Path(args.gold_out) == Path(args.out):
             ap.error("--gold-out must differ from --out")
-        write_gold_set(args.gold_set, args.gold_out, args.seed,
-                       args.sites, args.episodes)
+        write_gold_set(args.gold_set, args.gold_out, args.seed, args.sites, args.episodes)
         return
 
     if args.apply_gold:
