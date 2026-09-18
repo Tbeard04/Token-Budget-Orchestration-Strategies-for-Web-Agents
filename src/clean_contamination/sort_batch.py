@@ -134,7 +134,7 @@ def main() -> None:
             current = tid
             shown_tasks += 1
             print()
-        print(f"   task {tid:>4} @ {str(ep.get('budget_level')):>6}  "
+        print(f"task {tid:>4} @ {str(ep.get('budget_level')):>6}  "
               f"{ep.get('timestamp')}")
  
     if args.dry_run:
