@@ -1,3 +1,25 @@
+## Requirements
+```text
+pydantic-ai>=1.0
+browsergym
+browsergym-webarena
+playwright
+openai
+sentence-transformers
+pandas
+numpy
+scipy
+statsmodels
+scikit-learn
+xgboost 
+matplotlib
+seaborn
+d3rlpy
+python-dotenv
+
+AWS EC2 WebArena Instance (Can connect to my version of the instance if requested)
+```
+
 ## Directory Tree:
 
 ```text
