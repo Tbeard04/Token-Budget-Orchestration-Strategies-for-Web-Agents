@@ -86,13 +86,13 @@ token-budget-orchestration-strategies-for-web-agents/
 │   │   │
 │   │   └── readme.txt
 │   │
-│   └── processed/                          # derived data, reproducible from raw/
+│   └── processed/                              # derived data, reproducible from raw/
 │       ├── 6_budgets_ALL_tasks_decontaminated_batch/
 │       │   ├── batch_strategy_A/
 │       │   └── batch_strategy_B/
 │       │
 │       ├── task_list/
-│       │   └── task_intents.json           # intents + task_category for all 475 tasks from task_analysis/
+│       │   └── task_intents.json               # intents + task_category for all 475 tasks from task_analysis/
 │       │
 │       ├── final_annotation_difficulty_tiers/  # task_metadata.jsonl (final labels)
 │       │
