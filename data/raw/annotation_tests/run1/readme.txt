@@ -1,2 +1,2 @@
-This directory contains files on the LLM evaluator "guessing" the difficulty of the task based on the rubric scale as a baseline (this output version does not 
-take into account the task_intents.json file)
+This directory contains files on the LLM evaluator classifying the difficulty of the task based on the rubric scale as a baseline (this output version does 
+take into account the task_intents.json file & Strategy A's max steps, median tokens, distinct urls output but no cohens kappa which is my hand labelled tasks)
