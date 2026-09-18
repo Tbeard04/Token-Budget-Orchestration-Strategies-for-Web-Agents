@@ -40,7 +40,7 @@ def cost_floor_profile(df: pd.DataFrame) -> None:
 
     valid = df[df["steps"] > 0].copy()
     if valid.empty:
-        print("   no episodes with steps > 0")
+        print("no episodes with steps > 0")
         return
 
     valid["tok_per_step"] = valid["total_tokens"] / valid["steps"]
@@ -75,7 +75,7 @@ def answer_failure_analysis(df: pd.DataFrame) -> None:
     print("\n By budget level:")
     for budget, grp in wrong.groupby("budget_level"):
         pct = len(grp) / len(df[df["budget_level"] == budget])
-        print(f"     {budget:>6}: {len(grp):>4} episodes ({pct:.0%})")
+        print(f"{budget:>6}: {len(grp):>4} episodes ({pct:.0%})")
 
     print("\n By site:")
     for site, grp in wrong.groupby("site"):
