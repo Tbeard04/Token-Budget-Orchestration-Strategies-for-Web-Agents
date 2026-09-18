@@ -142,7 +142,7 @@ def write_gold_set(n: int, out: str, seed: int, sites: list, episode_paths) -> N
                 "task_id": tid,
                 "site": cfg["sites"][0],
                 "intent": cfg.get("intent", ""),
-                "eval_criteria": json.dumps(cfg.get("eval", {}))[:600],
+                "eval_criteria": json.dumps(cfg.get("eval", {}))[:1200],
                 # fill these four in by hand, each 0, 1 or 2
                 "pages_to_traverse": None,
                 "retrieval_type": None,
