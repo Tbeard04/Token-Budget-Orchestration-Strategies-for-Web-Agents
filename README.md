@@ -1,5 +1,6 @@
-Directory Tree:
+## Directory Tree:
 
+```text
 token-budget-orchestration-strategies-for-web-agents/
 │
 ├── src/
@@ -145,3 +146,4 @@ token-budget-orchestration-strategies-for-web-agents/
 ├── requirements.txt
 ├── .gitignore
 └── README.md
+```
