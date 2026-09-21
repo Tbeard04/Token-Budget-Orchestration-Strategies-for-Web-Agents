@@ -89,9 +89,6 @@ def main() -> None:
         return
  
     src = Path(args.annotations)
-    if not src.exists():
-        raise SystemExit(f"not found: {src}\n"
-                         f"Run annotate_tasks.py --apply-gold first.")
  
     #list of tasks
     rows = []
