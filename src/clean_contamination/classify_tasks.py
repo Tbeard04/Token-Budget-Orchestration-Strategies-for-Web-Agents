@@ -78,22 +78,29 @@ def classify(intent: str, category: str) -> tuple[str, str]:
 #main
 def main() -> None:
     ap = argparse.ArgumentParser()
-    #add arguments
     ap.add_argument("--annotations", default="../data/processed/final_annotation_difficulty_tiers/task_metadata.jsonl")
     ap.add_argument("--output", default="../data/processed/task_list/task_risk_levels.jsonl")
     ap.add_argument("--show", type=int, default=5)
+    ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args()
  
-    #read the annotations
-    src = Path(args.annotations)
+    if args.self_test:
+        self_test()
+        return
  
+    src = Path(args.annotations)
+    if not src.exists():
+        raise SystemExit(f"not found: {src}\n"
+                         f"Run annotate_tasks.py --apply-gold first.")
+ 
+    #list of tasks
     rows = []
     #list of tasks with unknown category
     unknown = []
     #read the annotations
     for line in src.read_text().splitlines():
-        #strip the line
         line = line.strip()
+        #if the line is empty
         if not line:
             continue
         #load the task
@@ -102,12 +109,11 @@ def main() -> None:
         cat = t.get("task_category", "unknown")
         #if the category is unknown
         if cat == "unknown":
+            #add the task id to the list
             unknown.append(t["task_id"])
-        #classify the task
         level, reason = classify(t.get("intent", ""), cat)
         #add the task to the list
         rows.append({
-            #add the task id
             "task_id": t["task_id"],
             "site": t.get("site", ""),
             "intent": t.get("intent", ""),
@@ -116,9 +122,8 @@ def main() -> None:
             "risk_reason": reason,
         })
  
-    #write the tasks to the output file
-    out = Path(args.output)
     #create the output directory if it doesn't exist
+    out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     #write the tasks to the output file
     with out.open("w") as f:
@@ -150,46 +155,112 @@ def main() -> None:
     #count the number of clean tasks
     clean = counts.get("read_only", 0)
     #print the number of clean tasks
-    print(f"\n {clean} tasks ({clean / n:.0%}) cannot be contaminated at all.")
-    #print the number of tasks that need the first-success rule
-    print(f"{n - clean} tasks ({1 - clean / n:.0%}) need the first-success rule.")
+    print(f"\n   {clean} tasks ({clean / n:.0%}) cannot be contaminated at all.")
+    print(f"   {n - clean} tasks ({1 - clean / n:.0%}) need the first-success rule.")
  
-    #print the risk level by site
     print(f"\n{'=' * 70}\nRisk level by site\n{'=' * 70}")
     #count the number of tasks by site
     by_site = defaultdict(Counter)
+    #print the risk level by site
     for r in rows:
         by_site[r["site"]][r["risk_level"]] += 1
-    #print the risk level by site
     for site in sorted(by_site):
+        #count the number of tasks by risk level
         c = by_site[site]
+        #print the risk level by site
         print(f"   {site:16s} read_only:{c['read_only']:>4}  "
               f"idempotent:{c['idempotent']:>4}  "
               f"non_idempotent:{c['non_idempotent']:>4}")
  
-    #print the category -> risk level
+    #print the category --> risk level
     print(f"\n{'=' * 70}\nCategory -> risk level\n{'=' * 70}")
     #count the number of tasks by category
     by_cat = defaultdict(Counter)
     for r in rows:
         by_cat[r["task_category"]][r["risk_level"]] += 1
-    #print the category -> risk level
     for cat in sorted(by_cat, key=lambda c: -sum(by_cat[c].values())):
         c = by_cat[cat]
         parts = "  ".join(f"{lv}:{c[lv]}" for lv in RISK_LEVELS if c[lv])
         print(f"   {cat:22s} {parts}")
  
     if args.show:
-        print(f"\n{'=' * 70}\nExamples\n{'=' * 70}")
         #print the examples
+        print(f"\n{'=' * 70}\nExamples\n{'=' * 70}")
         for lv in RISK_LEVELS:
-            #get the tasks with the risk level
             sub = [r for r in rows if r["risk_level"] == lv][:args.show]
-            #print the risk level
             print(f"\n   --- {lv} ---")
-            #print the tasks
             for r in sub:
                 #print the task id and intent
                 print(f"   {r['task_id']:>4}  {r['intent'][:62]}")
                 #print the risk reason
                 print(f"{r['risk_reason']}")
+
+
+#self test
+def self_test() -> None:
+    #list of cases
+    cases = [
+        #(intent, category, expected)
+        ("What is the top-1 best-selling brand in Quarter 1 2022",
+         "information_retrieval", "read_only"),
+        ("I want to browse the products in the Headphones category",
+         "navigation", "read_only"),
+        ("List products from PS4 accessories category by ascending price",
+         "other", "read_only"),
+        ("Get the order number of my most recent complete order",
+         "other", "read_only"),
+        ("Show me products under $25 in \"women shoes\" category",
+         "navigation", "read_only"),
+
+        #idempotent
+        ("Add this product to my wishlist", "create", "idempotent"),
+        ("Add Tide PODS to my wish list", "create", "idempotent"),
+        ("Subscribe to the newsletter of OneStopMarket", "create", "idempotent"),
+        ("Upvote the newest post in books subreddit", "bulk_action", "idempotent"),
+        ("Thumbs down the top 1 post ever in gadgets.", "bulk_action", "idempotent"),
+ 
+
+        ("Like all submissions created by Hrekires in subreddit news",
+         "bulk_action", "non_idempotent"),
+        ("DisLike all submissions created by RickyDontLoseThat in subreddit massachusetts",
+         "bulk_action", "non_idempotent"),
+        ("Rate my recent purchase of Jiffy Corn Muffin Cornbread Mix with 4 stars",
+         "purchase", "non_idempotent"),
+ 
+        ("Reduce the price of this product by 15%", "modify_value", "non_idempotent"),
+        ("Delete all pending negative reviews for Circe fleece", "delete", "non_idempotent"),
+        ("Change my reddit bio to \"I am a robot\"", "modify_value", "non_idempotent"),
+        ("Post my question, \"is car necessary in NYC\", in a subreddit",
+         "create", "non_idempotent"),
+        ("Add a simple product named Lelelumon Yoga Mat with 42 in stock",
+         "create", "non_idempotent"),
+        ("Buy the highest rated product from the meat substitute category",
+         "purchase", "non_idempotent"),
+        ("Cancel order 302", "modify_value", "non_idempotent"),
+        ("Disable Ryker Tee Crew Neck from the site", "modify_value", "non_idempotent"),
+ 
+        # write verb hiding in the "other" fallback bucket
+        ("I previously ordered some a mattress foundation around Feb or March "
+         "2023 and later cancelled. Can you reorder it for me?",
+         "other", "non_idempotent"),
+ 
+        # word boundary: "remover" must not match "remove"
+        ("Show me products under $46.99 in makeup remover",
+         "information_retrieval", "read_only"),
+    ]
+ 
+    failures = []
+    for intent, cat, expected in cases:
+        got, reason = classify(intent, cat)
+        if got != expected:
+            failures.append((intent[:55], cat, expected, got, reason))
+ 
+    for f in failures:
+        print(f"FAIL  {f[0]!r} [{f[1]}]\n      expected {f[2]}, got {f[3]}  ({f[4]})")
+ 
+    print(f"\nself-test: {len(cases) - len(failures)}/{len(cases)} passed")
+    if failures:
+        raise SystemExit(1)
+
+if __name__ == "__main__":
+    main()
