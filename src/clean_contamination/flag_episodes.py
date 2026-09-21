@@ -156,8 +156,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     #add the episodes
     ap.add_argument("--episodes", nargs="+", default=[
-        "../data/processed/6_budgets_ALL_tasks_decontaminated_batch/batch_strategy_A/strategy_a.jsonl",
-        "../data/processed/6_budgets_ALL_tasks_decontaminated_batch/batch_strategy_B/strategy_b.jsonl",])
+        "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/strategy_a.jsonl",
+        "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/strategy_b.jsonl",])
     ap.add_argument("--risk", default="../data/processed/task_list/task_risk_levels.jsonl")
     ap.add_argument("--metadata", default="../data/processed/" "final_annotation_difficulty_tiers/task_metadata.jsonl")
     ap.add_argument("--out", default="../data/processed/" "6_budgets_ALL_tasks_decontaminated_batch/episodes_flagged.jsonl")
