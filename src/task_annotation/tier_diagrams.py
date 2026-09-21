@@ -141,3 +141,33 @@ def _rounded_vbar(ax, x, height, width, colour) -> None:
              MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO,
              MPath.CLOSEPOLY]
     ax.add_patch(PathPatch(MPath(verts, codes), facecolor=colour, edgecolor="none", lw=0, zorder=3))
+
+
+def _fits(ax, text: str, seg_width_data: float, fontsize: float) -> bool:
+    # Measure the rendered label before placing it inside a segment.
+    ax.figure.canvas.draw()
+    t = ax.text(0, 0, text, fontsize=fontsize, alpha=0)
+    bb = t.get_window_extent(renderer=ax.figure.canvas.get_renderer())
+    t.remove()
+    inv = ax.transData.inverted()
+    w = abs(inv.transform((bb.width, 0))[0] - inv.transform((0, 0))[0])
+    return w * 1.5 < abs(seg_width_data)
+ 
+ 
+def _stacked_row(ax, y, parts, total, height, fontsize=8.5) -> None:
+    # One 100%-stacked row. parts = [(value, colour), ...]
+    gap_x, _ = _pt_to_data(ax, GAP_PT)
+    left = 0.0
+    for value, colour in parts:
+        if value <= 0:
+            continue
+        w = 100.0 * value / total
+        ax.barh(y, max(w - gap_x, 0.01), left=left, height=height, color=colour, edgecolor="none", lw=0, zorder=3)
+        if _fits(ax, str(value), w - gap_x, fontsize):
+            ax.text(left + (w - gap_x) / 2, y, str(value), ha="center", va="center", fontsize=fontsize, color=_on_fill(colour), zorder=4)
+        left += w
+ 
+ 
+def _pct_axis(ax) -> None:
+    ax.set_xticks([0, 25, 50, 75, 100])
+    ax.set_xticklabels(["0", "25", "50", "75", "100%"], fontsize=8.8)
