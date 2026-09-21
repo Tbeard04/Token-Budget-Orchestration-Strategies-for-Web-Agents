@@ -94,3 +94,41 @@ def cluster_similar(rows: list, threshold: float = 0.85) -> dict:
         for m in members:
             out[m] = label[root]
     return out
+
+def to_csv(gold_path: str, csv_path: str, threshold: float = 0.85) -> None:
+    rows = load_gold(gold_path)
+    group_of = cluster_similar(rows, threshold)
+
+    ordered = sorted(rows, key=lambda r: (
+        group_of.get(r.get("task_id"), "ZZ"),
+        r.get("site", ""),
+        r.get("task_id", 0),
+    ))
+
+    counts = Counter(normalise_template(r.get("intent", "")) for r in rows)
+
+    out = Path(csv_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=COLUMNS)
+        w.writeheader()
+        for r in ordered:
+            etype, etarget = summarise_eval(r.get("eval_criteria", ""))
+            obs = r.get("observed_hint") or {}
+            gid = group_of.get(r.get("task_id"), "")
+            w.writerow({
+                "task_id": r.get("task_id"),
+                "site": r.get("site", ""),
+                "group": gid,
+                "intent": r.get("intent", ""),
+                "eval_type": etype,
+                "eval_target": etarget,
+                "obs_median_steps": obs.get("median_steps", ""),
+                "obs_max_steps": obs.get("max_steps", ""),
+                "obs_urls": obs.get("distinct_urls", ""),
+                **{d: (r.get(d) if r.get(d) is not None else "") for d in DIMENSIONS},
+            })
+
+    # exact = sum(1 for c in counts.values() if c > 1)
+    # n_groups = len(set(group_of.values()))
+    print(f"Wrote {len(ordered)} rows to {out}")
