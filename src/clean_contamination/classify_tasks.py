@@ -12,7 +12,7 @@ classify_tasks.py - assign a contamination risk level to every task.
     non_idempotent: Change a price, delete reviews, post new content, update an address, cancel an order. A prior success leaves the site in a different
     starting condition, so a later episode may "succeed" by finding the work already done. Only these need contamination handling.
 
-Run from src/: python -m clean_contamination.classify_tasks \ --annotations ../data/processed/task_list/task_metadata.jsonl \ --output ../data/processed/task_list/task_risk_levels.jsonl
+src/: python -m clean_contamination.classify_tasks \ --annotations ../data/processed/final_annotation_difficulty_tiers/task_metadata.jsonl \ --output ../data/processed/task_list/task_risk_levels.jsonl
 """
 
 from __future__ import annotations
@@ -27,10 +27,8 @@ from pathlib import Path
 STATE_CHANGE_CATEGORIES = {"create", "modify_value", "delete", "bulk_action", "crud_operation", "form_fill",}
 
 # Intent phrases indicating an idempotent write - repeating is harmless
-IDEMPOTENT_KEYWORDS = ["add to wishlist", "wish list", "wishlist", "add to cart", "add to my cart", "subscribe", 
-    "upvote", "up vote", "like all", "dislike all", "thumbs down", "thumbs up", "rate ", "star rating",]
+IDEMPOTENT_KEYWORDS = ["add to wishlist", "wish list", "wishlist", "add to cart", "add to my cart", "subscribe", "upvote", "up vote", "like all", "dislike all", "thumbs down", "thumbs up", "rate ", "star rating",]
 
 # Intent phrases indicating the task only reads
-ACTUALLY_READ_ONLY_KEYWORDS = ["show me", "tell me", "what is", "what are", "what do", "among the", "find the", "list out", "list the",
-    "how many", "how much", "is there any", "compare", "count of", "which customer", "who has",]
+ACTUALLY_READ_ONLY_KEYWORDS = ["show me", "tell me", "what is", "what are", "what do", "among the", "find the", "list out", "list the", "how many", "how much", "is there any", "compare", "count of", "which customer", "who has",]
 
