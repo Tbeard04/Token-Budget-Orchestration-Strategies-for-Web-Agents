@@ -19,3 +19,36 @@ COLUMNS = [
     "obs_median_steps", "obs_max_steps", "obs_urls",
     "pages_to_traverse", "retrieval_type", "interaction", "target_locatability",
 ]
+
+
+# Making the evaluation criteria readable
+def summarise_eval(raw: str) -> tuple[str, str]:
+    #Return (eval_type, target) from the stored criteria JSON.
+    if not raw:
+        return "", ""
+    try:
+        e = json.loads(raw)
+    except json.JSONDecodeError:
+        m = re.search(r'"eval_types":\s*\[([^\]]*)\]', raw)
+        types = m.group(1).replace('"', "").replace(" ", "") if m else "?"
+        return f"{types} (truncated)", raw[:120]
+
+    types = "+".join(e.get("eval_types") or [])
+
+    ans = e.get("reference_answers")
+    if ans:
+        for key in ("exact_match", "must_include", "fuzzy_match"):
+            if key in ans:
+                v = ans[key]
+                v = ", ".join(str(x) for x in v) if isinstance(v, list) else str(v)
+                return types, f"{key}: {v[:200]}"
+
+    if e.get("reference_url"):
+        return types, f"url: {e['reference_url'][:200]}"
+
+    ph = e.get("program_html") or []
+    if ph:
+        urls = {p.get("url", "") for p in ph}
+        return types, f"DOM check x{len(ph)} on {len(urls)} page(s)"
+
+    return types, ""
