@@ -257,3 +257,31 @@ def check(gold_path: str) -> None:
         print("   difference is noise you are handing to the annotator as signal.")
     elif groups:
         print(f"\n   {len(groups)} near-identical groups: all consistent")
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--gold", required=True, help="gold set jsonl")
+    ap.add_argument("--csv", default=None)
+    ap.add_argument("--out", default=None,
+                    help="where --from-csv writes; defaults to --gold in place")
+    ap.add_argument("--to-csv", action="store_true")
+    ap.add_argument("--from-csv", action="store_true")
+    ap.add_argument("--check", action="store_true")
+    args = ap.parse_args()
+
+    if args.to_csv:
+        if not args.csv:
+            ap.error("--to-csv needs --csv")
+        to_csv(args.gold, args.csv)
+    elif args.from_csv:
+        if not args.csv:
+            ap.error("--from-csv needs --csv")
+        from_csv(args.gold, args.csv, args.out)
+    elif args.check:
+        check(args.gold)
+    else:
+        ap.error("pick one of --to-csv, --from-csv, --check")
+
+if __name__ == "__main__":
+    main()
