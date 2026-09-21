@@ -132,3 +132,72 @@ def to_csv(gold_path: str, csv_path: str, threshold: float = 0.85) -> None:
     # exact = sum(1 for c in counts.values() if c > 1)
     # n_groups = len(set(group_of.values()))
     print(f"Wrote {len(ordered)} rows to {out}")
+
+
+def from_csv(gold_path: str, csv_path: str, out_path: str | None) -> None:
+    rows = load_gold(gold_path)
+    by_id = {r.get("task_id"): r for r in rows}
+
+    #utf-8-sig tolerates the BOM Excel writes
+    with open(csv_path, newline="", encoding="utf-8-sig") as f:
+        csv_rows = list(csv.DictReader(f))
+
+    missing = [c for c in ("task_id", *DIMENSIONS) if c not in (csv_rows[0] if csv_rows else {})]
+    if missing:
+        raise SystemExit(f"CSV is missing required columns: {missing}")
+
+    filled, blank, bad, unknown = 0, [], [], []
+    for cr in csv_rows:
+        try:
+            tid = int(str(cr["task_id"]).strip())
+        except (ValueError, KeyError):
+            continue
+        target = by_id.get(tid)
+        if target is None:
+            unknown.append(tid)
+            continue
+
+        scores = {}
+        for d in DIMENSIONS:
+            v = (cr.get(d) or "").strip()
+            if v == "":
+                scores = {}
+                blank.append(tid)
+                break
+            try:
+                iv = int(float(v))
+            except ValueError:
+                scores = {}
+                bad.append((tid, d, v))
+                break
+            if iv not in (0, 1, 2):
+                scores = {}
+                bad.append((tid, d, v))
+                break
+            scores[d] = iv
+
+        if scores:
+            target.update(scores)
+            filled += 1
+
+    dest = Path(out_path or gold_path)
+    if dest.exists() and not out_path:
+        backup = dest.with_suffix(dest.suffix + ".bak")
+        shutil.copy2(dest, backup)
+        print(f"Backed up {dest.name} -> {backup.name}")
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with dest.open("w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+    print(f"Wrote {len(rows)} rows to {dest}  ({filled} scored)")
+    if blank:
+        print(f"   {len(blank)} rows still blank: {blank}")
+    if bad:
+        print(f"   {len(bad)} rows with a value outside 0-2: {bad[:10]}")
+    if unknown:
+        print(f"   {len(unknown)} csv task_ids not in the gold set: {unknown[:10]}")
+
+    check(str(dest))
+
