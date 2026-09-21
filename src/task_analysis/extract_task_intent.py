@@ -134,6 +134,7 @@ def main():
             "by_site": {},
             "by_category": {},
         },
+        "task_categories": {},
         "sites": {},
     }
  
