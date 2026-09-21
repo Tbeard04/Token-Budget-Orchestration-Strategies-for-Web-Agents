@@ -21,3 +21,13 @@ def load_jsonl(path: str | Path) -> list[dict]:
             except json.JSONDecodeError:
                 pass
     return rows
+
+def demanding(meta: dict | None) -> bool:
+    #if the metadata is not provided
+    if not meta:
+        #no metadata: fall back to flagging everything
+        return True
+    #if the interaction is 2 or the difficulty tier is Medium or Hard
+    return (meta.get("interaction") == 2
+            or meta.get("difficulty_tier") in ("Medium", "Hard"))
+
