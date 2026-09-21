@@ -65,13 +65,14 @@ def _style() -> None:
         "figure.dpi": DPI,
     })
 
-
+# Layout helpers
+# Create a new figure and adjust the layout
 def _canvas(w: float, h: float, left: float, right: float, top: float, bottom: float):
     fig, ax = plt.subplots(figsize=(w, h))
     fig.subplots_adjust(left=left, right=right, top=top, bottom=bottom)
     return fig, ax
  
- 
+# Add a title and subtitle to the figure
 def _header(fig, title: str, subtitle: str | None, x: float = 0.015) -> None:
     # one point, in figure fraction
     pt = 1.0 / (fig.get_figheight() * 72.0)
@@ -79,7 +80,7 @@ def _header(fig, title: str, subtitle: str | None, x: float = 0.015) -> None:
     if subtitle:
         fig.text(x, 1 - 34 * pt, subtitle, fontsize=9.2, color=INK_SECONDARY, va="top", ha="left")
  
- 
+# Add a legend to the figure
 def _legend(fig, labels: list[str], colours: list[str], x: float = 0.015, y: float = 0.012) -> None:
     handles = [Patch(facecolor=c, edgecolor="none", label=l)
                for l, c in zip(labels, colours)]
@@ -89,7 +90,8 @@ def _legend(fig, labels: list[str], colours: list[str], x: float = 0.015, y: flo
     for t in leg.get_texts():
         t.set_color(INK_SECONDARY)
  
- 
+# Save the figure to a file
 def _save(fig, out: Path) -> None:
     fig.savefig(out, dpi=DPI, bbox_inches="tight", pad_inches=0.26)
     plt.close(fig)
+
