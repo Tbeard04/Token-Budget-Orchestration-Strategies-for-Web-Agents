@@ -88,3 +88,64 @@ def flag(episodes: list[dict], risk: dict, lenient_idempotent: bool = False, pre
     for e in episodes:
         del e["_i"]
     return episodes
+
+
+# reporting
+#print the title
+def _rule(title: str) -> None:
+    print(f"\n{'=' * 72}\n{title}\n{'=' * 72}")
+ 
+#print the report
+def report(episodes: list[dict], pre_steps: int) -> None:
+    n = len(episodes)
+    by_strategy = defaultdict(list)
+    for e in episodes:
+        by_strategy[e.get("strategy")].append(e)
+ 
+    _rule("Reward eligibility")
+    print(f"{'strategy':10s}{'episodes':>10}{'usable':>10}{'excluded':>10}"
+          f"{'excluded %':>12}")
+    for s in sorted(by_strategy):
+        eps = by_strategy[s]
+        bad = sum(1 for e in eps if not e["use_for_reward"])
+        print(f"{str(s):10s}{len(eps):>10}{len(eps) - bad:>10}{bad:>10}"
+              f"{bad / len(eps):>11.1%}")
+    bad = sum(1 for e in episodes if not e["use_for_reward"])
+    print(f"{'ALL':10s}{n:>10}{n - bad:>10}{bad:>10}{bad / n:>11.1%}")
+    print(f"\nuse_for_routing: {sum(1 for e in episodes if e['use_for_routing'])}"
+          f" of {n} (all episodes, by design)")
+ 
+    _rule("Exclusions by reason")
+    reasons = Counter(e["contamination_reason"] for e in episodes if e["contamination_reason"])
+    if not reasons:
+        print("none")
+    for reason, c in reasons.most_common():
+        print(f"{reason:32s} {c:>5}")
+ 
+    #print the episodes by risk level
+    _rule("Episodes by risk level")
+    print(f"{'risk level':18s}{'episodes':>10}{'usable':>10}{'excluded':>10}")
+    for lv in RISK_LEVELS + ["unknown"]:
+        eps = [e for e in episodes if e["risk_level"] == lv]
+        if not eps:
+            continue
+        bad = sum(1 for e in eps if not e["use_for_reward"])
+        print(f"{lv:18s}{len(eps):>10}{len(eps) - bad:>10}{bad:>10}")
+ 
+    #print the successes
+    _rule("Successes (what the reward signal is actually made of)")
+    print(f"{'strategy':10s}{'successes':>11}{'usable':>9}{'discarded':>11}")
+    for s in sorted(by_strategy):
+        su = [e for e in by_strategy[s] if e.get("success")]
+        bad = sum(1 for e in su if not e["use_for_reward"])
+        print(f"{str(s):10s}{len(su):>11}{len(su) - bad:>9}{bad:>11}")
+ 
+    suspects = sorted({(e["task_id"], e["risk_level"]) for e in episodes if e["suspect_pre_existing"]})
+    _rule(f"Suspect pre-existing state (first success took <= {pre_steps} step)")
+    print(f"{len(suspects)} task/level pairs. These are NOT excluded - a task "
+          f"that genuinely\ntakes one step looks identical. Report them as a "
+          f"limitation, or exclude\nthem in a sensitivity analysis.\n")
+    for tid, lv in suspects[:20]:
+        print(f"task {tid:>4}  {lv}")
+    if len(suspects) > 20:
+        print(f"and {len(suspects) - 20} more")
