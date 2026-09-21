@@ -201,8 +201,7 @@ def fig_tier_distribution(rows: list, out: Path) -> None:
     # Set the x-axis ticks to empty
     ax.set_xticks([])
     # Add a header to the figure
-    _header(fig, "Task difficulty tiers",
-            f"{n} single-site WebArena tasks scored on a four-dimension rubric")
+    _header(fig, "Task difficulty tiers", None)
     _save(fig, out / "tier_distribution.png")
  
  
@@ -229,7 +228,7 @@ def fig_tier_by_site(rows: list, out: Path) -> None:
     ax.set_yticks(ys)
     ax.set_yticklabels([SITE_LABELS.get(s, s) for s in sites], fontsize=10.5, color=INK)
     _pct_axis(ax)
-    _header(fig, "Difficulty composition by site", "Bars scaled to 100%; segment labels are task counts")
+    _header(fig, "Difficulty composition by site", None)
     _legend(fig, TIERS, [TIER_COLOURS[t] for t in TIERS])
     _save(fig, out / "tier_by_site.png")
  
@@ -259,7 +258,7 @@ def fig_tier_by_category(rows: list, out: Path) -> None:
     # Set the x-axis ticks and labels
     _pct_axis(ax)
     # Add a header to the figure
-    _header(fig, "Difficulty by task category", "Categories from the regex classifier, ordered by task count")
+    _header(fig, "Difficulty composition by task category", None)
     _legend(fig, TIERS, [TIER_COLOURS[t] for t in TIERS])
     _save(fig, out / "tier_by_category.png")
  
