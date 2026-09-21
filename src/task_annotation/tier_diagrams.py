@@ -95,3 +95,24 @@ def _save(fig, out: Path) -> None:
     fig.savefig(out, dpi=DPI, bbox_inches="tight", pad_inches=0.26)
     plt.close(fig)
 
+
+# Helper functions
+# Calculate the luminance of a hex colour
+def _luminance(hex_colour: str) -> float:
+    r, g, b = (int(hex_colour[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    f = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+ 
+# Determine the ink or white inside a coloured fill, whichever clears contrast
+def _on_fill(hex_colour: str) -> str:
+    """Ink or white inside a coloured fill, whichever clears contrast."""
+    return "#ffffff" if _luminance(hex_colour) < 0.42 else INK
+ 
+# Convert points to data coordinates
+def _pt_to_data(ax, pts: float) -> tuple[float, float]:
+    inv = ax.transData.inverted()
+    scale = ax.figure.dpi / 72.0
+    x0, y0 = inv.transform((0, 0))
+    x1, y1 = inv.transform((pts * scale, pts * scale))
+    return abs(x1 - x0), abs(y1 - y0)
+
