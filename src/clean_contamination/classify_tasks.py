@@ -35,3 +35,35 @@ IDEMPOTENT_KEYWORDS = ["add to wishlist", "wish list", "wishlist", "add to cart"
 #Intent phrases indicating the task only reads
 ACTUALLY_READ_ONLY_KEYWORDS = ["show me", "tell me", "what is", "what are", "what do", "among the", "find the", "list out", "list the", "how many", "how much", "is there any", "compare", "count of", "which customer", "who has",]
 
+#Patterns for writing verbs
+WRITE_VERB_PATTERNS = [
+    r"\breorder\b", r"\bre-order\b",
+    r"\bbuy\b", r"\bpurchase\b", r"\bcheckout\b", r"\bplace an order\b",
+    r"\bdelete\b", r"\bremove\b", r"\bcancel\b",
+    r"\bchange\b", r"\bupdate\b", r"\bmodify\b", r"\bedit\b", r"\brename\b",
+    r"\bset the\b", r"\bincrease\b", r"\breduce\b", r"\bdecrease\b",
+    r"\bdisable\b", r"\benable\b", r"\bapprove\b",
+    r"\bpost\b", r"\bcreate\b", r"\bdraft\b", r"\bsubmit\b", r"\breply\b",
+    r"\bsubscribe\b", r"\bupvote\b", r"\bdownvote\b",
+]
+
+def _has_phrase(intent: str, phrases: list[str]) -> bool:
+    return any(p in intent for p in phrases)
+ 
+ 
+def _has_pattern(intent: str, patterns: list[str]) -> bool:
+    return any(re.search(p, intent) for p in patterns)
+
+# def classify_task(task: dict) -> str:
+#     intent = task["intent"]
+#     if _has_phrase(intent, IDEMPOTENT_KEYWORDS):
+#         return "idempotent"
+#     elif _has_pattern(intent, WRITE_VERB_PATTERNS):
+#         return "non_idempotent"
+#     else:
+#         return "read_only"
+
+# def main(annotations: Path, output: Path) -> None:
+#     with open(annotations, "r") as f:
+#         tasks = [json.loads(line) for line in f]
+#     with open(output, "w") as f:
