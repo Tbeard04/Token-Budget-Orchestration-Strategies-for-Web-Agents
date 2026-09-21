@@ -107,6 +107,10 @@ def classify(intent: str, category: str, impossible: bool = False) -> tuple[str,
         return "read_only", f"{category}: impossible task, evaluator expects N/A"
 
     if category in STATE_CHANGE_CATEGORIES:
+        if (not _has_pattern(bare, STRONG_WRITE_PATTERNS)
+                and _has_phrase(bare, ACTUALLY_READ_ONLY_KEYWORDS)
+                and not _has_phrase(i, IDEMPOTENT_KEYWORDS)):
+            return "read_only", f"{category}: read-only phrasing, no write verb"
         #if the intent contains any of the idempotent keywords
         if _has_phrase(i, IDEMPOTENT_KEYWORDS):
             return "idempotent", f"{category}: idempotent action"
@@ -175,7 +179,7 @@ def main() -> None:
         if cat == "unknown":
             #add the task id to the list
             unknown.append(t["task_id"])
-        level, reason = classify(t.get("intent", ""), cat)
+        level, reason = classify(t.get("intent", ""), cat, t["task_id"] in impossible)
         #add the task to the list
         rows.append({
             "task_id": t["task_id"],
@@ -328,6 +332,15 @@ def self_test() -> None:
          "information_retrieval", "non_idempotent"),
         ("Find a subreddit focused on topics related to NYC, and post my "
          "question, \"is car necessary\" there", "navigation", "non_idempotent"),
+
+
+        #homograph at the CATEGORY level
+        ("Get the purchase date and order id of the most recent pending order",
+         "purchase", "read_only"),
+        ("Draft a new marketing price rule for fall discount that offers $10 "
+         "discount on checkout for all customers", "purchase", "non_idempotent"),
+        ("Add the product with the lowest per unit price from my open tabs "
+         "to the shopping cart", "create", "idempotent"),
     ]
 
     #list of failures
@@ -370,8 +383,7 @@ def self_test() -> None:
     #test the detector cases
     for cfg, expected in detector_cases:
         if is_impossible(cfg) != expected:
-            failures.append((str(cfg)[:55], "is_impossible", expected,
-                             is_impossible(cfg), ""))
+            failures.append((str(cfg)[:55], "is_impossible", expected, is_impossible(cfg), ""))
     cases = cases + imp_cases + detector_cases
 
 
