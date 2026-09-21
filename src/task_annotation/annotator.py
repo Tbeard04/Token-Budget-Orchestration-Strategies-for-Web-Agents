@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 
 import wa_env as W
+from pathlib import Path
 from observed_cost import format_observed
 from rubric import (ANNOTATOR_INSTRUCTIONS, DIMENSIONS, TaskAnnotation, normalise_template, tier_of, total_of)
 
@@ -48,7 +49,6 @@ def annotate_one(agent, cfg: dict, category: str, observed) -> dict:
 
 def load_categories(intents_path: str | None) -> dict:
     #task_category per task from extract_task_intents.py
-    from pathlib import Path
     if not intents_path or not Path(intents_path).exists():
         return {}
     data = json.load(open(intents_path))

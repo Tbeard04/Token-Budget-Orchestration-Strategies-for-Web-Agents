@@ -159,8 +159,6 @@ def write_gold_set(n: int, out: str, seed: int, sites: list, episode_paths) -> N
     for site in sorted(alloc):
         print(f"   {site:16s} {alloc[site]:>3}  (pool {len(site_pools[site])})")
     print(f"\nTask ids: {' '.join(str(t) for t in sorted(chosen))}")
-    print("\nFill in all four dimensions on every row (0, 1 or 2). A row left")
-    print("null is skipped, which shrinks the gold set and the held-out subset.")
     print(f"\nRubric:\n{RUBRIC_SUMMARY}")
 
 
