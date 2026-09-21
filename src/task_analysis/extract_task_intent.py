@@ -144,6 +144,8 @@ def main():
     for t in tasks:
         site = t["sites"][0]
         cat = categorise(t["intent"])
+        # JSON object keys are strings; readers must int() them back
+        output["task_categories"][str(t["task_id"])] = cat
         by_site[site].append({
             "task_id": t["task_id"],
             "intent": t["intent"],
@@ -189,7 +191,14 @@ def main():
         json.dump(output, f, indent=2)
  
     # ── Report ──────────────────────────────────────────────────────────
-    print(f"Extracted {len(tasks)} tasks to {args.output}\n")
+    print(f"Extracted {len(tasks)} tasks to {args.output}")
+    print(f"per-task category mapping: {len(output['task_categories'])} tasks")
+    n_repr = sum(len(c["tasks"])
+                 for s in output["sites"].values()
+                 for c in s["categories"].values())
+    print(f"template representatives listed under 'sites': {n_repr}\n")
+    assert len(output["task_categories"]) == len(tasks), \
+        "task_categories must cover every task"
     print("By site:")
     for site, n in output["summary"]["by_site"].items():
         print(f"  {site:16s} {n:>3} tasks")
