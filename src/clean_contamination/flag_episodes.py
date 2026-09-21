@@ -164,12 +164,12 @@ def main() -> None:
     ap.add_argument("--lenient-idempotent", action="store_true")
     ap.add_argument("--pre-steps", type=int, default=1)
     ap.add_argument("--example", type=int, default=None)
-    # ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args()
  
-    # if args.self_test:
-    #     self_test()
-    #     return
+    if args.self_test:
+        self_test()
+        return
  
     risk_rows = load_jsonl(args.risk)
     risk = {r["task_id"]: r["risk_level"] for r in risk_rows}
@@ -317,7 +317,7 @@ def self_test() -> None:
     flag(eps9, risk, metadata={})
     assert eps9[0]["suspect_pre_existing"]
     
-    
+
     assert demanding(None) is True
     assert demanding({"interaction": 0, "difficulty_tier": "Easy"}) is False
  
