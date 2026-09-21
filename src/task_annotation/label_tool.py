@@ -201,3 +201,59 @@ def from_csv(gold_path: str, csv_path: str, out_path: str | None) -> None:
 
     check(str(dest))
 
+
+# Checking
+def check(gold_path: str) -> None:
+    rows = load_gold(gold_path)
+    done = [r for r in rows if all(r.get(d) is not None for d in DIMENSIONS)]
+    todo = [r["task_id"] for r in rows if r not in done]
+
+    print(f"\n{'=' * 66}\nGold set: {len(done)}/{len(rows)} labelled\n{'=' * 66}")
+    if todo:
+        print(f"still blank: {todo}")
+    if not done:
+        return
+
+    for d in DIMENSIONS:
+        dist = Counter(r[d] for r in done)
+        print(f"   {d:22s} 0:{dist.get(0, 0):>3}  1:{dist.get(1, 0):>3}  "
+              f"2:{dist.get(2, 0):>3}")
+
+    totals = [sum(r[d] for d in DIMENSIONS) for r in done]
+    tiers = Counter(tier_of(t) for t in totals)
+    print(f"\n   rubric total: mean {sum(totals) / len(totals):.2f}  "
+          f"range {min(totals)}-{max(totals)}")
+    for t in TIERS:
+        c = tiers.get(t, 0)
+        print(f"   {t:8s} {c:>3}  ({c / len(done):.0%})")
+
+    # a flat gold set cannot calibrate anything
+    if len(set(totals)) < 4:
+        print("\n   WARNING: the totals barely vary. Exemplars drawn from this "
+              "will not\n   show the annotator the range of the scale.")
+    if max(tiers.values()) / len(done) > 0.8:
+        print("\n   WARNING: over 80% of the gold set is one tier. Kappa will be "
+              "unstable\n   and the exemplars will bias the annotator towards it.")
+
+    # near-identical tasks must agree, or the gold set contradicts itself
+    group_of = cluster_similar(done)
+    groups = defaultdict(list)
+    for r in done:
+        gid = group_of.get(r["task_id"])
+        if gid:
+            groups[gid].append(r)
+
+    clashes = []
+    for gid, grp in groups.items():
+        for d in DIMENSIONS:
+            if len({r[d] for r in grp}) > 1:
+                clashes.append((gid, d, {r["task_id"]: r[d] for r in grp}))
+
+    if clashes:
+        print(f"\n   {len(clashes)} inconsistencies across near-identical tasks:")
+        for gid, d, vals in clashes[:12]:
+            print(f"      {gid} differs on {d}: {vals}")
+        print("   These are the same task with different parameters. Any")
+        print("   difference is noise you are handing to the annotator as signal.")
+    elif groups:
+        print(f"\n   {len(groups)} near-identical groups: all consistent")
