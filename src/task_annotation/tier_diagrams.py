@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch, PathPatch
 from matplotlib.path import Path as MPath
  
-from rubric import DIMENSIONS, TIERS
+from rubric import TIERS
  
 # Colour tokens
 SURFACE = "#fcfcfb"
@@ -128,18 +128,6 @@ def _rounded_hbar(ax, y, width, height, colour) -> None:
     codes = [MPath.MOVETO, MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO, MPath.CLOSEPOLY]
     ax.add_patch(PathPatch(MPath(verts, codes), facecolor=colour, edgecolor="none", lw=0, zorder=3))
  
- 
-def _rounded_vbar(ax, x, height, width, colour) -> None:
-    # Column: square at the baseline, rounded at the cap.
-    if height == 0:
-        return
-    rx, ry = _pt_to_data(ax, ROUND_PT)
-    r_x, r_y = min(rx, width / 2), min(ry, abs(height))
-    xl, xr = x - width / 2, x + width / 2
-    verts = [(xl, 0), (xl, height - r_y), (xl, height), (xl + r_x, height), (xr - r_x, height), (xr, height), (xr, height - r_y), (xr, 0), (xl, 0)]
-    codes = [MPath.MOVETO, MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO, MPath.CLOSEPOLY]
-    ax.add_patch(PathPatch(MPath(verts, codes), facecolor=colour, edgecolor="none", lw=0, zorder=3))
-
 
 def _fits(ax, text: str, seg_width_data: float, fontsize: float) -> bool:
     # Measure the rendered label before placing it inside a segment.
