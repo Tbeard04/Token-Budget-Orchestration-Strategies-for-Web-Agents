@@ -18,26 +18,26 @@ from matplotlib.path import Path as MPath
  
 from rubric import DIMENSIONS, TIERS
  
-# ---------------------------------------------------------------------------
-# Tokens
-# ---------------------------------------------------------------------------
- 
+# Colour tokens
 SURFACE = "#fcfcfb"
 INK = "#0b0b0b"
 INK_SECONDARY = "#52514e"
 INK_MUTED = "#898781"
 GRID = "#e1e0d9"
 AXIS = "#c3c2b7"
- 
+
+# Tier colours
 TIER_COLOURS = {"Easy": "#86b6ef", "Medium": "#2a78d6", "Hard": "#104281"}
+# Score colours
 SCORE_COLOURS = ["#86b6ef", "#2a78d6", "#104281"]
- 
+# Site labels
 SITE_LABELS = {"shopping": "Shopping", "shopping_admin": "Shopping admin", "reddit": "Reddit"}
- 
+# Dimension labels
 DIMENSION_LABELS = {"pages_to_traverse": "Pages to traverse", "retrieval_type": "Retrieval type", "interaction": "Interaction", "target_locatability": "Target locatability",}
- 
+
+# DPI
 DPI = 300
-# surface gap between touching fills
+# Surface gap between touching fills
 GAP_PT = 2.0
 # rounded data-end
 ROUND_PT = 4.0
@@ -105,7 +105,6 @@ def _luminance(hex_colour: str) -> float:
  
 # Determine the ink or white inside a coloured fill, whichever clears contrast
 def _on_fill(hex_colour: str) -> str:
-    """Ink or white inside a coloured fill, whichever clears contrast."""
     return "#ffffff" if _luminance(hex_colour) < 0.42 else INK
  
 # Convert points to data coordinates
@@ -116,3 +115,29 @@ def _pt_to_data(ax, pts: float) -> tuple[float, float]:
     x1, y1 = inv.transform((pts * scale, pts * scale))
     return abs(x1 - x0), abs(y1 - y0)
 
+def _rounded_hbar(ax, y, width, height, colour) -> None:
+    # Horizontal bar: square at the baseline, rounded at the data end.
+    if width == 0:
+        return
+    rx, ry = _pt_to_data(ax, ROUND_PT)
+    r_x, r_y = min(rx, abs(width)), min(ry, height / 2)
+    yb, yt = y - height / 2, y + height / 2
+    verts = [(0, yb), (width - r_x, yb), (width, yb), (width, yb + r_y), (width, yt - r_y), (width, yt), (width - r_x, yt), (0, yt), (0, yb)]
+    codes = [MPath.MOVETO, MPath.LINETO, MPath.CURVE3, MPath.CURVE3,
+             MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO,
+             MPath.CLOSEPOLY]
+    ax.add_patch(PathPatch(MPath(verts, codes), facecolor=colour, edgecolor="none", lw=0, zorder=3))
+ 
+ 
+def _rounded_vbar(ax, x, height, width, colour) -> None:
+    # Column: square at the baseline, rounded at the cap.
+    if height == 0:
+        return
+    rx, ry = _pt_to_data(ax, ROUND_PT)
+    r_x, r_y = min(rx, width / 2), min(ry, abs(height))
+    xl, xr = x - width / 2, x + width / 2
+    verts = [(xl, 0), (xl, height - r_y), (xl, height), (xl + r_x, height), (xr - r_x, height), (xr, height), (xr, height - r_y), (xr, 0), (xl, 0)]
+    codes = [MPath.MOVETO, MPath.LINETO, MPath.CURVE3, MPath.CURVE3,
+             MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO,
+             MPath.CLOSEPOLY]
+    ax.add_patch(PathPatch(MPath(verts, codes), facecolor=colour, edgecolor="none", lw=0, zorder=3))
