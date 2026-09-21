@@ -7,6 +7,7 @@ The LLM provided structured guidance on functions & code understanding. Most imp
 
 Overall, this allowed me to not only speed development up, but also understand the workings of each system component in much greater depth, bringing planning & design with practical implementation.
 The section below will outline where I used Opus 5 and will be structured with the following:
+
 	- Script: xxxx.py
 	- Model: Claude Opus 5
 	- Prompt: "Write a function that..." 
