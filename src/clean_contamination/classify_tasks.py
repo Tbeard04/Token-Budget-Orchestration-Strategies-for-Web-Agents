@@ -55,6 +55,7 @@ def _has_phrase(intent: str, phrases: list[str]) -> bool:
 def _has_pattern(intent: str, patterns: list[str]) -> bool:
     return any(re.search(p, intent) for p in patterns)
 
+#classify the task
 def classify(intent: str, category: str) -> tuple[str, str]:
     #convert intent to lowercase
     i = (intent or "").lower()
@@ -74,9 +75,121 @@ def classify(intent: str, category: str) -> tuple[str, str]:
     #if no write is detected
     return "read_only", f"{category}: no write detected"
 
-
-
-# def main(annotations: Path, output: Path) -> None:
-#     with open(annotations, "r") as f:
-#         tasks = [json.loads(line) for line in f]
-#     with open(output, "w") as f:
+#main
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    #add arguments
+    ap.add_argument("--annotations", default="../data/processed/final_annotation_difficulty_tiers/task_metadata.jsonl")
+    ap.add_argument("--output", default="../data/processed/task_list/task_risk_levels.jsonl")
+    ap.add_argument("--show", type=int, default=5)
+    args = ap.parse_args()
+ 
+    #read the annotations
+    src = Path(args.annotations)
+ 
+    rows = []
+    #list of tasks with unknown category
+    unknown = []
+    #read the annotations
+    for line in src.read_text().splitlines():
+        #strip the line
+        line = line.strip()
+        if not line:
+            continue
+        #load the task
+        t = json.loads(line)
+        #get the category
+        cat = t.get("task_category", "unknown")
+        #if the category is unknown
+        if cat == "unknown":
+            unknown.append(t["task_id"])
+        #classify the task
+        level, reason = classify(t.get("intent", ""), cat)
+        #add the task to the list
+        rows.append({
+            #add the task id
+            "task_id": t["task_id"],
+            "site": t.get("site", ""),
+            "intent": t.get("intent", ""),
+            "task_category": cat,
+            "risk_level": level,
+            "risk_reason": reason,
+        })
+ 
+    #write the tasks to the output file
+    out = Path(args.output)
+    #create the output directory if it doesn't exist
+    out.parent.mkdir(parents=True, exist_ok=True)
+    #write the tasks to the output file
+    with out.open("w") as f:
+        #write each task
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+ 
+    #count the number of tasks
+    n = len(rows)
+    #print the number of tasks read and written
+    print(f"[classify] read  {n} tasks from {src}")
+    print(f"[classify] wrote {n} tasks to  {out}")
+ 
+    #if there are tasks with unknown category
+    if unknown:
+        #print the number of tasks with unknown category
+        print(f"\n[classify] WARNING: {len(unknown)} tasks have "
+              f"task_category 'unknown' and were classified on intent text "
+              f"alone: {unknown[:15]}")
+ 
+    #count the number of tasks by risk level
+    counts = Counter(r["risk_level"] for r in rows)
+    #print the risk levels
+    print(f"\n{'=' * 70}\nRisk levels\n{'=' * 70}")
+    for lv in RISK_LEVELS:
+        c = counts.get(lv, 0)
+        print(f"   {lv:16s} {c:>4}  ({c / n:>4.0%})  {'#' * int(40 * c / n)}")
+ 
+    #count the number of clean tasks
+    clean = counts.get("read_only", 0)
+    #print the number of clean tasks
+    print(f"\n {clean} tasks ({clean / n:.0%}) cannot be contaminated at all.")
+    #print the number of tasks that need the first-success rule
+    print(f"{n - clean} tasks ({1 - clean / n:.0%}) need the first-success rule.")
+ 
+    #print the risk level by site
+    print(f"\n{'=' * 70}\nRisk level by site\n{'=' * 70}")
+    #count the number of tasks by site
+    by_site = defaultdict(Counter)
+    for r in rows:
+        by_site[r["site"]][r["risk_level"]] += 1
+    #print the risk level by site
+    for site in sorted(by_site):
+        c = by_site[site]
+        print(f"   {site:16s} read_only:{c['read_only']:>4}  "
+              f"idempotent:{c['idempotent']:>4}  "
+              f"non_idempotent:{c['non_idempotent']:>4}")
+ 
+    #print the category -> risk level
+    print(f"\n{'=' * 70}\nCategory -> risk level\n{'=' * 70}")
+    #count the number of tasks by category
+    by_cat = defaultdict(Counter)
+    for r in rows:
+        by_cat[r["task_category"]][r["risk_level"]] += 1
+    #print the category -> risk level
+    for cat in sorted(by_cat, key=lambda c: -sum(by_cat[c].values())):
+        c = by_cat[cat]
+        parts = "  ".join(f"{lv}:{c[lv]}" for lv in RISK_LEVELS if c[lv])
+        print(f"   {cat:22s} {parts}")
+ 
+    if args.show:
+        print(f"\n{'=' * 70}\nExamples\n{'=' * 70}")
+        #print the examples
+        for lv in RISK_LEVELS:
+            #get the tasks with the risk level
+            sub = [r for r in rows if r["risk_level"] == lv][:args.show]
+            #print the risk level
+            print(f"\n   --- {lv} ---")
+            #print the tasks
+            for r in sub:
+                #print the task id and intent
+                print(f"   {r['task_id']:>4}  {r['intent'][:62]}")
+                #print the risk reason
+                print(f"{r['risk_reason']}")
