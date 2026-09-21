@@ -47,21 +47,34 @@ WRITE_VERB_PATTERNS = [
     r"\bsubscribe\b", r"\bupvote\b", r"\bdownvote\b",
 ]
 
+#check if the intent contains a phrase
 def _has_phrase(intent: str, phrases: list[str]) -> bool:
     return any(p in intent for p in phrases)
  
- 
+#check if the intent contains a write verb
 def _has_pattern(intent: str, patterns: list[str]) -> bool:
     return any(re.search(p, intent) for p in patterns)
 
-# def classify_task(task: dict) -> str:
-#     intent = task["intent"]
-#     if _has_phrase(intent, IDEMPOTENT_KEYWORDS):
-#         return "idempotent"
-#     elif _has_pattern(intent, WRITE_VERB_PATTERNS):
-#         return "non_idempotent"
-#     else:
-#         return "read_only"
+def classify(intent: str, category: str) -> tuple[str, str]:
+    #convert intent to lowercase
+    i = (intent or "").lower()
+    #if the category is a state change category
+    if category in STATE_CHANGE_CATEGORIES:
+        if _has_phrase(i, IDEMPOTENT_KEYWORDS):
+            return "idempotent", f"{category}: idempotent action"
+        return "non_idempotent", f"{category}: writes to the site"
+    #if the intent contains a write verb
+    if _has_pattern(i, WRITE_VERB_PATTERNS):
+        if _has_phrase(i, IDEMPOTENT_KEYWORDS):
+            return "idempotent", f"{category}: write verb, idempotent action"
+        return "non_idempotent", f"{category}: write verb in the intent"
+    #if the intent contains a read-only phrasing
+    if _has_phrase(i, ACTUALLY_READ_ONLY_KEYWORDS):
+        return "read_only", f"{category}: read-only phrasing"
+    #if no write is detected
+    return "read_only", f"{category}: no write detected"
+
+
 
 # def main(annotations: Path, output: Path) -> None:
 #     with open(annotations, "r") as f:
