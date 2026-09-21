@@ -64,4 +64,32 @@ def _style() -> None:
         "axes.grid": False,
         "figure.dpi": DPI,
     })
+
+
+def _canvas(w: float, h: float, left: float, right: float, top: float, bottom: float):
+    fig, ax = plt.subplots(figsize=(w, h))
+    fig.subplots_adjust(left=left, right=right, top=top, bottom=bottom)
+    return fig, ax
  
+ 
+def _header(fig, title: str, subtitle: str | None, x: float = 0.015) -> None:
+    # one point, in figure fraction
+    pt = 1.0 / (fig.get_figheight() * 72.0)
+    fig.text(x, 1 - 14 * pt, title, fontsize=12.5, fontweight="semibold", color=INK, va="top", ha="left")
+    if subtitle:
+        fig.text(x, 1 - 34 * pt, subtitle, fontsize=9.2, color=INK_SECONDARY, va="top", ha="left")
+ 
+ 
+def _legend(fig, labels: list[str], colours: list[str], x: float = 0.015, y: float = 0.012) -> None:
+    handles = [Patch(facecolor=c, edgecolor="none", label=l)
+               for l, c in zip(labels, colours)]
+    leg = fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(x, y), ncol=len(labels), frameon=False, fontsize=8.8,
+                     handlelength=0.85, handleheight=0.85, columnspacing=1.8,
+                     handletextpad=0.55)
+    for t in leg.get_texts():
+        t.set_color(INK_SECONDARY)
+ 
+ 
+def _save(fig, out: Path) -> None:
+    fig.savefig(out, dpi=DPI, bbox_inches="tight", pad_inches=0.26)
+    plt.close(fig)
