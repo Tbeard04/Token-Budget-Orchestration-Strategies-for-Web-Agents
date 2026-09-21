@@ -61,3 +61,36 @@ def load_gold(path: str) -> list[dict]:
         if line:
             rows.append(json.loads(line))
     return rows
+
+
+def cluster_similar(rows: list, threshold: float = 0.85) -> dict:
+    #Single-link cluster task ids by intent-template similarity.
+    tmpl = {r["task_id"]: normalise_template(r.get("intent", "")) for r in rows}
+    ids = sorted(tmpl)
+    parent = {i: i for i in ids}
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for a_i, a in enumerate(ids):
+        for b in ids[a_i + 1:]:
+            if SequenceMatcher(None, tmpl[a], tmpl[b]).ratio() >= threshold:
+                ra, rb = find(a), find(b)
+                if ra != rb:
+                    parent[rb] = ra
+
+    clusters = defaultdict(list)
+    for i in ids:
+        clusters[find(i)].append(i)
+
+    label, out = {}, {}
+    for n, (root, members) in enumerate(sorted(clusters.items()), 1):
+        if len(members) < 2:
+            continue
+        label[root] = f"G{len(label) + 1}"
+        for m in members:
+            out[m] = label[root]
+    return out
