@@ -21,7 +21,6 @@ AWS EC2 WebArena Instance (Can connect to my version of the instance if requeste
 ```
 
 ## Directory Tree:
-
 ```text
 token-budget-orchestration-strategies-for-web-agents/
 │
