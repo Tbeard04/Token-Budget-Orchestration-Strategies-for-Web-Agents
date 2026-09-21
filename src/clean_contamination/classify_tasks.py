@@ -19,16 +19,19 @@ from __future__ import annotations
 
 import argparse
 import json
-from collections import Counter
+import re
+from collections import Counter, defaultdict
 from pathlib import Path
 
+#risk levels
+RISK_LEVELS = ["read_only", "idempotent", "non_idempotent"]
 
-# Annotation categories that involve writing to the site
+#Annotation categories that involve writing to the site
 STATE_CHANGE_CATEGORIES = {"create", "modify_value", "delete", "bulk_action", "crud_operation", "form_fill",}
 
-# Intent phrases indicating an idempotent write - repeating is harmless
-IDEMPOTENT_KEYWORDS = ["add to wishlist", "wish list", "wishlist", "add to cart", "add to my cart", "subscribe", "upvote", "up vote", "like all", "dislike all", "thumbs down", "thumbs up", "rate ", "star rating",]
+#Intent phrases indicating an idempotent write - repeating is harmless
+IDEMPOTENT_KEYWORDS = ["add to wishlist", "wish list", "wishlist", "add to cart", "add to my cart", "to the shopping cart", "to my cart", "subscribe", "upvote", "up vote", "downvote", "down vote", "thumbs up", "thumbs down",]
 
-# Intent phrases indicating the task only reads
+#Intent phrases indicating the task only reads
 ACTUALLY_READ_ONLY_KEYWORDS = ["show me", "tell me", "what is", "what are", "what do", "among the", "find the", "list out", "list the", "how many", "how much", "is there any", "compare", "count of", "which customer", "who has",]
 
