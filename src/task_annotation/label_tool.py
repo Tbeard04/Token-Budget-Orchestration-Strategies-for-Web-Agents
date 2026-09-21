@@ -52,3 +52,12 @@ def summarise_eval(raw: str) -> tuple[str, str]:
         return types, f"DOM check x{len(ph)} on {len(urls)} page(s)"
 
     return types, ""
+
+# JSONL <--> CSV conversion
+def load_gold(path: str) -> list[dict]:
+    rows = []
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line:
+            rows.append(json.loads(line))
+    return rows
