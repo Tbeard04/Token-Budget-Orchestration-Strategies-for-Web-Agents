@@ -149,3 +149,73 @@ def report(episodes: list[dict], pre_steps: int) -> None:
         print(f"task {tid:>4}  {lv}")
     if len(suspects) > 20:
         print(f"and {len(suspects) - 20} more")
+
+
+#main 
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    #add the episodes
+    ap.add_argument("--episodes", nargs="+", default=[
+        "../data/processed/6_budgets_ALL_tasks_decontaminated_batch/batch_strategy_A/strategy_a.jsonl",
+        "../data/processed/6_budgets_ALL_tasks_decontaminated_batch/batch_strategy_B/strategy_b.jsonl",])
+    ap.add_argument("--risk", default="../data/processed/task_list/task_risk_levels.jsonl")
+    ap.add_argument("--metadata", default="../data/processed/" "final_annotation_difficulty_tiers/task_metadata.jsonl")
+    ap.add_argument("--out", default="../data/processed/" "6_budgets_ALL_tasks_decontaminated_batch/episodes_flagged.jsonl")
+    ap.add_argument("--lenient-idempotent", action="store_true")
+    ap.add_argument("--pre-steps", type=int, default=1)
+    ap.add_argument("--example", type=int, default=None)
+    # ap.add_argument("--self-test", action="store_true")
+    args = ap.parse_args()
+ 
+    # if args.self_test:
+    #     self_test()
+    #     return
+ 
+    risk_rows = load_jsonl(args.risk)
+    risk = {r["task_id"]: r["risk_level"] for r in risk_rows}
+    print(f"[flag] risk levels : {len(risk)} tasks from {args.risk}")
+ 
+    episodes, skipped = [], 0
+    for path in args.episodes:
+        rows = load_jsonl(path)
+        errs = [r for r in rows if "error" in r]
+        clean = [r for r in rows if "error" not in r]
+        skipped += len(errs)
+        strat = Counter(r.get("strategy") for r in clean)
+        print(f"[flag] {Path(path).name:22s} {len(clean):>5} episodes"
+              f"  strategies={dict(strat)}"
+              + (f"  ({len(errs)} error rows skipped)" if errs else ""))
+        episodes.extend(clean)
+ 
+    if not episodes:
+        raise SystemExit("no episodes loaded")
+ 
+    missing = sorted({e["task_id"] for e in episodes} - set(risk))
+    if missing:
+        print(f"[flag] WARNING: {len(missing)} task ids have no risk level and "
+              f"are treated as unknown (never exempt): {missing[:15]}")
+ 
+    meta = {}
+    if Path(args.metadata).exists():
+        meta = {m["task_id"]: m for m in load_jsonl(args.metadata)}
+        print(f"[flag] metadata   : {len(meta)} tasks from {args.metadata}")
+    else:
+        print(f"[flag] WARNING: no metadata at {args.metadata} - every "
+              f"one-step first success will be marked suspect, including "
+              f"genuinely one-step tasks")
+ 
+    if args.lenient_idempotent:
+        print("[flag] --lenient-idempotent: idempotent tasks treated as clean")
+ 
+    flag(episodes, risk, args.lenient_idempotent, args.pre_steps, meta)
+ 
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.open("w") as f:
+        for e in episodes:
+            f.write(json.dumps(e) + "\n")
+ 
+    report(episodes, args.pre_steps)
+    print(f"\n[flag] wrote {len(episodes)} episodes to {out}")
+    if skipped:
+        print(f"[flag] {skipped} error rows were skipped and are NOT in the output")
