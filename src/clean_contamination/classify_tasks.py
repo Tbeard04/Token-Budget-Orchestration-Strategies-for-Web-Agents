@@ -55,13 +55,56 @@ def _has_pattern(intent: str, patterns: list[str]) -> bool:
     return any(re.search(p, intent) for p in patterns)
 
 
+def is_impossible(cfg: dict) -> bool:
+    #get the reference answers
+    ans = (cfg.get("eval") or {}).get("reference_answers")
+    #if the reference answers is not a dictionary
+    if not isinstance(ans, dict):
+        #return False
+        return False
+    values: list[str] = []
+    for key in ("exact_match", "must_include", "fuzzy_match"):
+        v = ans.get(key)
+        if isinstance(v, str):
+            values.append(v)
+        elif isinstance(v, list):
+            values.extend(str(x) for x in v)
+    #every accepted answer must be N/A - a task that merely allows N/A among other answers is a real task
+    return bool(values) and all(v.strip().upper() == "N/A" for v in values)
+ 
+ 
+def load_impossible(configs_path: str | None) -> set:
+    #if the configs path is not provided
+    if not configs_path:
+        return set()
+    #get the path
+    p = Path(configs_path)
+    #if the path does not exist
+    if not p.exists():
+        #print the error
+        print(f"[classify] configs not found, impossible-task check skipped: {p}")
+        return set()
+    #load the data
+    data = json.loads(p.read_text())
+    #get the task ids
+    ids = {c["task_id"] for c in data if "task_id" in c and is_impossible(c)}
+    #print the number of impossible tasks
+    print(f"[classify] impossible tasks (evaluator expects N/A): {len(ids)}"
+          + (f"  {sorted(ids)[:15]}" if ids else ""))
+    return ids
+
 #Function to classify the intent
-def classify(intent: str, category: str) -> tuple[str, str]:
+def classify(intent: str, category: str, impossible: bool = False) -> tuple[str, str]:
     #convert the intent to lowercase
     i = (intent or "").lower()
     #strip the quoted spans
     bare = _strip_quoted(i)
     #if the category is a state change category
+
+
+    #an impossible task writes nothing whatever its category says
+    if impossible:
+        return "read_only", f"{category}: impossible task, evaluator expects N/A"
 
     if category in STATE_CHANGE_CATEGORIES:
         #if the intent contains any of the idempotent keywords
@@ -94,6 +137,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--annotations", default="../data/processed/final_annotation_difficulty_tiers/task_metadata.jsonl")
     ap.add_argument("--output", default="../data/processed/task_list/task_risk_levels.jsonl")
+    ap.add_argument("--configs", default="task_analysis/test.raw.json")
     ap.add_argument("--show", type=int, default=5)
     ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args()
@@ -109,10 +153,14 @@ def main() -> None:
         raise SystemExit(f"not found: {src}\n"
                          f"Run annotate_tasks.py --apply-gold first.")
 
+    #load the impossible tasks
+    impossible = load_impossible(args.configs)
+
     #list to store the tasks
     rows = []
     #list to store the tasks with unknown category
     unknown = []
+    #iterate over the tasks
     for line in src.read_text().splitlines():
         #strip the line
         line = line.strip()
@@ -289,6 +337,43 @@ def self_test() -> None:
         got, reason = classify(intent, cat)
         if got != expected:
             failures.append((intent[:55], cat, expected, got, reason))
+
+
+     # impossible tasks override the category (tasks 794-798)
+    imp_cases = [
+        ("Change the delivery address for my most recent order to 4000 Forbes "
+         "Ave, Pittsburgh, PA.", "modify_value", "read_only"),
+        ("Delete all pending negative reviews for Circe fleece", "delete",
+         "non_idempotent"),   # not impossible: still non_idempotent
+    ]
+    for intent, cat, expected in imp_cases[:1]:
+        got, _ = classify(intent, cat, impossible=True)
+        if got != expected:
+            failures.append((intent[:55], cat, expected, got, "impossible=True"))
+    for intent, cat, expected in imp_cases[1:]:
+        got, _ = classify(intent, cat, impossible=False)
+        if got != expected:
+            failures.append((intent[:55], cat, expected, got, "impossible=False"))
+ 
+    # the N/A detector itself
+    detector_cases = [
+        ({"eval": {"reference_answers": {"fuzzy_match": "N/A"}}}, True),
+        ({"eval": {"reference_answers": {"fuzzy_match": ["N/A"]}}}, True),
+        ({"eval": {"reference_answers": {"exact_match": "n/a"}}}, True),
+        ({"eval": {"reference_answers": {"must_include": ["N/A", "Sprite"]}}}, False),
+        ({"eval": {"reference_answers": {"exact_match": "Sprite"}}}, False),
+        ({"eval": {"reference_answers": None}}, False),
+        ({"eval": {"eval_types": ["program_html"], "program_html": [{}]}}, False),
+        ({}, False),
+    ]
+
+    #test the detector cases
+    for cfg, expected in detector_cases:
+        if is_impossible(cfg) != expected:
+            failures.append((str(cfg)[:55], "is_impossible", expected,
+                             is_impossible(cfg), ""))
+    cases = cases + imp_cases + detector_cases
+
 
     #print the failures
     for f in failures:
