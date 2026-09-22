@@ -29,7 +29,22 @@ AWS Instance is configured to accept all incoming IP addresses, so all you'll ne
 
 ## How to run tasks once on AWS Instance terminal
 ```text
+Please be careful not to run small batches as this is costly on both the instance & the API usage.
 
+On the AWS Instance terminal, run this command to test strategy A on a single task: 
+    [INSERT COMMAND HERE] 
+    [TASK INTENT]
+
+..., run this command to test strategy B on a single task:
+    [INSERT COMMAND HERE] 
+    [TASK INTENT]
+
+..., run this command to test strategy C on a single task:
+    [INSERT COMMAND HERE] 
+    [TASK INTENT]
+
+You can replace the task ID on the command line with these tasks: xx, xx, xx, xxx, xxx to examine the different end states each strategy finishes with.
+[INSERT 5 DIFFERENT TASK WITH RANGING DIFFICULTY]
 ```
 
 
