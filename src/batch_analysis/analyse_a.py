@@ -6,10 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from batch_analysis.shared import (
-    load, join_tiers, print_section, run_shared_analysis,
-    BUDGET_TERMINATIONS, STUCK_TERMINATIONS,
-)
+from batch_analysis.shared import (load, join_tiers, print_section, run_shared_analysis, BUDGET_TERMINATIONS, STUCK_TERMINATIONS,)
 
 
 def budget_as_binding_constraint(df: pd.DataFrame) -> None:

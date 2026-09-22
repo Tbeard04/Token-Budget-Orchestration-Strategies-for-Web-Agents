@@ -1,5 +1,5 @@
 """
-flag_episodes.py - decide which episodes Strategy C may learn a reward from.
+flag_episodes.py - decide which episodes Strategy C may learn a reward from
 """
 from __future__ import annotations
  

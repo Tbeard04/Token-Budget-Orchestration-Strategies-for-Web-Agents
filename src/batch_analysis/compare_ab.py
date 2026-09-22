@@ -25,10 +25,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from batch_analysis.shared import (
-    load, join_tiers, print_section, COLOURS,
-    BUDGET_TERMINATIONS, STUCK_TERMINATIONS,
-)
+from batch_analysis.shared import (load, join_tiers, print_section, COLOURS,BUDGET_TERMINATIONS, STUCK_TERMINATIONS,)
 
 def comparison_table(a: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
     print_section("A vs B: Success Rate by Budget")

@@ -8,14 +8,12 @@ import json
 import tasks
 import wa_env as W
 from observed_cost import format_observed
-from rubric import (ANNOTATOR_INSTRUCTIONS, DIMENSIONS, TaskAnnotation,
-                    normalise_template, tier_of, total_of)
+from rubric import (ANNOTATOR_INSTRUCTIONS, DIMENSIONS, TaskAnnotation, normalise_template, tier_of, total_of)
  
  
 def build_annotator(exemplar_block: str = ""):
     #Construct the scoring agent, calibrated on the exemplars if given
-    return W.make_agent(ANNOTATOR_INSTRUCTIONS + exemplar_block,
-                        TaskAnnotation, label="annotator")
+    return W.make_agent(ANNOTATOR_INSTRUCTIONS + exemplar_block, TaskAnnotation, label="annotator")
  
  
 def annotate_one(agent, cfg: dict, category: str, observed) -> dict:

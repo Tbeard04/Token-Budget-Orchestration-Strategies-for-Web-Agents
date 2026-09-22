@@ -78,11 +78,8 @@ CREATE_PATTERNS = [
 ]
 
 
-#"Buy the best rating product" contains "rate", which CREATE_PATTERNS matches. "order" alone is too weak as a signal as it
-#appears in many read-only queries ("the billing address for order 00178"),so only explicit buying verbs count.
-PURCHASE_PATTERNS = [
-    r"\bbuy\b", r"\bpurchase\b", r"\bcheckout\b", r"\bplace an order\b",
-]
+#purchase patterns
+PURCHASE_PATTERNS = [r"\bbuy\b", r"\bpurchase\b", r"\bcheckout\b", r"\bplace an order\b",]
 
 #helper function to check if the intent matches any of the patterns
 def _matches(intent: str, patterns: list[str]) -> bool:
@@ -184,8 +181,7 @@ def main():
                 } for t in unique],
             }
  
-    output["summary"]["by_category"] = dict(
-        sorted(by_cat.items(), key=lambda x: -x[1]))
+    output["summary"]["by_category"] = dict(sorted(by_cat.items(), key=lambda x: -x[1]))
  
     with open(args.output, "w") as f:
         json.dump(output, f, indent=2)

@@ -1,31 +1,5 @@
 """
 annotate_tasks.py - entry point for difficulty annotation
-
-Run from src/task_annotation/, in that order. Steps 1 and 4 make no LLM calls.
-
- 1. Write the blank gold set, then fill in the four scores by hand:
-      python annotate_tasks.py --gold-set 50 \
-        --episodes ../../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/strategy_a.jsonl \
-        --gold-out ../../data/raw/annotation_tests/run2/gold_set_50.jsonl
-
- 2. Annotate all tasks, anchored on the hand labels (475 LLM calls - use tmux):
-      python annotate_tasks.py --n 999 \
-        --intents ../../data/tasks/task_intents.json \
-        --episodes ../../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/strategy_a.jsonl \
-        --gold-labels ../../data/raw/annotation_tests/run2/gold_set_50.jsonl \
-        --out ../../data/raw/annotation_tests/run2/tasks_annotated_run2.jsonl
-
- 3. Agreement, BEFORE any merge:
-      python cohen_kappa.py \
-        --gold ../../data/raw/annotation_tests/run2/gold_set_50.jsonl \
-        --pred ../../data/raw/annotation_tests/run2/tasks_annotated_run2.jsonl \
-        --out  ../../data/raw/annotation_tests/run2/kappa_run2.json
-
- 4. Final metadata, with the 50 human labels replacing the model's:
-      python annotate_tasks.py \
-        --apply-gold ../../data/raw/annotation_tests/run2/tasks_annotated_run2.jsonl \
-        --gold-labels ../../data/raw/annotation_tests/run2/gold_set_50.jsonl \
-        --out ../../data/tasks/task_metadata.jsonl
 """
 from __future__ import annotations
 

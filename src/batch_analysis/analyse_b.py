@@ -9,12 +9,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from batch_analysis.shared import (
-    load, join_tiers, print_section, run_shared_analysis, COLOURS,
-)
+from batch_analysis.shared import (load, join_tiers, print_section, run_shared_analysis, COLOURS,)
 
 # Extraction helpers
-
 def _critic_steps(df: pd.DataFrame):
     for _, row in df.iterrows():
         steps = row.get("step_log")
@@ -227,10 +224,10 @@ def per_role_cost(df: pd.DataFrame) -> None:
 
     grand = sum(totals.values())
     if not grand:
-        print(" no role token data")
+        print("no role token data")
         return
 
-    print(f" role  |  tokens  |  share")
+    print(f" role | tokens | share")
     for role, tok in totals.items():
         print(f" {role:9s} | {tok:>10,}  |  {tok/grand:.1%}")
     print(f" {'TOTAL':9s} | {grand:>10,}  |  100.0%")
