@@ -12,8 +12,6 @@
 ### shared.py
 
 
-# ----------------------------
-
 
 ## Clean Contamination
 
@@ -32,9 +30,7 @@
 ### sort_batch.py
 
 
-# ----------------------------
 
-
-## task_analysis
+## Task Analysis
 
 
