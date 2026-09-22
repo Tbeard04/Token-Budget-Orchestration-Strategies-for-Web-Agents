@@ -30,3 +30,30 @@ Lines/Output: 263-345
 What I've Learnt: This allowed me to re-use this in other scripts to check the validity of the various scripts such as flag_episodes.py. 
 Mistakes Made: None
 
+Script: 
+Model: Claude Opus 5
+Prompt: 
+Lines/Output:
+What I've Learnt:
+Mistakes Made: 
+
+Script: 
+Model: 
+Prompt: 
+Lines/Output: 
+What I've Learnt:  
+Mistakes Made: 
+
+Script:
+Model: Claude Opus 5
+Prompt:
+Lines/Output: 
+What I've Learnt:
+Mistakes Made: 
+
+Script:
+Model: Claude Opus 5
+Prompt:
+Lines/Output: 
+What I've Learnt: 
+Mistakes Made: 
