@@ -142,9 +142,6 @@ def report(episodes: list[dict], pre_steps: int) -> None:
  
     suspects = sorted({(e["task_id"], e["risk_level"]) for e in episodes if e["suspect_pre_existing"]})
     _rule(f"Suspect pre-existing state (first success took <= {pre_steps} step)")
-    print(f"{len(suspects)} task/level pairs. These are NOT excluded - a task "
-          f"that genuinely\ntakes one step looks identical. Report them as a "
-          f"limitation, or exclude\nthem in a sensitivity analysis.\n")
     for tid, lv in suspects[:20]:
         print(f"task {tid:>4}  {lv}")
     if len(suspects) > 20:
