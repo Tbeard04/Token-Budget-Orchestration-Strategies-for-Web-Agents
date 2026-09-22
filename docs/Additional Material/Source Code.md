@@ -33,4 +33,11 @@
 
 ## Task Analysis
 
+### extract_task_intent.py
 
+
+### task_category_plots.py
+
+
+### test.raw.json
+Taken from WebArena Github Repository: https://github.com/web-arena-x/webarena/blob/main/config_files/test.raw.json
