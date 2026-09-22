@@ -256,11 +256,11 @@ def main() -> None:
             sub = [r for r in rows if r["risk_level"] == lv][:args.show]
             print(f"\n   --- {lv} ---")
             for r in sub:
-                print(f"   {r['task_id']:>4}  {r['intent'][:62]}")
-                print(f"         {r['risk_reason']}")
+                print(f" {r['task_id']:>4}  {r['intent'][:62]}")
+                print(f" {r['risk_reason']}")
 
 
-
+#AI-Generated
 # Self-test
 def self_test() -> None:
     #list of cases to test
@@ -342,6 +342,7 @@ def self_test() -> None:
         ("Add the product with the lowest per unit price from my open tabs "
          "to the shopping cart", "create", "idempotent"),
     ]
+#AI-Generated
 
     #list of failures
     failures = []
