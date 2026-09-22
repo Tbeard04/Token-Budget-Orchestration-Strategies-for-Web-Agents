@@ -157,7 +157,7 @@ def write_gold_set(n: int, out: str, seed: int, sites: list, episode_paths) -> N
 
     print(f"\nWrote {written} blank rows to {out_path}")
     for site in sorted(alloc):
-        print(f"   {site:16s} {alloc[site]:>3}  (pool {len(site_pools[site])})")
+        print(f" {site:16s} {alloc[site]:>3}  (pool {len(site_pools[site])})")
     print(f"\nTask ids: {' '.join(str(t) for t in sorted(chosen))}")
     print(f"\nRubric:\n{RUBRIC_SUMMARY}")
 

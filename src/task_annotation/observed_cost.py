@@ -76,8 +76,6 @@ def format_observed(obs) -> str:
         f"maximum steps taken: {obs['max_steps']}\n"
         f"distinct pages visited: {obs['distinct_urls']}\n"
         f"median tokens: {obs['median_tokens']:.0f}\n"
-        f"Use this to calibrate PAGES TO TRAVERSE only. The agent may have "
-        f"wandered, so distinct pages is an upper bound."
     )
 
 
