@@ -20,6 +20,19 @@ python-dotenv
 AWS EC2 WebArena Instance (Can connect to my version of the instance if requested)
 ```
 
+## How to connect to AWS Instance
+```text
+AWS Instance is configured to accept all incoming IP addresses, so all you'll need is both the pem key (located in the keys directory) & the .env file.
+1. Open a terminal inside the root folder (token-budget-orchestration-strategies-for-web-agents)
+2. 
+```
+
+## How to run tasks once on AWS Instance terminal
+```text
+
+```
+
+
 ## Directory Tree:
 ```text
 token-budget-orchestration-strategies-for-web-agents/
