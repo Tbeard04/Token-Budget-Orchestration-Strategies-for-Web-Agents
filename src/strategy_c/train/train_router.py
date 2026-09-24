@@ -390,3 +390,37 @@ def run(pairs: list[dict], trans: list[dict], cfg: dict, out_dir: Path) -> dict:
             }) + "\n")
 
     return metrics
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", type=int)
+    ap.add_argument("--alpha", type=float)
+    ap.add_argument("--pairs", default="../data/processed/strategy_c_models/mode_pairs.jsonl")
+    ap.add_argument("--transitions", default="../data/processed/strategy_c_models/transitions.jsonl")
+    args = ap.parse_args()
+ 
+    #output directory
+    out_dir = Path(__file__).parent / f"model_{args.model}"
+    cfg_path = out_dir / "config.json"
+    #configuration
+    cfg = dict(DEFAULT_CONFIG)
+    #update the configuration
+    if cfg_path.exists():
+        cfg.update(json.loads(cfg_path.read_text()))
+    if args.alpha is not None:
+        cfg["alpha"] = args.alpha
+    #the sweep grid is an evaluation setting, never persisted per model
+    cfg["threshold_quantiles"] = DEFAULT_CONFIG["threshold_quantiles"]
+    out_dir.mkdir(parents=True, exist_ok=True)
+    #save the configuration
+    cfg_path.write_text(json.dumps({k: v for k, v in cfg.items() if k != "threshold_quantiles"}, indent=2))
+    #load the pairs and transitions
+    pairs = load_jsonl(args.pairs)
+    trans = load_jsonl(args.transitions)
+    print(f"[router] model_{args.model}: {len(pairs)} pairs, {len(trans)} transitions")
+    #run the router
+    run(pairs, trans, cfg, out_dir)
+
+
+if __name__ == "__main__":
+    main()
