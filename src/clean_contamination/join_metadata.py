@@ -266,3 +266,7 @@ def main() -> None:
             sub = [r for r in rows if r["strategy"] == s]
             write_rows(sub, view)
             print(f"[join] wrote {len(sub):>5} rows -> {view.name}  (view)")
+
+
+if __name__ == "__main__":
+    main()
