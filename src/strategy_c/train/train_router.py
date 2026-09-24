@@ -113,7 +113,7 @@ class Norm:
 
 
 # training
-#Advantage-weighted policy gradient with entropy bonus
+#Advantage weighted policy gradient with entropy bonus
 # X:states, A:action index taken, W:exp(advantage/beta) for that action
 def train_head(X: np.ndarray, A: np.ndarray, W: np.ndarray, cfg: dict) -> MLP:
     #set the seed
@@ -137,3 +137,10 @@ def train_head(X: np.ndarray, A: np.ndarray, W: np.ndarray, cfg: dict) -> MLP:
             loss.backward() #backpropagate the loss
             opt.step() #update the parameters
     return net
+
+#predict the action probability
+def predict(net: MLP, X: np.ndarray) -> np.ndarray:
+    #disable gradient computation
+    with torch.no_grad():
+        #predict the action probability
+        return torch.softmax(net(torch.tensor(X, dtype=torch.float32)), -1)[:, 1].numpy()
