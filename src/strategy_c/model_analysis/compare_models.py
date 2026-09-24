@@ -215,6 +215,27 @@ def fig_per_budget(models: dict, chosen: int, out: Path) -> None:
         if name == "per_budget_tokens":
             for i in range(len(BUDGETS)):
                 if a[i] > 0:
-                    ax.text(x[i] + w / 2, r[i] + max(a) * 0.015, f"−{1 - r[i] / a[i]:.0%}",
-                            ha="center", va="bottom", fontsize=8.5, color=INK)
+                    ax.text(x[i] + w / 2, r[i] + max(a) * 0.015, f"−{1 - r[i] / a[i]:.0%}", ha="center", va="bottom", fontsize=8.5, color=INK)
         save(fig, out / f"{name}.png")
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--models", default="../data/processed/strategy_c_models")
+    ap.add_argument("--out", default="../data/processed/diagrams/strategy_c_model123_plots")
+    ap.add_argument("--chosen", type=int, default=2)
+    args = ap.parse_args()
+ 
+    models = load(Path(args.models))
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+ 
+    fig_frontier(models, args.chosen, out)
+    fig_mode_p_cycle(models, out)
+    fig_mode_by_winner(models, args.chosen, out)
+    fig_stop_by_step(models, out)
+    fig_stop_step0(models, args.chosen, out)
+    fig_per_budget(models, args.chosen, out)
+ 
+ 
+if __name__ == "__main__":
+    main()
