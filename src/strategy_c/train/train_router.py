@@ -1,0 +1,62 @@
+"""
+train_router.py - train and evaluate one version of the Strategy C router
+
+
+Two small MLPs, trained separately, saved together as router.pt:
+J = E[ w(s,a) * log pi(a|s) ] + alpha * H(pi)
+w(s,a) = exp(A(s,a) / beta), clipped
+R_stop = success - lambda * tokens_remaining / budget   [[(continue) vs 0 (stop)]]
+R_mode = success * (1 - lambda * tokens / budget)  [[failure = 0, see build_mode_set]]
+"""
+
+from __future__ import annotations
+ 
+import argparse
+import json
+import math
+import time
+from collections import Counter, defaultdict
+from pathlib import Path
+ 
+import numpy as np
+import torch
+import torch.nn as nn
+from sklearn.metrics import roc_auc_score
+ 
+DEFAULT_CONFIG = {
+    #entropy weight the hyperparameter under test
+    "alpha": 0.05,
+    #advantage temperature
+    "beta": 0.5,
+    #token cost weight in the return
+    "lambda": 0.5,
+    #hidden layer size
+    "hidden": 64,
+    #number of epochs
+    "epochs": 60,
+    #learning rate
+    "lr": 1e-3,
+    #batch size
+    "batch": 256,
+    #number of folds
+    "folds": 5,
+    #seed
+    "seed": 0,
+    #frontier sweep: stop the most hopeless % of states. Quantiles of the held-out P(stop), so the sweep is by rank
+    "threshold_quantiles": [0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.85, 0.90, 0.93, 0.95, 0.97, 0.98, 0.99],
+    #used to pick the suggested threshold
+    "min_success_kept": 0.90,
+}
+ 
+#sites
+SITES = ["reddit", "shopping", "shopping_admin"]
+#categories
+CATEGORIES = ["bulk_action", "create", "delete", "information_retrieval", "modify_value", "navigation", "other", "purchase"]
+#risk order
+RISK_ORD = {"read_only": 0, "idempotent": 1, "non_idempotent": 2}
+#mode order
+MODE_ORD = {"execute": 0, "cycle": 1}
+#mode actions
+MODE_ACTIONS = ["execute", "cycle"]
+#stop actions
+STOP_ACTIONS = ["continue", "stop"]
