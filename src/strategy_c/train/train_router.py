@@ -188,3 +188,18 @@ def build_stop_set(trans: list[dict], lam: float):
         R[i, 0] = float(t["episode_success"]) - lam * remaining / t["budget_level"]
     #return the transitions, features, and returns
     return S, X, R
+
+
+#expand the features and returns to training rows
+def expand(X: np.ndarray, R: np.ndarray, beta: float):
+    #calculate the weights
+    W = advantage_weights(R, beta)
+    #number of states
+    n = len(X)
+    #concatenate the features and actions
+    Xe = np.concatenate([X, X])
+    Ae = np.concatenate([np.zeros(n, int), np.ones(n, int)])
+    We = np.concatenate([W[:, 0], W[:, 1]]) #concatenate the weights
+    keep = We > 0 #keep the rows with weight greater than 0
+    #return the features, actions, and weights
+    return Xe[keep], Ae[keep], We[keep]
