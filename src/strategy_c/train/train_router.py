@@ -144,3 +144,16 @@ def predict(net: MLP, X: np.ndarray) -> np.ndarray:
     with torch.no_grad():
         #predict the action probability
         return torch.softmax(net(torch.tensor(X, dtype=torch.float32)), -1)[:, 1].numpy()
+
+
+#returns(n, 2) return of each action per state --> (n, 2) weights
+#Standard AWR weight is exp(A/beta)
+#advantage weights are clipped to avoid overflow
+def advantage_weights(returns: np.ndarray, beta: float, clip: float = 20.0) -> np.ndarray:
+    #calculate the advantage
+    adv = returns - returns.mean(1, keepdims=True)
+    #calculate the weights
+    w = np.minimum(np.exp(adv / beta), clip)
+    #subtract the minimum weight to avoid negative weights
+    return w - w.min(1, keepdims=True)
+
