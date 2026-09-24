@@ -150,3 +150,71 @@ def fig_mode_by_winner(models: dict, chosen: int, out: Path) -> None:
             ha="right", va="top", fontsize=9, color=INK2)
     save(fig, out / "mode_by_winner.png")
 
+
+def fig_stop_by_step(models: dict, out: Path) -> None:
+    fig, ax = new_fig("Stop head: mean P(stop) by step (execute arm, held-out)")
+    for n, d in models.items():
+        by_step: dict[int, list] = {}
+        for o in d["oof"]:
+            for k, q in enumerate(o["p_stop_A"]):
+                by_step.setdefault(k, []).append(q)
+        ks = [k for k in sorted(by_step) if len(by_step[k]) >= 30]
+        ax.plot(ks, [np.mean(by_step[k]) for k in ks], "-", color=MODEL_COLOUR[n], lw=2,
+                marker=MODEL_MARKER[n], ms=6, mec=SURFACE, mew=1.2, label=f"model {n}")
+    ax.set_xlabel("Step index (website moves so far)")
+    ax.set_ylabel("Mean P(stop)")
+    ax.set_ylim(0, 1.02)
+    ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+    ax.legend(fontsize=9, loc="lower right")
+    save(fig, out / "stop_by_step.png")
+ 
+ 
+def fig_stop_step0(models: dict, chosen: int, out: Path) -> None:
+    fig, ax = new_fig(f"Stop head: P(stop) at step 0 by budget and difficulty (model {chosen})")
+    oof = models[chosen]["oof"]
+    width = 0.26
+    for i, tier in enumerate(["Easy", "Medium", "Hard"]):
+        vals = []
+        for b in BUDGETS:
+            q = [o["p_stop_A"][0] for o in oof
+                 if o["budget_level"] == b and o["difficulty_tier"] == tier and o["p_stop_A"]]
+            vals.append(np.mean(q) if q else 0)
+        x = np.arange(len(BUDGETS)) + (i - 1) * width
+        ax.bar(x, vals, width - 0.03, color=TIER_COLOUR[tier], label=tier, zorder=3)
+    ax.set_xticks(np.arange(len(BUDGETS)), [f"{b // 1000}k" for b in BUDGETS])
+    ax.set_xlabel("Token budget")
+    ax.set_ylabel("Mean P(stop) at step 0")
+    ax.set_ylim(0, 1.18)
+    ax.legend(title="Difficulty tier", fontsize=9, title_fontsize=9, loc="upper right", ncol=3)
+    save(fig, out / "stop_step0.png")
+ 
+ 
+def fig_per_budget(models: dict, chosen: int, out: Path) -> None:
+    m = models[chosen]["metrics"]
+    pb = m["per_budget"]
+    x = np.arange(len(BUDGETS))
+    w = 0.36
+    a_s = [pb[str(b)]["baselines"]["always_A"]["successes"] for b in BUDGETS]
+    r_s = [pb[str(b)]["router"]["successes"] for b in BUDGETS]
+    a_t = [pb[str(b)]["baselines"]["always_A"]["tokens"] / 1e6 for b in BUDGETS]
+    r_t = [pb[str(b)]["router"]["tokens"] / 1e6 for b in BUDGETS]
+ 
+    for name, a, r, ylab, title in (
+            ("per_budget_successes", a_s, r_s, "Successes",
+             f"Successes by budget: model {chosen} vs always-A"),
+            ("per_budget_tokens", a_t, r_t, "Tokens spent (millions)",
+             f"Tokens spent by budget: model {chosen} vs always-A")):
+        fig, ax = new_fig(title)
+        ax.bar(x - w / 2, a, w - 0.03, color=INK2, alpha=0.55, label="always-A", zorder=3)
+        ax.bar(x + w / 2, r, w - 0.03, color=MODEL_COLOUR[chosen],
+               label=f"router (model {chosen})", zorder=3)
+        ax.set_xticks(x, [f"{b // 1000}k" for b in BUDGETS])
+        ax.set_xlabel("Token budget")
+        ax.set_ylabel(ylab)
+        ax.legend(fontsize=9, loc="upper left")
+        if name == "per_budget_tokens":
+            for i in range(len(BUDGETS)):
+                if a[i] > 0:
+                    ax.text(x[i] + w / 2, r[i] + max(a) * 0.015, f"−{1 - r[i] / a[i]:.0%}",
+                            ha="center", va="bottom", fontsize=8.5, color=INK)
+        save(fig, out / f"{name}.png")
