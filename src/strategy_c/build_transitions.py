@@ -148,3 +148,53 @@ def attach_step_logs(episodes: list[dict], raw_paths: list[str]) -> int:
         ep["step_log"] = raw.get((ep["strategy"], ep["task_id"], ep["budget_level"]), [])
         n += 1
     return n
+
+def write_jsonl(rows: list[dict], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+ 
+ 
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--episodes", default="../data/processed/6_budgets_ALL_tasks_decontaminated_batch/final_episodes.jsonl")
+    ap.add_argument("--raw", nargs="*", default=[
+        "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/strategy_a.jsonl",
+        "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/strategy_b.jsonl",])
+    ap.add_argument("--out-dir", default="../data/processed/strategy_c")
+    args = ap.parse_args()
+ 
+    #load the episodes
+    episodes = load_jsonl(args.episodes)
+    #attach the step logs
+    restored = attach_step_logs(episodes, args.raw)
+    print(f"[build] {len(episodes)} episodes"
+          + (f", step_log restored from raw for {restored}" if restored else ""))
+ 
+    #create the transitions
+    trans = [r for ep in episodes for r in episode_rows(ep)]
+    #create the mode pairs
+    pairs = mode_pairs(episodes)
+ 
+    #write the transitions and mode pairs to the output directory
+    out = Path(args.out_dir)
+    #write the transitions to the output directory
+    write_jsonl(trans, out / "transitions.jsonl")
+    #write the mode pairs to the output directory
+    write_jsonl(pairs, out / "mode_pairs.jsonl")
+
+    #count the actions
+    acts = Counter(r["action"] for r in trans)
+    print(f"[build] transitions {len(trans):>6}  "
+          + "  ".join(f"{a} {n}" for a, n in sorted(acts.items())))
+    print(f"[build] mode pairs  {len(pairs):>6}  "
+          f"both eligible {sum(p['both_eligible'] for p in pairs)}")
+    empty = sum(1 for ep in episodes if not ep.get("step_log"))
+    if empty:
+        print(f"[build] {empty} episodes had no steps -> stop row only")
+    print(f"[build] wrote -> {out}/")
+
+
+if __name__ == "__main__":
+    main()
