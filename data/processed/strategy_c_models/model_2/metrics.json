@@ -1,0 +1,476 @@
+{
+  "config": {
+    "alpha": 0.05,
+    "beta": 0.5,
+    "lambda": 0.5,
+    "hidden": 64,
+    "epochs": 60,
+    "lr": 0.001,
+    "batch": 256,
+    "folds": 5,
+    "seed": 0,
+    "threshold_quantiles": [
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.85,
+      0.9,
+      0.93,
+      0.95,
+      0.97,
+      0.98,
+      0.99
+    ],
+    "min_success_kept": 0.9
+  },
+  "train_seconds": 18.7,
+  "mode_head": {
+    "n_pairs": 2560,
+    "picks_cycle_frac": 0.000390625,
+    "auc_better_arm": 0.8114079337924581,
+    "auc_where_outcomes_differ": 0.7682291666666666,
+    "picks_cycle_by_budget": {
+      "2000": 0.0,
+      "4000": 0.0,
+      "8000": 0.0,
+      "16000": 0.0,
+      "32000": 0.0,
+      "64000": 0.002380952380952381
+    }
+  },
+  "stop_head": {
+    "n_states": 17439,
+    "auc_stop_vs_eventual_failure": 0.7564183240446682,
+    "mean_p_stop_by_tier": {
+      "Easy": 0.6623704084537094,
+      "Medium": 0.8144167037918963,
+      "Hard": 0.9215043423178587
+    }
+  },
+  "baselines": {
+    "always_A": {
+      "successes": 365,
+      "tokens": 27474370
+    },
+    "always_B": {
+      "successes": 197,
+      "tokens": 40558013
+    },
+    "oracle": {
+      "successes": 389,
+      "tokens": 7402730
+    }
+  },
+  "frontier": [
+    {
+      "threshold": null,
+      "quantile": null,
+      "successes": 365,
+      "tokens": 27451464,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2560
+      },
+      "success_kept_vs_A": 1.0,
+      "tokens_saved_vs_A": 0.001
+    },
+    {
+      "threshold": 0.7439969182014465,
+      "quantile": 0.3,
+      "successes": 245,
+      "tokens": 8000700,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "step0": 1792,
+        "never": 571,
+        "mid": 197
+      },
+      "success_kept_vs_A": 0.671,
+      "tokens_saved_vs_A": 0.709
+    },
+    {
+      "threshold": 0.9045550465583803,
+      "quantile": 0.4,
+      "successes": 275,
+      "tokens": 10704355,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "step0": 1590,
+        "never": 742,
+        "mid": 228
+      },
+      "success_kept_vs_A": 0.753,
+      "tokens_saved_vs_A": 0.61
+    },
+    {
+      "threshold": 0.9739179015159607,
+      "quantile": 0.5,
+      "successes": 288,
+      "tokens": 13211245,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "step0": 1373,
+        "never": 964,
+        "mid": 223
+      },
+      "success_kept_vs_A": 0.789,
+      "tokens_saved_vs_A": 0.519
+    },
+    {
+      "threshold": 0.9931299209594726,
+      "quantile": 0.6,
+      "successes": 302,
+      "tokens": 15868689,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "step0": 1160,
+        "never": 1156,
+        "mid": 244
+      },
+      "success_kept_vs_A": 0.827,
+      "tokens_saved_vs_A": 0.422
+    },
+    {
+      "threshold": 0.9986084938049317,
+      "quantile": 0.7,
+      "successes": 318,
+      "tokens": 18457344,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 1391,
+        "step0": 947,
+        "mid": 222
+      },
+      "success_kept_vs_A": 0.871,
+      "tokens_saved_vs_A": 0.328
+    },
+    {
+      "threshold": 0.9998255133628845,
+      "quantile": 0.8,
+      "successes": 335,
+      "tokens": 21434585,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 1676,
+        "step0": 714,
+        "mid": 170
+      },
+      "success_kept_vs_A": 0.918,
+      "tokens_saved_vs_A": 0.22
+    },
+    {
+      "threshold": 0.9999532699584961,
+      "quantile": 0.85,
+      "successes": 346,
+      "tokens": 22903369,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 1850,
+        "step0": 577,
+        "mid": 133
+      },
+      "success_kept_vs_A": 0.948,
+      "tokens_saved_vs_A": 0.166
+    },
+    {
+      "threshold": 0.9999923706054688,
+      "quantile": 0.9,
+      "successes": 354,
+      "tokens": 24297993,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2033,
+        "step0": 418,
+        "mid": 109
+      },
+      "success_kept_vs_A": 0.97,
+      "tokens_saved_vs_A": 0.116
+    },
+    {
+      "threshold": 0.9999983716011047,
+      "quantile": 0.93,
+      "successes": 361,
+      "tokens": 25241943,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2159,
+        "step0": 313,
+        "mid": 88
+      },
+      "success_kept_vs_A": 0.989,
+      "tokens_saved_vs_A": 0.081
+    },
+    {
+      "threshold": 0.9999996423721313,
+      "quantile": 0.95,
+      "successes": 363,
+      "tokens": 25820604,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2250,
+        "step0": 262,
+        "mid": 48
+      },
+      "success_kept_vs_A": 0.995,
+      "tokens_saved_vs_A": 0.06
+    },
+    {
+      "threshold": 1.0,
+      "quantile": 0.97,
+      "successes": 365,
+      "tokens": 26435430,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2353,
+        "step0": 170,
+        "mid": 37
+      },
+      "success_kept_vs_A": 1.0,
+      "tokens_saved_vs_A": 0.038
+    },
+    {
+      "threshold": 1.0,
+      "quantile": 0.98,
+      "successes": 365,
+      "tokens": 26435430,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2353,
+        "step0": 170,
+        "mid": 37
+      },
+      "success_kept_vs_A": 1.0,
+      "tokens_saved_vs_A": 0.038
+    },
+    {
+      "threshold": 1.0,
+      "quantile": 0.99,
+      "successes": 365,
+      "tokens": 26435430,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2353,
+        "step0": 170,
+        "mid": 37
+      },
+      "success_kept_vs_A": 1.0,
+      "tokens_saved_vs_A": 0.038
+    }
+  ],
+  "suggested_threshold": 0.9998255133628845,
+  "per_budget": {
+    "2000": {
+      "baselines": {
+        "always_A": {
+          "successes": 6,
+          "tokens": 1021764
+        },
+        "always_B": {
+          "successes": 0,
+          "tokens": 0
+        },
+        "oracle": {
+          "successes": 6,
+          "tokens": 23714
+        }
+      },
+      "router": {
+        "successes": 4,
+        "tokens": 245970,
+        "mode_mix": {
+          "A": 430
+        },
+        "stops": {
+          "never": 112,
+          "step0": 318
+        }
+      }
+    },
+    "4000": {
+      "baselines": {
+        "always_A": {
+          "successes": 24,
+          "tokens": 1822848
+        },
+        "always_B": {
+          "successes": 0,
+          "tokens": 0
+        },
+        "oracle": {
+          "successes": 24,
+          "tokens": 111474
+        }
+      },
+      "router": {
+        "successes": 19,
+        "tokens": 874500,
+        "mode_mix": {
+          "A": 425
+        },
+        "stops": {
+          "never": 195,
+          "step0": 195,
+          "mid": 35
+        }
+      }
+    },
+    "8000": {
+      "baselines": {
+        "always_A": {
+          "successes": 54,
+          "tokens": 3140674
+        },
+        "always_B": {
+          "successes": 24,
+          "tokens": 2477466
+        },
+        "oracle": {
+          "successes": 54,
+          "tokens": 462382
+        }
+      },
+      "router": {
+        "successes": 48,
+        "tokens": 2232281,
+        "mode_mix": {
+          "A": 424
+        },
+        "stops": {
+          "never": 294,
+          "step0": 95,
+          "mid": 35
+        }
+      }
+    },
+    "16000": {
+      "baselines": {
+        "always_A": {
+          "successes": 86,
+          "tokens": 5494599
+        },
+        "always_B": {
+          "successes": 34,
+          "tokens": 5743254
+        },
+        "oracle": {
+          "successes": 86,
+          "tokens": 1226976
+        }
+      },
+      "router": {
+        "successes": 77,
+        "tokens": 4424379,
+        "mode_mix": {
+          "A": 433
+        },
+        "stops": {
+          "never": 347,
+          "mid": 27,
+          "step0": 59
+        }
+      }
+    },
+    "32000": {
+      "baselines": {
+        "always_A": {
+          "successes": 96,
+          "tokens": 7746929
+        },
+        "always_B": {
+          "successes": 56,
+          "tokens": 11593570
+        },
+        "oracle": {
+          "successes": 103,
+          "tokens": 2188656
+        }
+      },
+      "router": {
+        "successes": 92,
+        "tokens": 6626400,
+        "mode_mix": {
+          "A": 428
+        },
+        "stops": {
+          "never": 365,
+          "mid": 32,
+          "step0": 31
+        }
+      }
+    },
+    "64000": {
+      "baselines": {
+        "always_A": {
+          "successes": 99,
+          "tokens": 8247556
+        },
+        "always_B": {
+          "successes": 83,
+          "tokens": 20743723
+        },
+        "oracle": {
+          "successes": 116,
+          "tokens": 3389528
+        }
+      },
+      "router": {
+        "successes": 95,
+        "tokens": 7031055,
+        "mode_mix": {
+          "A": 419,
+          "B": 1
+        },
+        "stops": {
+          "never": 363,
+          "mid": 41,
+          "step0": 16
+        }
+      }
+    }
+  }
+}

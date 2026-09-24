@@ -1,0 +1,476 @@
+{
+  "config": {
+    "alpha": 0.01,
+    "beta": 0.5,
+    "lambda": 0.5,
+    "hidden": 64,
+    "epochs": 60,
+    "lr": 0.001,
+    "batch": 256,
+    "folds": 5,
+    "seed": 0,
+    "threshold_quantiles": [
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.85,
+      0.9,
+      0.93,
+      0.95,
+      0.97,
+      0.98,
+      0.99
+    ],
+    "min_success_kept": 0.9
+  },
+  "train_seconds": 17.6,
+  "mode_head": {
+    "n_pairs": 2560,
+    "picks_cycle_frac": 0.000390625,
+    "auc_better_arm": 0.8100481057449078,
+    "auc_where_outcomes_differ": 0.7671440972222222,
+    "picks_cycle_by_budget": {
+      "2000": 0.0,
+      "4000": 0.0,
+      "8000": 0.0,
+      "16000": 0.0,
+      "32000": 0.0,
+      "64000": 0.002380952380952381
+    }
+  },
+  "stop_head": {
+    "n_states": 17439,
+    "auc_stop_vs_eventual_failure": 0.7533516523260702,
+    "mean_p_stop_by_tier": {
+      "Easy": 0.6711025157847212,
+      "Medium": 0.8178692811023546,
+      "Hard": 0.9262943405965267
+    }
+  },
+  "baselines": {
+    "always_A": {
+      "successes": 365,
+      "tokens": 27474370
+    },
+    "always_B": {
+      "successes": 197,
+      "tokens": 40558013
+    },
+    "oracle": {
+      "successes": 389,
+      "tokens": 7402730
+    }
+  },
+  "frontier": [
+    {
+      "threshold": null,
+      "quantile": null,
+      "successes": 365,
+      "tokens": 27451464,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2560
+      },
+      "success_kept_vs_A": 1.0,
+      "tokens_saved_vs_A": 0.001
+    },
+    {
+      "threshold": 0.7648032903671265,
+      "quantile": 0.3,
+      "successes": 245,
+      "tokens": 7977441,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "step0": 1792,
+        "never": 566,
+        "mid": 202
+      },
+      "success_kept_vs_A": 0.671,
+      "tokens_saved_vs_A": 0.71
+    },
+    {
+      "threshold": 0.9225210309028626,
+      "quantile": 0.4,
+      "successes": 275,
+      "tokens": 10680427,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "step0": 1582,
+        "never": 753,
+        "mid": 225
+      },
+      "success_kept_vs_A": 0.753,
+      "tokens_saved_vs_A": 0.611
+    },
+    {
+      "threshold": 0.9826647639274597,
+      "quantile": 0.5,
+      "successes": 285,
+      "tokens": 13122298,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "step0": 1367,
+        "never": 957,
+        "mid": 236
+      },
+      "success_kept_vs_A": 0.781,
+      "tokens_saved_vs_A": 0.522
+    },
+    {
+      "threshold": 0.9963307976722717,
+      "quantile": 0.6,
+      "successes": 299,
+      "tokens": 15792608,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "step0": 1149,
+        "never": 1160,
+        "mid": 251
+      },
+      "success_kept_vs_A": 0.819,
+      "tokens_saved_vs_A": 0.425
+    },
+    {
+      "threshold": 0.9994065284729003,
+      "quantile": 0.7,
+      "successes": 311,
+      "tokens": 18505359,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "step0": 922,
+        "never": 1402,
+        "mid": 236
+      },
+      "success_kept_vs_A": 0.852,
+      "tokens_saved_vs_A": 0.326
+    },
+    {
+      "threshold": 0.9999375581741333,
+      "quantile": 0.8,
+      "successes": 333,
+      "tokens": 21331472,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 1681,
+        "step0": 698,
+        "mid": 181
+      },
+      "success_kept_vs_A": 0.912,
+      "tokens_saved_vs_A": 0.224
+    },
+    {
+      "threshold": 0.9999847412109375,
+      "quantile": 0.85,
+      "successes": 343,
+      "tokens": 22854273,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 1867,
+        "step0": 541,
+        "mid": 152
+      },
+      "success_kept_vs_A": 0.94,
+      "tokens_saved_vs_A": 0.168
+    },
+    {
+      "threshold": 0.9999980926513672,
+      "quantile": 0.9,
+      "successes": 354,
+      "tokens": 24287298,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2052,
+        "step0": 397,
+        "mid": 111
+      },
+      "success_kept_vs_A": 0.97,
+      "tokens_saved_vs_A": 0.116
+    },
+    {
+      "threshold": 0.9999996423721313,
+      "quantile": 0.93,
+      "successes": 360,
+      "tokens": 25030100,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2162,
+        "step0": 305,
+        "mid": 93
+      },
+      "success_kept_vs_A": 0.986,
+      "tokens_saved_vs_A": 0.089
+    },
+    {
+      "threshold": 0.9999998807907104,
+      "quantile": 0.95,
+      "successes": 362,
+      "tokens": 25389335,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2211,
+        "step0": 276,
+        "mid": 73
+      },
+      "success_kept_vs_A": 0.992,
+      "tokens_saved_vs_A": 0.076
+    },
+    {
+      "threshold": 1.0,
+      "quantile": 0.97,
+      "successes": 363,
+      "tokens": 25876522,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2290,
+        "step0": 221,
+        "mid": 49
+      },
+      "success_kept_vs_A": 0.995,
+      "tokens_saved_vs_A": 0.058
+    },
+    {
+      "threshold": 1.0,
+      "quantile": 0.98,
+      "successes": 363,
+      "tokens": 25876522,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2290,
+        "step0": 221,
+        "mid": 49
+      },
+      "success_kept_vs_A": 0.995,
+      "tokens_saved_vs_A": 0.058
+    },
+    {
+      "threshold": 1.0,
+      "quantile": 0.99,
+      "successes": 363,
+      "tokens": 25876522,
+      "mode_mix": {
+        "A": 2559,
+        "B": 1
+      },
+      "stops": {
+        "never": 2290,
+        "step0": 221,
+        "mid": 49
+      },
+      "success_kept_vs_A": 0.995,
+      "tokens_saved_vs_A": 0.058
+    }
+  ],
+  "suggested_threshold": 0.9999375581741333,
+  "per_budget": {
+    "2000": {
+      "baselines": {
+        "always_A": {
+          "successes": 6,
+          "tokens": 1021764
+        },
+        "always_B": {
+          "successes": 0,
+          "tokens": 0
+        },
+        "oracle": {
+          "successes": 6,
+          "tokens": 23714
+        }
+      },
+      "router": {
+        "successes": 4,
+        "tokens": 270569,
+        "mode_mix": {
+          "A": 430
+        },
+        "stops": {
+          "never": 121,
+          "step0": 309
+        }
+      }
+    },
+    "4000": {
+      "baselines": {
+        "always_A": {
+          "successes": 24,
+          "tokens": 1822848
+        },
+        "always_B": {
+          "successes": 0,
+          "tokens": 0
+        },
+        "oracle": {
+          "successes": 24,
+          "tokens": 111474
+        }
+      },
+      "router": {
+        "successes": 19,
+        "tokens": 901108,
+        "mode_mix": {
+          "A": 425
+        },
+        "stops": {
+          "never": 204,
+          "step0": 190,
+          "mid": 31
+        }
+      }
+    },
+    "8000": {
+      "baselines": {
+        "always_A": {
+          "successes": 54,
+          "tokens": 3140674
+        },
+        "always_B": {
+          "successes": 24,
+          "tokens": 2477466
+        },
+        "oracle": {
+          "successes": 54,
+          "tokens": 462382
+        }
+      },
+      "router": {
+        "successes": 46,
+        "tokens": 2217077,
+        "mode_mix": {
+          "A": 424
+        },
+        "stops": {
+          "never": 294,
+          "step0": 102,
+          "mid": 28
+        }
+      }
+    },
+    "16000": {
+      "baselines": {
+        "always_A": {
+          "successes": 86,
+          "tokens": 5494599
+        },
+        "always_B": {
+          "successes": 34,
+          "tokens": 5743254
+        },
+        "oracle": {
+          "successes": 86,
+          "tokens": 1226976
+        }
+      },
+      "router": {
+        "successes": 78,
+        "tokens": 4422457,
+        "mode_mix": {
+          "A": 433
+        },
+        "stops": {
+          "never": 343,
+          "mid": 37,
+          "step0": 53
+        }
+      }
+    },
+    "32000": {
+      "baselines": {
+        "always_A": {
+          "successes": 96,
+          "tokens": 7746929
+        },
+        "always_B": {
+          "successes": 56,
+          "tokens": 11593570
+        },
+        "oracle": {
+          "successes": 103,
+          "tokens": 2188656
+        }
+      },
+      "router": {
+        "successes": 90,
+        "tokens": 6542477,
+        "mode_mix": {
+          "A": 428
+        },
+        "stops": {
+          "never": 355,
+          "mid": 44,
+          "step0": 29
+        }
+      }
+    },
+    "64000": {
+      "baselines": {
+        "always_A": {
+          "successes": 99,
+          "tokens": 8247556
+        },
+        "always_B": {
+          "successes": 83,
+          "tokens": 20743723
+        },
+        "oracle": {
+          "successes": 116,
+          "tokens": 3389528
+        }
+      },
+      "router": {
+        "successes": 96,
+        "tokens": 6977784,
+        "mode_mix": {
+          "A": 419,
+          "B": 1
+        },
+        "stops": {
+          "never": 364,
+          "mid": 41,
+          "step0": 15
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "alpha": 0.1,
+  "beta": 0.5,
+  "lambda": 0.5,
+  "hidden": 64,
+  "epochs": 60,
+  "lr": 0.001,
+  "batch": 256,
+  "folds": 5,
+  "seed": 0,
+  "min_success_kept": 0.9
+}
