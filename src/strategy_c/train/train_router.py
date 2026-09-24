@@ -110,3 +110,30 @@ class Norm:
     #normalise the input
     def __call__(self, X: np.ndarray) -> np.ndarray:
         return (X - self.mean) / self.std
+
+
+# training
+#Advantage-weighted policy gradient with entropy bonus
+# X:states, A:action index taken, W:exp(advantage/beta) for that action
+def train_head(X: np.ndarray, A: np.ndarray, W: np.ndarray, cfg: dict) -> MLP:
+    #set the seed
+    torch.manual_seed(cfg["seed"])
+    #define the MLP
+    net = MLP(X.shape[1], cfg["hidden"])
+    #define the optimizer
+    opt = torch.optim.Adam(net.parameters(), lr=cfg["lr"])
+    #convert the input to tensors
+    Xt, At, Wt = (torch.tensor(X, dtype=torch.float32), torch.tensor(A), torch.tensor(W, dtype=torch.float32))
+    #train the MLP  
+    for epoch in range(cfg["epochs"]):
+        perm = torch.randperm(len(Xt))
+        for i in range(0, len(Xt), cfg["batch"]):
+            j = perm[i:i + cfg["batch"]] #batch index
+            logp = torch.log_softmax(net(Xt[j]), -1) #log probability of the action
+            chosen = logp.gather(1, At[j][:, None]).squeeze(1) #log probability of the chosen action
+            entropy = -(logp.exp() * logp).sum(-1).mean() #entropy of the policy
+            loss = -(Wt[j] * chosen).mean() - cfg["alpha"] * entropy #loss function
+            opt.zero_grad() #zero the gradients
+            loss.backward() #backpropagate the loss
+            opt.step() #update the parameters
+    return net
