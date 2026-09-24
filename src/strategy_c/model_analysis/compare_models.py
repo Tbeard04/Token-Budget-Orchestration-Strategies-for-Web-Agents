@@ -80,14 +80,6 @@ def fig_frontier(models: dict, chosen: int, out: Path) -> None:
                 mec=SURFACE, mew=1.5, zorder=4,
                 label=f"model {n}  (α = {m['config']['alpha']})")
         s = suggested_row(m)
-        if n == chosen:
-            ax.plot(100 * s["tokens_saved_vs_A"], 100 * s["success_kept_vs_A"], "o",
-                    ms=18, mfc="none", mec=MODEL_COLOUR[n], mew=2, zorder=5)
-            ax.annotate(f"chosen operating point\n{s['success_kept_vs_A']:.0%} kept, "
-                        f"{s['tokens_saved_vs_A']:.0%} saved",
-                        (100 * s["tokens_saved_vs_A"], 100 * s["success_kept_vs_A"]),
-                        xytext=(10, 62), textcoords="offset points", fontsize=9, color=INK,
-                        arrowprops=dict(arrowstyle="-", color=INK2, lw=1))
     #plot the baselines
     b = next(iter(models.values()))["metrics"]["baselines"]
     ref_s, ref_t = b["always_A"]["successes"], b["always_A"]["tokens"] #reference successes and tokens
