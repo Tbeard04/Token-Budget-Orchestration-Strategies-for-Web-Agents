@@ -366,3 +366,9 @@ def run_shared_analysis(df: pd.DataFrame, out_dir: Path, verbose_tasks: bool = F
     plot_tokens_by_budget(df, out_dir)
     plot_success_by_site(df, out_dir)
     plot_difficulty_curve(df, out_dir)
+
+
+
+
+
+## add spending schemes analysis here for shared analysis between A,B & C
