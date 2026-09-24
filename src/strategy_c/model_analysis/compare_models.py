@@ -123,3 +123,30 @@ def fig_mode_p_cycle(models: dict, out: Path) -> None:
     ax.legend(fontsize=9, loc="upper right", bbox_to_anchor=(1.0, 0.98))
     save(fig, out / "mode_p_cycle.png")
 
+#figure for the mode head: P(cycle) by which arm actually won
+def fig_mode_by_winner(models: dict, chosen: int, out: Path) -> None:
+    fig, ax = new_fig(f"Mode head: P(cycle) by which arm actually won (model {chosen})")
+    oof = models[chosen]["oof"] #oof predictions
+    groups = {"A only": [], "B only": [], "both": [], "neither": []}
+    for o in oof: #group the predictions by which arm actually won
+        k = ("A only" if o["a_success"] and not o["b_success"] else
+             "B only" if o["b_success"] and not o["a_success"] else
+             "both" if o["a_success"] else "neither")
+        groups[k].append(o["p_cycle"]) #add the p(cycle) to the group
+    names = list(groups)
+    bp = ax.boxplot([groups[k] for k in names], #boxplot of the p(cycle) for each group
+                    tick_labels=[f"{k}\n(n={len(groups[k])})" for k in names],
+                    widths=0.5, patch_artist=True, showfliers=False,
+                    medianprops=dict(color=INK, lw=1.5),
+                    whiskerprops=dict(color=INK2), capprops=dict(color=INK2))
+    for patch in bp["boxes"]: #set the color of the boxes
+        patch.set(facecolor=MODEL_COLOUR[chosen], alpha=0.35, edgecolor=MODEL_COLOUR[chosen])
+    ax.axhline(0.5, color=INK2, lw=1, ls=(0, (4, 3))) #add the decision boundary
+    ax.set_ylim(-0.02, 0.56)
+    ax.set_ylabel("P(cycle)")
+    ax.set_xlabel("Which arm succeeded on the pair")
+    auc = models[chosen]["metrics"]["mode_head"]["auc_where_outcomes_differ"] #AUC for the mode head
+    ax.text(0.98, 0.88, f"AUC, A-only vs B-only: {auc:.2f}", transform=ax.transAxes,
+            ha="right", va="top", fontsize=9, color=INK2)
+    save(fig, out / "mode_by_winner.png")
+
