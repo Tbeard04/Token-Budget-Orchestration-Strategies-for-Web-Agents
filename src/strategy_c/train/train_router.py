@@ -1,7 +1,6 @@
 """
 train_router.py - train and evaluate one version of the Strategy C router
 
-
 Two small MLPs, trained separately, saved together as router.pt:
 J = E[ w(s,a) * log pi(a|s) ] + alpha * H(pi)
 w(s,a) = exp(A(s,a) / beta), clipped
