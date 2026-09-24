@@ -89,4 +89,24 @@ MODE_FEATURE_NAMES = (["tier_ord", "pages_to_traverse", "retrieval_type", "inter
 #stop feature names
 STOP_FEATURE_NAMES = MODE_FEATURE_NAMES + ["step_index", "budget_remaining_frac", "last_error", "url_changed_last", "consecutive_errors", "mode_ord"]
 
+#multi-layer perceptron
+class MLP(nn.Module):
+    #number of input features, number of hidden layers, number of output classes
+    def __init__(self, n_in: int, hidden: int, n_out: int = 2):
+        #initialise the MLP
+        super().__init__()
+        #define the layers
+        self.net = nn.Sequential(nn.Linear(n_in, hidden), nn.ReLU(), nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, n_out))
+    #forward pass
+    def forward(self, x):
+        return self.net(x)
 
+#normalisation
+class Norm:
+    #fit the normalisation on the training fold only
+    def __init__(self, X: np.ndarray):
+        self.mean = X.mean(0)
+        self.std = X.std(0) + 1e-6
+    #normalise the input
+    def __call__(self, X: np.ndarray) -> np.ndarray:
+        return (X - self.mean) / self.std
