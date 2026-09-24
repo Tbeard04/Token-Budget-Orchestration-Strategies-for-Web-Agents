@@ -129,3 +129,22 @@ def mode_pairs(episodes: list[dict]) -> list[dict]:
         row["both_eligible"] = row["a_eligible"] and row["b_eligible"]
         out.append(row)
     return out
+
+#if the joined file dropped step_log, pull it back from the raw files (in this case I haven't dropped it)
+def attach_step_logs(episodes: list[dict], raw_paths: list[str]) -> int:
+    #if the episodes have step_log, return 0
+    if episodes and "step_log" in episodes[0]:
+        #return 0
+        return 0
+    #create a dictionary to store the step logs
+    raw = {}
+    #loop through the raw paths
+    for p in raw_paths:
+        for r in load_jsonl(p):
+            if "error" not in r:
+                raw[(r["strategy"], r["task_id"], r["budget_level"])] = r.get("step_log", [])
+    n = 0
+    for ep in episodes:
+        ep["step_log"] = raw.get((ep["strategy"], ep["task_id"], ep["budget_level"]), [])
+        n += 1
+    return n
