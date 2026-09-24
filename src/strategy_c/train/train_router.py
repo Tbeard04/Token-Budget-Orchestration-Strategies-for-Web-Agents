@@ -157,3 +157,15 @@ def advantage_weights(returns: np.ndarray, beta: float, clip: float = 20.0) -> n
     #subtract the minimum weight to avoid negative weights
     return w - w.min(1, keepdims=True)
 
+
+#build the mode set
+def build_mode_set(pairs: list[dict], lam: float):
+    #filter the pairs that are both eligible
+    P = [p for p in pairs if p["both_eligible"]]
+    #convert the pairs to features
+    X = np.array([task_features(p) for p in P], dtype=np.float32)
+    #convert the pairs to returns
+    R = np.array([[p["a_success"] * (1 - lam * p["a_tokens"] / p["budget_level"]),
+                   p["b_success"] * (1 - lam * p["b_tokens"] / p["budget_level"])] for p in P])
+    #return the pairs, features, and returns
+    return P, X, R
