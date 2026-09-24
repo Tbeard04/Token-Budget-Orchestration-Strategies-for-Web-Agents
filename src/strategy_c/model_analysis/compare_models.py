@@ -150,14 +150,14 @@ def fig_mode_by_winner(models: dict, chosen: int, out: Path) -> None:
             ha="right", va="top", fontsize=9, color=INK2)
     save(fig, out / "mode_by_winner.png")
 
-
+#figure for the stop head: mean P(stop) by step (execute arm, held-out)
 def fig_stop_by_step(models: dict, out: Path) -> None:
     fig, ax = new_fig("Stop head: mean P(stop) by step (execute arm, held-out)")
     for n, d in models.items():
         by_step: dict[int, list] = {}
-        for o in d["oof"]:
+        for o in d["oof"]: #group the predictions by step
             for k, q in enumerate(o["p_stop_A"]):
-                by_step.setdefault(k, []).append(q)
+                by_step.setdefault(k, []).append(q) #add the p(stop) to the group
         ks = [k for k in sorted(by_step) if len(by_step[k]) >= 30]
         ax.plot(ks, [np.mean(by_step[k]) for k in ks], "-", color=MODEL_COLOUR[n], lw=2,
                 marker=MODEL_MARKER[n], ms=6, mec=SURFACE, mew=1.2, label=f"model {n}")
@@ -168,7 +168,7 @@ def fig_stop_by_step(models: dict, out: Path) -> None:
     ax.legend(fontsize=9, loc="lower right")
     save(fig, out / "stop_by_step.png")
  
- 
+#figure for the stop head: P(stop) at step 0 by budget and difficulty
 def fig_stop_step0(models: dict, chosen: int, out: Path) -> None:
     fig, ax = new_fig(f"Stop head: P(stop) at step 0 by budget and difficulty (model {chosen})")
     oof = models[chosen]["oof"]
@@ -188,7 +188,7 @@ def fig_stop_step0(models: dict, chosen: int, out: Path) -> None:
     ax.legend(title="Difficulty tier", fontsize=9, title_fontsize=9, loc="upper right", ncol=3)
     save(fig, out / "stop_step0.png")
  
- 
+#figure for the stop head: successes and tokens at each budget
 def fig_per_budget(models: dict, chosen: int, out: Path) -> None:
     m = models[chosen]["metrics"]
     pb = m["per_budget"]
@@ -198,7 +198,7 @@ def fig_per_budget(models: dict, chosen: int, out: Path) -> None:
     r_s = [pb[str(b)]["router"]["successes"] for b in BUDGETS]
     a_t = [pb[str(b)]["baselines"]["always_A"]["tokens"] / 1e6 for b in BUDGETS]
     r_t = [pb[str(b)]["router"]["tokens"] / 1e6 for b in BUDGETS]
- 
+    #plot the successes and tokens at each budget
     for name, a, r, ylab, title in (
             ("per_budget_successes", a_s, r_s, "Successes",
              f"Successes by budget: model {chosen} vs always-A"),
@@ -218,6 +218,7 @@ def fig_per_budget(models: dict, chosen: int, out: Path) -> None:
                     ax.text(x[i] + w / 2, r[i] + max(a) * 0.015, f"−{1 - r[i] / a[i]:.0%}", ha="center", va="bottom", fontsize=8.5, color=INK)
         save(fig, out / f"{name}.png")
 
+#main function
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", default="../data/processed/strategy_c_models")
