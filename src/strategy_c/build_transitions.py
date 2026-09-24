@@ -102,3 +102,30 @@ def episode_rows(ep: dict) -> list[dict]:
     })
     return rows
 
+# mode pairs
+def mode_pairs(episodes: list[dict]) -> list[dict]:
+    #one row per (task, budget) with A's and B's outcome side by side
+    cells: dict[tuple, dict] = defaultdict(dict)
+    #group the episodes by task and budget
+    for ep in episodes:
+        #if the strategy is in ACTION_OF
+        if ep["strategy"] in ACTION_OF:
+            #add the episode to the cells
+            cells[(ep["task_id"], ep["budget_level"])][ep["strategy"]] = ep
+ 
+    #loop through the cells
+    out = []
+    for (tid, budget), arms in sorted(cells.items()):
+        if "A" not in arms or "B" not in arms:
+            continue
+        a, b = arms["A"], arms["B"]
+        row = {"task_id": tid, "budget_level": budget,
+               **{f: a.get(f) for f in TASK_FIELDS},
+               "tier_ord": TIER_ORD.get(a.get("difficulty_tier"))}
+        for s, ep in (("a", a), ("b", b)):
+            row[f"{s}_success"] = bool(ep["success"])
+            row[f"{s}_tokens"] = ep["total_tokens"]
+            row[f"{s}_eligible"] = ep.get("use_for_reward", True)
+        row["both_eligible"] = row["a_eligible"] and row["b_eligible"]
+        out.append(row)
+    return out
