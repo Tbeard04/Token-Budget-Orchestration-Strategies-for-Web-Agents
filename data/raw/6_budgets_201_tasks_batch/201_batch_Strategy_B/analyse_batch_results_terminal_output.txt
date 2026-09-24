@@ -10,7 +10,7 @@ budget_level
 32000              201         44      21.89%            44          201   21.89%          30111             5
 64000              201         60      29.85%            60          201   29.85%          58053             8
 
-   Distinct tasks solved at ANY budget: 62/201 (31%)
+ Distinct tasks solved at ANY budget: 62/201 (31%)
 
 ======================================================================
 Success Rate by Site
@@ -24,96 +24,41 @@ shopping_admin       402      11.19%            22           67   32.84%        
 ======================================================================
 Task Solvability
 ======================================================================
-   62/201 tasks solved at least once (31%)
+62/201 tasks solved at least once (31%)
 
-                   site  min_budget  max_budget  times_solved  budgets_tested
-task_id
-403              reddit        4000       64000             5               5
-402              reddit        4000       64000             5               5
-723              reddit        4000       64000             5               5
-22             shopping        8000       64000             4               4
-201      shopping_admin        8000       64000             4               4
-260            shopping        8000       64000             4               4
-191            shopping        8000       64000             4               4
-115      shopping_admin        8000       64000             4               4
-468            shopping        8000       64000             4               4
-247      shopping_admin        8000       64000             4               4
-313            shopping        8000       64000             4               4
-368            shopping        8000       64000             4               4
-276            shopping        8000       64000             4               4
-574            shopping        8000       64000             3               3
-518            shopping        8000       64000             4               4
-166            shopping        8000       64000             4               4
-538      shopping_admin        8000       64000             4               4
-792            shopping        8000       64000             4               4
-726              reddit        8000       64000             4               4
-582              reddit        8000       64000             4               4
-517            shopping        8000       64000             4               4
-774      shopping_admin        8000       64000             4               4
-796            shopping        8000       64000             3               3
-693            shopping       16000       64000             3               3
-652              reddit       16000       64000             3               3
-298            shopping       32000       64000             2               2
-233            shopping       32000       64000             2               2
-199      shopping_admin       32000       32000             1               1
-231            shopping       32000       64000             2               2
-96             shopping       32000       64000             2               2
-48             shopping       32000       32000             1               1
-47             shopping       32000       64000             2               2
-711      shopping_admin       32000       64000             2               2
-713      shopping_admin       32000       64000             2               2
-95       shopping_admin       32000       64000             2               2
-129      shopping_admin       32000       64000             2               2
-691            shopping       32000       64000             2               2
-232            shopping       32000       64000             2               2
-400              reddit       32000       64000             2               2
-374      shopping_admin       32000       64000             2               2
-190            shopping       32000       64000             2               2
-128      shopping_admin       32000       64000             2               2
-650              reddit       32000       64000             2               2
-710      shopping_admin       32000       64000             2               2
-704      shopping_admin       32000       64000             2               2
-41       shopping_admin       64000       64000             1               1
-187      shopping_admin       64000       64000             1               1
-159            shopping       64000       64000             1               1
-209      shopping_admin       64000       64000             1               1
-240            shopping       64000       64000             1               1
-651              reddit       64000       64000             1               1
-626              reddit       64000       64000             1               1
-606              reddit       64000       64000             1               1
-602              reddit       64000       64000             1               1
-487      shopping_admin       64000       64000             1               1
-581              reddit       64000       64000             1               1
-489      shopping_admin       64000       64000             1               1
-635              reddit       64000       64000             1               1
-607              reddit       64000       64000             1               1
-677      shopping_admin       64000       64000             1               1
-705      shopping_admin       64000       64000             1               1
-773      shopping_admin       64000       64000             1               1
+ Tasks first solved at each budget level:
+       4000:   3 tasks
+       8000:  20 tasks
+      16000:   2 tasks
+      32000:  20 tasks
+      64000:  17 tasks
 
-   Minimum budget needed (median of solved tasks): 32000
+ Minimum budget needed (median of solved tasks): 32000
 
 ======================================================================
 Termination Reasons
 ======================================================================
-   budget_would_exceed             723  (60%)
-   safety_token_cap                255  (21%)
-   success                         154  (13%)
-   navigation_cycle                 36  (3%)
-   env_terminated                   26  (2%)
-   budget_exhausted_mid_step         9  (1%)
-   repeated_action_failure           3  (0%)
+   budget_would_exceed              723  (60%)
+   safety_token_cap                 255  (21%)
+   success                          154  (13%)
+   navigation_cycle                  36  (3%)
+   env_terminated                    26  (2%)
+   budget_exhausted_mid_step          9  (1%)
+   repeated_action_failure            3  (0%)
+
+ budget-driven total:   987  (82%)
+stuck (guard-fired):    39  (3%)
 
 ======================================================================
 Token Distribution
 ======================================================================
-episodes           : 1206
-min                : 0
-25th percentile    : 3930
-median             : 6926
-75th percentile    : 27816
-max                : 66915
-   median of successes: 6640  (n=154)
+episodes: 1206
+min: 0
+25th percentile: 3930
+median: 6926
+75th percentile: 27816
+max: 66915
+ median of successes: 6640  (n=154)
 
 ======================================================================
 Per-step Token Cost
@@ -124,4 +69,223 @@ reddit          4673.035714  5132.126946  1688.631889
 shopping        5645.750000  5906.510797   689.978387
 shopping_admin  6775.000000  6909.725596   658.995357
 
-   overall median: 5786  mean: 5927  std: 1339
+ overall median: 5786  mean: 5927  std: 1339
+
+======================================================================
+Plots
+======================================================================
+saved: ..\data\processed\diagrams\other_diagrams\6_budgets_201_tasks\strategy_b_batch\cost_curve_b.png
+saved: ..\data\processed\diagrams\other_diagrams\6_budgets_201_tasks\strategy_b_batch\termination_reasons_b.png
+ saved: ..\data\processed\diagrams\other_diagrams\6_budgets_201_tasks\strategy_b_batch\token_boxplot_b.png
+saved: ..\data\processed\diagrams\other_diagrams\6_budgets_201_tasks\strategy_b_batch\success_by_site_b.png
+
+======================================================================
+Critic Analysis: Rate and Outcome
+======================================================================
+ episodes: 1206
+ episodes with revisions: 120  (10.0%)
+ total critic calls: 3157
+ total revisions: 157
+ revision rate: 5.0%
+ rubber-stamp rate: 95.0%
+
+ SR of episodes WITH revisions   : 10.0%  (n=120)
+ SR of episodes WITHOUT revisions: 13.1%  (n=1086)
+
+ By budget level:
+   2000:     0 calls    0 revisions  (0.0%)
+   4000:   125 calls    1 revisions  (0.8%)
+   8000:   248 calls    2 revisions  (0.8%)
+  16000:   440 calls    7 revisions  (1.6%)
+  32000:   868 calls   36 revisions  (4.1%)
+  64000:  1476 calls  111 revisions  (7.5%)
+
+======================================================================
+Revision State Profile (Strategy C routing signal)
+======================================================================
+revisions analysed: 157
+
+ preceded by an action error :   17  (11%)
+ preceded by a clean step:  140  (89%)
+
+ base rate of post-error critic calls: 4%
+ lift from conditioning on action_error: 2.73x
+ action_error is a STRONG predictor of a useful Critic call.
+ Strategy C should invoke the Critic after errors.
+
+ Step number at revision:
+ median: 5   min: 0   max: 13
+
+ Budget remaining at revision:
+ median: 29%
+
+ Revised action executed without error: 101/157 (64%)
+ Revisions in episodes that succeeded : 12/157 (8%)
+
+ By site:
+ reddit          :  83 revisions, 56 worked, 5 in successful episodes
+ shopping        :  35 revisions, 21 worked, 6 in successful episodes
+ shopping_admin  :  39 revisions, 24 worked, 1 in successful episodes
+
+ By difficulty tier:
+ Unknown   : 157 revisions
+
+======================================================================
+Rubber-Stamp Cost (Strategy C savings ceiling)
+======================================================================
+total critic calls: 3157
+approval-only calls: 3000 (95%)
+
+ all critic tokens: 6,342,645
+tokens on approvals only: 5,996,638
+total episode tokens: 19,373,733
+
+ critic share of all spend: 32.7%
+Recoverable by perfect routing: 31.0% of all tokens
+
+======================================================================
+Per-Role Token Cost
+======================================================================
+ role | tokens | share
+ planner   |  6,914,314  |  35.7%
+ executor  |  6,116,774  |  31.6%
+ critic    |  6,342,645  |  32.7%
+ TOTAL     | 19,373,733  |  100.0%
+
+ Average tokens per logical step:
+ planner  :   2184
+ executor :   1932
+ critic   :   2003
+ TOTAL    :   6119
+
+======================================================================
+Planner vs Critic Value
+======================================================================
+successes with NO critic revision : 142
+successes WITH critic revision: 12
+
+ 92% of Strategy B's successes involved no Critic
+
+======================================================================
+Critic Revision Details (first 20)
+======================================================================
+
+   [1] task 613 @ 32000 step 3  (reddit, clean state)
+ proposed: select_option('378', 'r/books')
+ revised: click('378')
+ outcome: revision worked, episode failed
+ reason: The combobox 378 does not contain an 'r/books' option in the current listbox, and a select_option('378','r/boo
+
+   [2] task 613 @ 16000 step 2  (reddit, clean state)
+ proposed: select_option('378', 'books')
+ revised: click('378')
+ outcome: revision also failed, episode failed
+ reason: The 'books' option does not appear in the combobox options on the current page (the listbox shows options like
+
+   [3] task 613 @ 64000 step 5  (reddit, clean state)
+ proposed: press('415', 'Enter')
+ revised: click('378')
+ outcome: revision worked, episode failed
+ reason: The combobox search shows 'No results found' (listbox 417 alert). Pressing Enter on the searchbox (415) will n
+
+   [4] task 613 @ 64000 step 6  (reddit, clean state)
+ proposed: select_option('378', 'r/books')
+ revised: click('378')
+ outcome: revision also failed, episode failed
+ reason: select_option('378','r/books') was already attempted on this page (action 1) without success; per rules, rejec
+
+   [5] task 162 @ 64000 step 9  (shopping, clean state)
+ proposed: press('1486', 'Enter')
+ revised: fill('1486', 'Nintendo Switch game card case')
+ outcome: revision also failed, episode failed
+ reason: Element 1486 exists but currently contains 'Nintendo Switch game card case 40'. The planner required replacing
+
+   [6] task 209 @ 32000 step 4  (shopping_admin, clean state)
+ proposed: click('1112')
+ revised: click('845')
+ outcome: revision also failed, episode failed
+ reason: The executor proposed clicking '1112' (the LayoutTable), but that exact action was already performed earlier o
+
+   [7] task 693 @ 64000 step 1  (shopping, clean state)
+ proposed: scroll(0,1000)
+ revised: scroll(0,2000)
+ outcome: revision worked, episode SUCCESS
+ reason: The executor's action repeats scroll(0,1000) which was already performed (action 0); reject. Suggest scrolling
+
+   [8] task 190 @ 64000 step 2  (shopping, clean state)
+ proposed: send_msg_to_user('65.32')
+ revised: send_msg_to_user('$65.32')
+ outcome: revision also failed, episode SUCCESS
+ reason: The value should include the currency symbol as shown on the page; send_msg_to_user('65.32') omits the dollar
+
+   [9] task 496 @ 64000 step 9  (shopping_admin, clean state)
+ proposed: send_msg_to_user('N/A')
+ revised: click('801')
+ outcome: revision also failed, episode failed
+ reason: send_msg_to_user('N/A') would submit an answer to the user rather than clicking the Save button as required by
+
+   [10] task 636 @ 32000 step 5  (reddit, clean state)
+ proposed: fill('142', 'Title: DIY toolkit recommendations under $100\n\nHi e
+ revised: fill('137', 'DIY toolkit recommendations under $100')
+ outcome: revision worked, episode failed
+ reason: The proposed action fills the Body field but includes the title text instead of putting the post title into th
+
+   [11] task 636 @ 64000 step 5  (reddit, clean state)
+ proposed: click('395')
+ revised: fill('137', 'Looking for DIY toolkit recommendations under $100')
+ outcome: revision worked, episode failed
+ reason: Clicking Create submission now would submit without a required Title (textbox 137) and Body (142) filled; acti
+
+   [12] task 636 @ 64000 step 7  (reddit, clean state)
+ proposed: click('60')
+ revised: click('63')
+ outcome: revision worked, episode failed
+ reason: Element 60 exists but is the top navigation 'Submit' link, not the submission form's submit button. The page s
+
+   [13] task 636 @ 64000 step 8  (reddit, clean state)
+ proposed: click('395')
+ revised: click('378')
+ outcome: revision worked, episode failed
+ reason: The Create submission button exists, but the Forum combobox still shows 'Choose one…' so the required r/DIY fo
+
+   [14] task 636 @ 64000 step 9  (reddit, clean state)
+ proposed: select_option('378', 'DIY')
+ revised: fill('415', 'DIY')
+ outcome: revision worked, episode failed
+ reason: The combobox 378 does not contain an option labeled 'DIY' in the current AXTree, so select_option('378','DIY')
+
+   [15] task 718 @ 64000 step 3  (reddit, clean state)
+ proposed: click('180')
+ revised: noop()
+ outcome: revision worked, episode failed
+ reason: Element 180 is 'Retract downvote', which would remove an existing downvote. The topmost post is already downvo
+
+   [16] task 146 @ 32000 step 3  (shopping, clean state)
+ proposed: send_msg_to_user('N/A')
+ revised: click('1706')
+ outcome: revision worked, episode failed
+ reason: Proposed action send_msg_to_user('N/A') incorrectly attempts to answer before opening the requested order; the
+
+   [17] task 351 @ 64000 step 9  (shopping, clean state)
+ proposed: select_option('1500', 'Price: Low to High')
+ revised: click('1500')
+ outcome: revision also failed, episode failed
+ reason: select_option('1500', 'Price: Low to High') was already attempted earlier at the same URL and the page remaine
+
+   [18] task 509 @ 64000 step 7  (shopping, clean state)
+ proposed: select_option('1500', 'Customer Rating')
+ revised: click('1500')
+ outcome: revision worked, episode failed
+ reason: A select_option on element 1500 was already attempted earlier on this page (action 5) without changing the pag
+
+   [19] task 216 @ 64000 step 3  (shopping_admin, clean state)
+ proposed: click('1381')
+ revised: click('2119')
+ outcome: revision worked, episode failed
+ reason: click('1381') clicks the Search button, which does not match the planner sub-goal of opening the Electra Bra T
+
+   [20] task 510 @ 32000 step 4  (shopping, after error)
+ proposed: select_option('1500', 'Rating')
+ revised: click('1500')
+ outcome: revision also failed, episode failed
+ reason: select_option('1500','Rating') was already attempted earlier on this same page (action 3) and the page remaine
