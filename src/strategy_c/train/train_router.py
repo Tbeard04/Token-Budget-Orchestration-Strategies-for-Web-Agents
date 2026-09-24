@@ -22,7 +22,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from sklearn.metrics import roc_auc_score
- 
+
+#default configuration
 DEFAULT_CONFIG = {
     #entropy weight the hyperparameter under test
     "alpha": 0.05,
@@ -60,3 +61,32 @@ MODE_ORD = {"execute": 0, "cycle": 1}
 MODE_ACTIONS = ["execute", "cycle"]
 #stop actions
 STOP_ACTIONS = ["continue", "stop"]
+
+
+# features - shared with the live runner
+def task_features(r: dict) -> list[float]:
+    return ([float(r["tier_ord"]), float(r["pages_to_traverse"]),
+             float(r["retrieval_type"]), float(r["interaction"]),
+             float(r["target_locatability"]), float(RISK_ORD[r["risk_level"]]),
+             math.log2(r["budget_level"])]
+            + [1.0 if r["site"] == s else 0.0 for s in SITES]
+            + [1.0 if r["task_category"] == c else 0.0 for c in CATEGORIES])
+ 
+ 
+def stop_features(r: dict) -> list[float]:
+    return task_features(r) + [
+        float(r["step_index"]),
+        max(0.0, float(r["budget_remaining_frac"])),
+        float(r["last_error"]),
+        float(r["url_changed_last"]),
+        min(4.0, float(r["consecutive_errors"])),
+        float(MODE_ORD[r["mode"]]),
+    ]
+
+#mode feature names
+MODE_FEATURE_NAMES = (["tier_ord", "pages_to_traverse", "retrieval_type", "interaction", "target_locatability", "risk_ord", "log2_budget"]
+                      + [f"site={s}" for s in SITES] + [f"cat={c}" for c in CATEGORIES])
+#stop feature names
+STOP_FEATURE_NAMES = MODE_FEATURE_NAMES + ["step_index", "budget_remaining_frac", "last_error", "url_changed_last", "consecutive_errors", "mode_ord"]
+
+
