@@ -169,3 +169,22 @@ def build_mode_set(pairs: list[dict], lam: float):
                    p["b_success"] * (1 - lam * p["b_tokens"] / p["budget_level"])] for p in P])
     #return the pairs, features, and returns
     return P, X, R
+
+
+#build the stop set
+def build_stop_set(trans: list[dict], lam: float):
+    #filter the transitions that are not terminal and are reward eligible
+    S = [t for t in trans if not t["is_terminal"] and t["use_for_reward"]]
+    #convert the transitions to features
+    X = np.array([stop_features(t) for t in S], dtype=np.float32)
+    #convert the transitions to returns
+    R = np.zeros((len(S), 2))
+    for i, t in enumerate(S):
+        #calculate the spent tokens
+        spent = (1 - max(0.0, t["budget_remaining_frac"])) * t["budget_level"]
+        #calculate the remaining tokens
+        remaining = max(0.0, t["episode_tokens"] - spent)
+        #calculate the return
+        R[i, 0] = float(t["episode_success"]) - lam * remaining / t["budget_level"]
+    #return the transitions, features, and returns
+    return S, X, R
