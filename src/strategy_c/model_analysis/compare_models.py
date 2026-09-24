@@ -58,10 +58,68 @@ def save(fig, path: Path) -> None:
     plt.close(fig)
  
 #get the frontier at a given quantile
+#frontier meaning the set of trade offs the router can offer between success and tokens saved
 def at_quantile(m: dict, q: float) -> dict:
     return next(r for r in m["frontier"] if r["quantile"] == q)
  
 #get the suggested row
 def suggested_row(m: dict) -> dict:
     return next(r for r in m["frontier"] if r["threshold"] == m["suggested_threshold"])
+
+#figure for the frontier
+def fig_frontier(models: dict, chosen: int, out: Path) -> None:
+    fig, ax = new_fig("Cost–performance frontier of the Strategy C router", (8, 5.6))
+    #plot the frontier for each model
+    for n, d in models.items():
+        m = d["metrics"]
+        pts = [(100 * r["tokens_saved_vs_A"], 100 * r["success_kept_vs_A"]) #tokens saved vs always-A and successes kept vs always-A
+               for r in m["frontier"] if r["threshold"] is not None] #only the rows with a threshold
+        xs, ys = zip(*sorted(pts)) #sort the points by tokens saved vs always-A
+        ax.plot(xs, ys, "-", color=MODEL_COLOUR[n], lw=2, alpha=0.9, zorder=3)
+        ax.plot(xs, ys, MODEL_MARKER[n], color=MODEL_COLOUR[n], ms=6.5,
+                mec=SURFACE, mew=1.5, zorder=4,
+                label=f"model {n}  (α = {m['config']['alpha']})")
+        s = suggested_row(m)
+        if n == chosen:
+            ax.plot(100 * s["tokens_saved_vs_A"], 100 * s["success_kept_vs_A"], "o",
+                    ms=18, mfc="none", mec=MODEL_COLOUR[n], mew=2, zorder=5)
+            ax.annotate(f"chosen operating point\n{s['success_kept_vs_A']:.0%} kept, "
+                        f"{s['tokens_saved_vs_A']:.0%} saved",
+                        (100 * s["tokens_saved_vs_A"], 100 * s["success_kept_vs_A"]),
+                        xytext=(10, 62), textcoords="offset points", fontsize=9, color=INK,
+                        arrowprops=dict(arrowstyle="-", color=INK2, lw=1))
+    #plot the baselines
+    b = next(iter(models.values()))["metrics"]["baselines"]
+    ref_s, ref_t = b["always_A"]["successes"], b["always_A"]["tokens"] #reference successes and tokens
+    for name, mk, dx, dy in (("always_A", "D", -10, 6), ("always_B", "X", 10, 6), ("oracle", "*", -12, -16)):
+        x = 100 * (1 - b[name]["tokens"] / ref_t) #tokens saved vs always-A
+        y = 100 * b[name]["successes"] / ref_s #successes kept vs always-A
+        ax.plot(x, y, mk, color=INK2, ms=10 if mk != "*" else 14, mec=SURFACE, mew=1.2, zorder=6)
+        ax.annotate(name.replace("_", "-"), (x, y), xytext=(dx, dy),
+                    textcoords="offset points", fontsize=9, color=INK2,
+                    ha="right" if dx < 0 else "left")
+    #plot the grid
+    ax.axhline(100, color=GRID, lw=1, zorder=1)
+    ax.axvline(0, color=GRID, lw=1, zorder=1)
+    ax.set_xlabel("Tokens saved vs always-A (%)")
+    ax.set_ylabel("Successes kept vs always-A (%)")
+    ax.set_xlim(-55, 95)
+    ax.set_ylim(45, 112)
+    ax.legend(loc="lower right", fontsize=9)
+    save(fig, out / "frontier.png")
+ 
+#figure for the mode head: P(cycle) on held-out task–budget pairs
+def fig_mode_p_cycle(models: dict, out: Path) -> None:
+    fig, ax = new_fig("Mode head: P(cycle) on held-out task–budget pairs")
+    bins = np.linspace(0, 1, 41) #bins for the histogram
+    for n, d in models.items():
+        p = [o["p_cycle"] for o in d["oof"]] #p(cycle) for each model
+        ax.hist(p, bins=bins, histtype="step", lw=2, color=MODEL_COLOUR[n],
+                label=f"model {n}  (picks cycle {d['metrics']['mode_head']['picks_cycle_frac']:.1%})")
+    ax.axvline(0.5, color=INK2, lw=1, ls=(0, (4, 3)))
+    ax.text(0.51, ax.get_ylim()[1] * 0.45, "decision\nboundary", fontsize=8.5, color=INK2, va="top")
+    ax.set_xlabel("P(cycle)")
+    ax.set_ylabel("Task–budget pairs")
+    ax.legend(fontsize=9, loc="upper right", bbox_to_anchor=(1.0, 0.98))
+    save(fig, out / "mode_p_cycle.png")
 
