@@ -251,3 +251,142 @@ def baselines(pairs: list[dict]) -> dict:
     out["oracle"] = {"successes": s, "tokens": t}
     return out
 
+
+#load the JSONL file
+def load_jsonl(path: str | Path) -> list[dict]:
+    return [json.loads(l) for l in Path(path).read_text().splitlines() if l.strip()]
+ 
+#run the router
+def run(pairs: list[dict], trans: list[dict], cfg: dict, out_dir: Path) -> dict:
+    t0 = time.time()
+    np.random.seed(cfg["seed"])
+    lam, beta = cfg["lambda"], cfg["beta"]
+ 
+    P, Xm, Rm = build_mode_set(pairs, lam)
+    S, Xs, Rs = build_stop_set(trans, lam)
+    groups_m = np.array([p["task_id"] for p in P])
+    groups_s = np.array([t["task_id"] for t in S])
+    #task ids
+    task_ids = sorted({p["task_id"] for p in pairs} | {t["task_id"] for t in trans})
+    perm = np.random.default_rng(cfg["seed"]).permutation(task_ids) #shuffle the task ids
+    #fold of the task ids
+    fold_of = {int(t): i % cfg["folds"] for i, t in enumerate(perm)}
+ 
+    #out-of-fold predictions, both heads share the task folds
+    oof_cycle = np.zeros(len(P))
+    oof_stop = np.zeros(len(S))
+    for f in range(cfg["folds"]):
+        #training data for the mode head
+        tr_m = np.array([fold_of[g] != f for g in groups_m])
+        tr_s = np.array([fold_of[g] != f for g in groups_s])
+        nm, ns = Norm(Xm[tr_m]), Norm(Xs[tr_s]) #normalise the features
+        Xe, Ae, We = expand(nm(Xm[tr_m]), Rm[tr_m], beta)
+        net_m = train_head(Xe, Ae, We, cfg) #train the mode head
+        oof_cycle[~tr_m] = predict(net_m, nm(Xm[~tr_m]))
+        Xe, Ae, We = expand(ns(Xs[tr_s]), Rs[tr_s], beta) #expand the features and returns
+        net_s = train_head(Xe, Ae, We, cfg)
+        oof_stop[~tr_s] = predict(net_s, ns(Xs[~tr_s]))
+ 
+    #metrics for the mode head
+    p_cycle = {(p["task_id"], p["budget_level"]): float(q) for p, q in zip(P, oof_cycle)}
+    better_b = np.array([Rm[i, 1] > Rm[i, 0] for i in range(len(P))]) #better arm
+    differ = np.array([p["a_success"] != p["b_success"] for p in P]) #differ in success
+    mode_metrics = {
+        "n_pairs": len(P), #number of pairs
+        "picks_cycle_frac": float((oof_cycle >= 0.5).mean()), #fraction of pairs that pick the cycle arm
+        "auc_better_arm": float(roc_auc_score(better_b, oof_cycle)) if better_b.any() and not better_b.all() else None, #AUC of the better arm
+        "auc_where_outcomes_differ": float(roc_auc_score(
+            [p["b_success"] for p, d in zip(P, differ) if d],
+            [q for q, d in zip(oof_cycle, differ) if d])) if differ.sum() > 1 else None, #AUC of the where outcomes differ
+        "picks_cycle_by_budget": {
+            str(b): float(np.mean([q >= 0.5 for p, q in zip(P, oof_cycle) if p["budget_level"] == b]))
+            for b in sorted({p["budget_level"] for p in P})}, #fraction of pairs that pick the cycle arm by budget
+    }
+ 
+    #metrics for the stop head
+    y_succ = np.array([t["episode_success"] for t in S])
+    stop_metrics = {
+        "n_states": len(S),
+        "auc_stop_vs_eventual_failure": float(roc_auc_score(~y_succ, oof_stop)),
+        "mean_p_stop_by_tier": {
+            tier: float(np.mean([q for t, q in zip(S, oof_stop) if t["difficulty_tier"] == tier]))
+            for tier in ["Easy", "Medium", "Hard"]},
+    }
+ 
+    #simulate the full policy on held-out pairs
+    p_stop = defaultdict(list) #stop probabilities by strategy, task id, and budget level
+    for t, q in zip(S, oof_stop):
+        p_stop[(t["strategy"], t["task_id"], t["budget_level"])].append(float(q)) #append the stop probability
+    eps = {} #episodes by strategy, task id, and budget level
+    for t in trans:
+        k = (t["strategy"], t["task_id"], t["budget_level"]) #key
+        e = eps.setdefault(k, {"success": int(t["episode_success"]), #success
+                               "tokens": t["episode_tokens"], "spent": []}) #tokens and spent
+        if not t["is_terminal"]: #if not terminal
+            e["spent"].append(int((1 - max(0.0, t["budget_remaining_frac"])) * t["budget_level"])) #append the spent
+    base = baselines(P) #baselines
+    frontier = [{"threshold": None, "quantile": None, **simulate(P, p_cycle, {}, 1.1, eps)}]
+    for q in cfg["threshold_quantiles"]: #quantiles of the held-out P(stop)
+        th = float(np.quantile(oof_stop, q))
+        frontier.append({"threshold": th, "quantile": q,
+                         **simulate(P, p_cycle, p_stop, th, eps)})
+    ref_s, ref_t = base["always_A"]["successes"], base["always_A"]["tokens"]
+    #frontier
+    for row in frontier:
+        row["success_kept_vs_A"] = round(row["successes"] / ref_s, 3) if ref_s else None
+        row["tokens_saved_vs_A"] = round(1 - row["tokens"] / ref_t, 3) if ref_t else None
+    ok = [r for r in frontier if r["threshold"] is not None
+          and r["success_kept_vs_A"] is not None
+          and r["success_kept_vs_A"] >= cfg["min_success_kept"]]
+    suggested = max(ok, key=lambda r: r["tokens_saved_vs_A"])["threshold"] if ok else None
+ 
+    per_budget = {}
+    for b in sorted({p["budget_level"] for p in P}):
+        sub = [p for p in P if p["budget_level"] == b]
+        per_budget[str(b)] = {"baselines": baselines(sub), "router": simulate(sub, p_cycle, p_stop, suggested or 1.1, eps)}
+ 
+    #final fit on everything, saved for the live runner
+    nm, ns = Norm(Xm), Norm(Xs) #normalise the features
+    Xe, Ae, We = expand(nm(Xm), Rm, beta) #expand the features and returns
+    net_m = train_head(Xe, Ae, We, cfg) #train the mode head
+    Xe, Ae, We = expand(ns(Xs), Rs, beta) #expand the features and returns
+    net_s = train_head(Xe, Ae, We, cfg) #train the stop head
+ 
+    out_dir.mkdir(parents=True, exist_ok=True)
+    #save the model
+    torch.save({
+        "config": cfg,
+        "mode_features": MODE_FEATURE_NAMES, "stop_features": STOP_FEATURE_NAMES,
+        "mode_norm": {"mean": nm.mean.tolist(), "std": nm.std.tolist()},
+        "stop_norm": {"mean": ns.mean.tolist(), "std": ns.std.tolist()},
+        "mode_state": net_m.state_dict(), "stop_state": net_s.state_dict(),
+        "stop_threshold": suggested,
+        "sites": SITES, "categories": CATEGORIES,
+    }, out_dir / "router.pt")
+ 
+    metrics = {
+        "config": cfg,
+        "train_seconds": round(time.time() - t0, 1),
+        "mode_head": mode_metrics,
+        "stop_head": stop_metrics,
+        "baselines": base,
+        "frontier": frontier,
+        "suggested_threshold": suggested,
+        "per_budget": per_budget,
+    }
+    (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
+
+    #save the out-of-fold predictions
+    with (out_dir / "oof_predictions.jsonl").open("w") as f:
+        for p, q in zip(P, oof_cycle):
+            k = (p["task_id"], p["budget_level"])
+            f.write(json.dumps({
+                "task_id": k[0], "budget_level": k[1], "difficulty_tier": p["difficulty_tier"],
+                "fold": fold_of[k[0]], "p_cycle": round(float(q), 4),
+                "p_stop_A": [round(x, 4) for x in p_stop.get(("A",) + k, [])],
+                "p_stop_B": [round(x, 4) for x in p_stop.get(("B",) + k, [])],
+                "a_success": p["a_success"], "a_tokens": p["a_tokens"],
+                "b_success": p["b_success"], "b_tokens": p["b_tokens"],
+            }) + "\n")
+
+    return metrics
