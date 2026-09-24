@@ -162,7 +162,7 @@ def main() -> None:
     ap.add_argument("--raw", nargs="*", default=[
         "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/strategy_a.jsonl",
         "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/strategy_b.jsonl",])
-    ap.add_argument("--out-dir", default="../data/processed/strategy_c")
+    ap.add_argument("--out-dir", default="../data/processed/strategy_c_models")
     args = ap.parse_args()
  
     #load the episodes
