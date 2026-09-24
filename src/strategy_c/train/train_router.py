@@ -203,3 +203,51 @@ def expand(X: np.ndarray, R: np.ndarray, beta: float):
     keep = We > 0 #keep the rows with weight greater than 0
     #return the features, actions, and weights
     return Xe[keep], Ae[keep], We[keep]
+
+
+#evaluate the policy
+#run the policy on held-out pairs using logged episodes
+def simulate(pairs: list[dict], p_cycle: dict, p_stop: dict, threshold: float, episodes_by_arm: dict) -> dict:
+    #number of successes
+    succ = tok = 0
+    #number of stops at each step
+    stops_at = Counter()
+    #number of modes
+    modes = Counter()
+    for p in pairs:
+        key = (p["task_id"], p["budget_level"]) #task id and budget level
+        arm = "B" if p_cycle[key] >= 0.5 else "A"
+        modes[arm] += 1 #increment the mode count
+        ep = episodes_by_arm[(arm,) + key] #get the episodes by arm and key
+        probs = p_stop.get((arm,) + key, []) #get the stop probabilities by arm and key
+        stopped = next((k for k, q in enumerate(probs) if q >= threshold), None) #get the stopped step
+        if stopped is None:
+            succ += ep["success"] #increment the success count
+            tok += ep["tokens"] #increment the token count
+            stops_at["never"] += 1
+        else:
+            #increment the token count
+            tok += ep["spent"][stopped]
+            stops_at["step0" if stopped == 0 else "mid"] += 1
+    return {"successes": int(succ), "tokens": int(tok),
+            "mode_mix": dict(modes), "stops": dict(stops_at)}
+#baselines
+def baselines(pairs: list[dict]) -> dict:
+    #return the successes and tokens for each arm in (("always_A", "a"), ("always_B", "b"))
+    out = {}
+    #always choose arm A
+    for name, arm in (("always_A", "a"), ("always_B", "b")):
+        out[name] = {"successes": int(sum(p[f"{arm}_success"] for p in pairs)),
+                     "tokens": int(sum(p[f"{arm}_tokens"] for p in pairs))}
+    #oracle
+    s = t = 0
+    #calculate the successes and tokens for the oracle
+    for p in pairs:
+        wins = [p[f"{a}_tokens"] for a in "ab" if p[f"{a}_success"]] #get the tokens for the winning arm
+        if wins:
+            s += 1 #increment the success count
+            t += min(wins) #increment the token count
+            t += min(wins)
+    out["oracle"] = {"successes": s, "tokens": t}
+    return out
+
