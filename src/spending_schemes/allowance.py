@@ -37,7 +37,6 @@ def allowance(scheme: str, step: int, budget: int, spent: int, last_error: bool,
 
     raise ValueError(f"unknown scheme {scheme!r}")
 
-
 #how many prompt characters fit inside a step allowance
 def prompt_char_limit(step_tokens: int, calls_per_step: int, instruction_tokens: int, effort: str) -> int:
     #per call output
