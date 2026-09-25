@@ -93,3 +93,20 @@ _router: Router | None = None
 #global tasks variable
 _tasks: dict[int, dict] | None = None
 
+#configure the router and tasks
+def configure(router_dir: str | Path | None = None, stop_answer: str | None = None) -> None:
+    global _router, _tasks, STOP_ANSWER
+    #if the stop answer is not None, check if it is valid
+    if stop_answer is not None:
+        if stop_answer not in ("none", "na"):
+            raise ValueError("stop_answer must be 'none' or 'na'")
+        STOP_ANSWER = stop_answer
+    #load the router
+    _router = Router(Path(router_dir) if router_dir else ROUTER_DIR)
+    #load the tasks
+    _tasks = load_task_rows()
+
+#load the task rows
+def load_task_rows() -> dict[int, dict]:
+    rows = {}
+    return rows
