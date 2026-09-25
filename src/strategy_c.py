@@ -15,7 +15,7 @@ import torch
 import wa_env as W
 import strategy_a
 import strategy_b
-from strategy_c.train.train_router import MLP, task_features, stop_features
+from router_c.train.train_router import MLP, task_features, stop_features
 
 
 DEFAULT_BUDGET = 16_000
