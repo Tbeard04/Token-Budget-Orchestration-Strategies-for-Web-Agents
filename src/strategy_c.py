@@ -445,3 +445,32 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
     print(f" {'router':20s}: p_cycle={p_cycle:.3f}  stopped_by_router={stop_step is not None}"
           f"{'' if stop_step is None else f' at step {stop_step}'}")
     return record_out
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("tasks", nargs="*", type=int)
+    ap.add_argument("--budget", type=int, default=None)
+    ap.add_argument("--router-dir", default=None)
+    ap.add_argument("--stop-answer", choices=["none", "na"], default=None)
+    ap.add_argument("--out", default="../data/raw/strategy_c_results.jsonl")
+    args = ap.parse_args()
+
+    configure(args.router_dir, args.stop_answer)
+
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w") as fh:
+        for tid in args.tasks:
+            try:
+                rec = run_episode(tid, args.budget)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                rec = {"strategy": "C", "task_id": tid, "site": W.site_of(tid), "error": f"{type(e).__name__}: {e}"}
+            fh.write(json.dumps(rec) + "\n")
+            fh.flush()
+    print(f"\nWrote {len(args.tasks)} episodes to {out_path}")
+
+
+if __name__ == "__main__":
+    main()
