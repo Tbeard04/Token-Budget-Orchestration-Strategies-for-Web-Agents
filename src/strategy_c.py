@@ -108,5 +108,29 @@ def configure(router_dir: str | Path | None = None, stop_answer: str | None = No
 
 #load the task rows
 def load_task_rows() -> dict[int, dict]:
+    #load the task metadata
+    meta = {r["task_id"]: r for r in map(json.loads, TASK_METADATA.read_text().splitlines()) if r}
+    #load the task risk levels
+    risk = {r["task_id"]: r for r in map(json.loads, TASK_RISK.read_text().splitlines()) if r}
+    #create a dictionary to store the task rows
     rows = {}
+    #iterate over the task metadata
+    for tid, m in meta.items():
+        #if the task id is not in the task risk levels, continue
+        if tid not in risk:
+            continue
+        #create a dictionary to store the task row
+        rows[tid] = {
+            "tier_ord": TIER_ORD[m["difficulty_tier"]],
+            "pages_to_traverse": m["pages_to_traverse"],
+            "retrieval_type": m["retrieval_type"],
+            "interaction": m["interaction"],
+            "target_locatability": m["target_locatability"],
+            "risk_level": risk[tid]["risk_level"],
+            "site": m["site"],
+            "task_category": m["task_category"],
+        }
+    #print the number of tasks loaded
+    print(f"[strategy_c] task features loaded for {len(rows)} tasks")
+    #return the task rows
     return rows
