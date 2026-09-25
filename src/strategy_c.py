@@ -20,7 +20,7 @@ from router_c.train.train_router import MLP, task_features, stop_features
 
 DEFAULT_BUDGET = 16_000
 #Path to the router-directed dynamic strategy model
-ROUTER_DIR = Path("../data/processed/strategy_c_models/model_2")
+ROUTER_DIR = Path("../data/processed/router_c_models/model_2")
 #Path to the task metadata
 TASK_METADATA = Path("../data/processed/final_annotation_difficulty_tiers/task_metadata.jsonl")
 #Path to the task risk levels
