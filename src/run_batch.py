@@ -16,7 +16,7 @@ from pathlib import Path
 import wa_env as W
 import strategy_a
 import strategy_b
-
+import strategy_c
 
 def sample_tasks(n: int, sites: list[str], seed: int) -> dict[str, list[int]]:
     pools = W.single_site_tasks(sites)
@@ -54,7 +54,9 @@ def load_completed(path: Path) -> set[tuple]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--strategy", choices=["A", "B"], required=True)
+    ap.add_argument("--strategy", choices=["A", "B", "C"], required=True)
+    ap.add_argument("--router-dir", default=None)
+    ap.add_argument("--stop-answer", choices=["none", "na"], default=None)
     ap.add_argument("--n", type=int, default=67, help="tasks per site")
     ap.add_argument("--sites", nargs="+", default=W.SITES)
     ap.add_argument("--budgets", nargs="+", type=int, default=W.BUDGETS)
@@ -67,8 +69,16 @@ def main() -> None:
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    runner = (strategy_a.run_episode if args.strategy == "A"
-              else strategy_b.run_episode)
+    runner = {"A": strategy_a.run_episode,
+              "B": strategy_b.run_episode,
+              "C": strategy_c.run_episode}[args.strategy]
+
+    routing_fh = None
+    if args.strategy == "C":
+        strategy_c.configure(args.router_dir, args.stop_answer)
+        routing_path = out_path.with_name(out_path.stem + "_routing.jsonl")
+        routing_fh = routing_path.open("a")
+        print(f"[batch] routing trace: {routing_path}")
 
     plan = sample_tasks(args.n, args.sites, args.seed)
     done = load_completed(out_path)
@@ -142,6 +152,21 @@ def main() -> None:
             #Write immediately: an interrupt must never lose finished work
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
+
+            #write the routing decisions to the routing file
+            if routing_fh is not None and "router" in rec:
+                routing_fh.write(json.dumps({
+                    "task_id": rec["task_id"], "site": rec["site"],
+                    "budget_level": rec["budget_level"], "timestamp": rec["timestamp"],
+                    "success": rec["success"], "total_tokens": rec["total_tokens"],
+                    "steps": rec["steps"], "termination_reason": rec["termination_reason"],
+                    **rec["router"],
+                }) + "\n")
+                routing_fh.flush()
+ 
+    #close the routing file
+    if routing_fh is not None:
+        routing_fh.close()
 
     mins = (time.time() - t_start) / 60
     print(f"\n{'=' * 78}")
