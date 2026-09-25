@@ -134,3 +134,313 @@ def load_task_rows() -> dict[int, dict]:
     print(f"[strategy_c] task features loaded for {len(rows)} tasks")
     #return the task rows
     return rows
+
+#check if the router and tasks are loaded
+def _ready() -> tuple[Router, dict[int, dict]]:
+    #if the router or tasks are not loaded, configure them
+    if _router is None or _tasks is None:
+        configure()
+    return _router, _tasks
+
+
+#episode function for the router-directed dynamic strategy
+def run_episode(task_id: int, budget: int | None = None) -> dict:
+    #get the router and tasks
+    router, tasks = _ready()
+    #get the budget
+    cap = budget if budget is not None else DEFAULT_BUDGET
+    #get the site
+    site = W.site_of(task_id)
+    #get the task row
+    task_row = {**tasks[task_id], "budget_level": cap}
+    #choose the mode
+    mode, p_cycle = router.choose_mode(task_row)
+    #print the task id, site, budget, and mode
+    print(f"\n{'=' * 60}\nTASK {task_id}  (site: {site})  [C, budget {cap}]  "
+          f"router -> {mode} (p_cycle={p_cycle:.3f})\n{'=' * 60}")
+ 
+    #make the environment
+    env = W.make_env(task_id)
+    #reset the environment
+    obs, _ = env.reset()
+    #get the goal
+    goal = W.goal_of(obs)
+    #print the goal and start URL
+    print(f"Goal: {goal}\nStart URL: {obs.get('url', 'unknown')}\n")
+ 
+    #initialize the input and output tokens
+    in_tok = out_tok = 0
+    #create a list to store the steps
+    steps: list[dict] = []
+    #create a list to store the decisions
+    decisions: list[dict] = []
+    #create a list to store the action history
+    action_history: list[str] = []
+    url_history: list[str] = [obs.get("url", "")]
+    #create a counter to store the url action counts
+    url_action_counts: Counter = Counter()
+    #initialize the consecutive errors
+    consecutive_errors = 0
+    #initialize the critic revisions
+    critic_revisions = 0
+    #initialize the last error
+    last_error = False
+    url_changed = False
+    #initialize the success
+    success = False
+    #initialize the reason
+    reason = "max_steps"
+    reward = 0.0
+    #initialize the stop step
+    stop_step: int | None = None
+    #initialize the time
+    t0 = time.time()
+ 
+    for i in range(W.MAX_STEPS):
+        #compute the spent tokens
+        spent = in_tok + out_tok
+        #create the state
+        state = {**task_row, "step_index": i,
+                 "budget_remaining_frac": 1 - spent / cap,
+                 "last_error": int(last_error), "url_changed_last": int(url_changed),
+                 "consecutive_errors": consecutive_errors, "mode": mode}
+        #compute the probability of a stop
+        p_stop = router.p_stop(state)
+        #check if the stop is triggered
+        stop = p_stop >= router.threshold
+        #store the decision
+        decisions.append({"step": i, "p_stop": round(p_stop, 6), "stop": stop,
+                          "budget_remaining_frac": round(state["budget_remaining_frac"], 4),
+                          "last_error": int(last_error), "url_changed_last": int(url_changed),
+                          "consecutive_errors": consecutive_errors})
+        #print the step, router p_stop, and stop decision
+        print(f"\n step {i}   router p_stop={p_stop:.4f} -> {'STOP' if stop else 'continue'}")
+        #if the stop is triggered, set the stop step and reason
+        if stop:
+            stop_step = i
+            reason = "router_stop"
+            #if the stop answer is "na", send a message to the user
+            if STOP_ANSWER == "na":
+                obs, reward, terminated, truncated, _ = env.step("send_msg_to_user('N/A')")
+                #if the reward is 1.0, set the success to True
+                if reward >= 1.0:
+                    success = True
+            break
+ 
+        #build the base prompt
+        base = W.build_prompt(obs, action_history, url_history)
+        #get the current url
+        cur_url = obs.get("url", "")
+ 
+        #if the mode is "execute", take one website step
+        if mode == "execute":
+            #compute the estimated input tokens
+            est_in = len(base) // 4
+            #if the spent tokens plus the estimated input tokens exceeds the budget, set the reason to "budget_would_exceed"
+            if spent + est_in > cap:
+                reason = "budget_would_exceed"
+                print(f" SKIPPED - est. {est_in} input tokens would exceed cap (used {spent}/{cap})")
+                break
+            #call the agent
+            result = W.call_agent(strategy_a.agent, base)
+            #get the usage
+            u = result.usage()
+            #update the input and output tokens
+            in_tok += u.input_tokens
+            out_tok += u.output_tokens
+            #get the final action
+            final_action = result.output.action
+            #print the reason, action, url, and tokens
+            print(f"reason: {result.output.reasoning}\naction: {final_action}\nurl: {cur_url[:90]}")
+            print(f"tokens: +{u.input_tokens} in / +{u.output_tokens} out (cumulative {in_tok + out_tok})")
+            #store the step
+            steps.append({
+                "step": i, "agent_role": "single", "action": final_action, "url": cur_url,
+                "prompt_chars": len(base), "input_tokens": u.input_tokens,
+                "output_tokens": u.output_tokens, "cumulative_tokens": in_tok + out_tok,
+                "usage_details": dict(u.details) if getattr(u, "details", None) else None,
+                "router_p_stop": round(p_stop, 6),
+            })
+            #if the input and output tokens exceed the budget, set the reason to "safety_token_cap"
+            if in_tok + out_tok >= cap:
+                reason = "safety_token_cap"
+                break
+ 
+        #if the mode is "cycle", take one website step
+        else:
+            #compute the estimated step
+            #identical to strategy_b.run_episode's step body
+            est_step = ((len(base) // 4) * 3 + strategy_b._INSTRUCTION_TOKENS + strategy_b._OUTPUT_MARGIN)
+            if spent + est_step > cap:
+                reason = "budget_would_exceed"
+                print(f" SKIPPED - est. {est_step} tokens for a 3-agent step would exceed "
+                      f"cap (used {spent}/{cap})")
+                break
+            #record function to store the step
+            def record(role, usage, action, extra=None):
+                nonlocal in_tok, out_tok
+                in_tok += usage.input_tokens
+                out_tok += usage.output_tokens
+                #create a dictionary to store the step
+                rec = {"step": i, "agent_role": role, "action": action, "url": cur_url,
+                       "prompt_chars": len(base), "input_tokens": usage.input_tokens,
+                       "output_tokens": usage.output_tokens,
+                       "cumulative_tokens": in_tok + out_tok,
+                       "usage_details": dict(usage.details) if getattr(usage, "details", None) else None}
+                #if extra is not None, update the step
+                if extra:
+                    #update the step
+                    rec.update(extra)
+                #if the role is "planner", update the router p_stop
+                if role == "planner":
+                    #update the router p_stop
+                    rec["router_p_stop"] = round(p_stop, 6)
+                steps.append(rec)
+                print(f"{role:8s}: +{usage.input_tokens} in / +{usage.output_tokens} out "
+                      f"(cumulative {in_tok + out_tok})")
+            #call the planner
+            r_plan = W.call_agent(strategy_b.planner, base)
+            #if the input and output tokens exceed the budget, set the reason to "budget_exhausted_mid_step"
+            if in_tok + out_tok >= cap:
+                reason = "budget_exhausted_mid_step"
+                break
+            #get the plan
+            plan = r_plan.output.plan
+            #store the step
+            record("planner", r_plan.usage(), None, {"plan": plan})
+            #print the plan
+            print(f"plan: {plan}")
+            #call the executor
+            r_exec = W.call_agent(strategy_b.executor, f"{base}\n\nPLANNER SUB-GOAL:\n{plan}")
+            #get the proposed action
+            proposed = r_exec.output.action
+            #store the step
+            record("executor", r_exec.usage(), proposed, {"proposed_action": proposed})
+            #if the input and output tokens exceed the budget, set the reason to "budget_exhausted_mid_step"
+            if in_tok + out_tok >= cap:
+                reason = "budget_exhausted_mid_step"
+                break
+            #print the proposed action
+            print(f"proposed: {proposed}")
+            #call the critic
+            r_crit = W.call_agent(strategy_b.critic,
+                                  f"{base}\n\nPLANNER SUB-GOAL:\n{plan}\n\n"
+                                  f"EXECUTOR PROPOSED ACTION:\n{proposed}")
+            #get the verdict
+            verdict = r_crit.output
+            #check if the action is revised
+            revised = (not verdict.approve) and bool(verdict.revised_action)
+            final_action = verdict.revised_action if revised else proposed
+            #update the critic revisions
+            critic_revisions += int(revised)
+            #store the step
+            record("critic", r_crit.usage(), final_action,
+                   {"approved": verdict.approve, "revised": revised,
+                    "proposed_action": proposed, "critic_reasoning": verdict.reasoning})
+            print(f"critic: {'REVISED' if revised else 'approved'} -> {final_action}")
+            if in_tok + out_tok >= cap:
+                reason = "safety_token_cap"
+                break
+ 
+        #update the action history
+        action_history.append(final_action)
+        #create a pair of the current url and the final action
+        pair = (cur_url, final_action)
+        #update the url action counts
+        url_action_counts[pair] += 1
+        #get the number of times the pair has been seen
+        pair_n = url_action_counts[pair]
+ 
+        #step the environment
+        obs, reward, terminated, truncated, _ = env.step(final_action)
+        #get the new url
+        new_url = obs.get("url", "")
+        #update the url history
+        url_history.append(new_url)
+        #get the last action error
+        err = obs.get("last_action_error")
+        #update the consecutive errors
+        consecutive_errors = consecutive_errors + 1 if err else 0
+        #update the last error
+        last_error = bool(err)
+        #update the url changed
+        url_changed = new_url != cur_url
+ 
+        #update the steps
+        for s in steps:
+            #if the step index is the current step, update the step
+            if s["step"] == i:
+                s["action_error"] = str(err) if err else None
+                s["step_reward"] = reward
+                s["next_url"] = new_url
+ 
+        #print the result
+        print(f"result: reward={reward}{'  ERROR: ' + str(err)[:70] if err else '  (action accepted)'}")
+ 
+        #if the reward is 1.0, set the success to True and reason to "success"
+        if reward >= 1.0:
+            success, reason = True, "success"
+            break
+        if terminated or truncated:
+            reason = "env_terminated"
+            break
+        if consecutive_errors >= W.MAX_CONSECUTIVE_ERRORS:
+            reason = "repeated_action_failure"
+            break
+        if pair_n >= W.MAX_SAME_ACTION_FROM_PAGE:
+            reason = "navigation_cycle"
+            break
+ 
+    env.close()
+    #get the logical steps
+    logical_steps = len({s["step"] for s in steps})
+    #create a counter to store the tokens by role
+    by_role = Counter()
+    #iterate over the steps
+    for s in steps:
+        #update the tokens by role
+        by_role[s["agent_role"]] += s["input_tokens"] + s["output_tokens"]
+ 
+    #create a dictionary to store the record output
+    record_out = {
+        "strategy": "C",
+        "site": site,
+        "task_id": task_id,
+        "budget_level": cap,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "goal": goal,
+        "success": success,
+        "final_reward": reward,
+        "termination_reason": reason,
+        "steps": logical_steps,
+        "agent_calls": len(steps),
+        "mode_chosen": mode,
+        "critic_revisions": critic_revisions if mode == "cycle" else None,
+        "tokens_by_role": dict(by_role),
+        "input_tokens": in_tok,
+        "output_tokens": out_tok,
+        "total_tokens": in_tok + out_tok,
+        "wall_clock_seconds": round(time.time() - t0, 1),
+        "router": {
+            "model_dir": router.model_dir,
+            "alpha": router.alpha,
+            "stop_threshold": router.threshold,
+            "stop_answer": STOP_ANSWER,
+            "mode": mode,
+            "p_cycle": round(p_cycle, 6),
+            "stopped_by_router": stop_step is not None,
+            "stop_step": stop_step,
+            "decisions": decisions,
+        },
+        "step_log": steps,
+    }
+
+    #print the record output
+    print(f"\n --- C / {site} / task {task_id} ---")
+    #iterate over the keys
+    for k in ("mode_chosen", "success", "termination_reason", "steps", "agent_calls",
+              "total_tokens", "wall_clock_seconds"):
+        print(f" {k:20s}: {record_out[k]}")
+    print(f" {'router':20s}: p_cycle={p_cycle:.3f}  stopped_by_router={stop_step is not None}"
+          f"{'' if stop_step is None else f' at step {stop_step}'}")
+    return record_out
