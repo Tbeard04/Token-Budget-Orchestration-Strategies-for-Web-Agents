@@ -421,6 +421,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         "output_tokens": out_tok,
         "total_tokens": in_tok + out_tok,
         "wall_clock_seconds": round(time.time() - t0, 1),
+        #create a dictionary to store the router output
         "router": {
             "model_dir": router.model_dir,
             "alpha": router.alpha,
