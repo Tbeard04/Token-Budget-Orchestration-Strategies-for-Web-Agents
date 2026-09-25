@@ -18,6 +18,7 @@ FRONT_FIRST_SHARE = 0.40
 #reactive: start from the even share, then scale by how the last step went
 #last move errored, or the page did not change
 REACTIVE_STUCK_MULT = 1.5
+
 #last move changed the page without error
 REACTIVE_PROGRESS_MULT = 0.75
 
