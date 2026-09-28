@@ -258,14 +258,9 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    #load the tasks
-    tasks = json.loads(TASKS_FILE.read_text())
-    budget = tasks["budget"]
-    task_ids = [t["task_id"] for t in tasks["tasks"]]
-    if args.smoke:
-        task_ids = task_ids[:2]
-    elif args.n:
-        task_ids = task_ids[: args.n]
+    #load the tasks (one JSON object per line)
+    budget = C.BUDGET
+    task_ids = [json.loads(l)["task_id"] for l in TASKS_FILE.read_text().splitlines() if l.strip()]
 
     #configure strategy C
     if "C" in args.strategies:
