@@ -245,3 +245,69 @@ def run_episode(strategy: str, scheme: str, task_id: int, budget: int) -> dict:
                          "stopped_by_router": stop_step is not None, "stop_step": stop_step,
                          "decisions": decisions}
     return rec
+
+#main function to run the schemes
+def main() -> None:
+    #parse the arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default="../data/raw/spending_schemes/schemes.jsonl")
+    ap.add_argument("--schemes", nargs="+", default=RUN_SCHEMES)
+    ap.add_argument("--strategies", nargs="+", default=STRATEGIES)
+    ap.add_argument("--n", type=int, default=None, help="first N tasks only")
+    ap.add_argument("--smoke", action="store_true", help="2 tasks, all cells")
+    ap.add_argument("--dry-run", action="store_true")
+    args = ap.parse_args()
+
+    #load the tasks
+    tasks = json.loads(TASKS_FILE.read_text())
+    budget = tasks["budget"]
+    task_ids = [t["task_id"] for t in tasks["tasks"]]
+    if args.smoke:
+        task_ids = task_ids[:2]
+    elif args.n:
+        task_ids = task_ids[: args.n]
+
+    #configure strategy C
+    if "C" in args.strategies:
+        strategy_c.configure()
+
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    done = set()
+    if out_path.exists():
+        for line in out_path.read_text().splitlines():
+            if line.strip():
+                r = json.loads(line)
+                done.add((r["strategy"], r["scheme"], r["task_id"]))
+
+    #create the todo list of tasks to run
+    todo = [(t, s, st) for t in task_ids for s in args.schemes for st in args.strategies
+            if (st, s, t) not in done]
+    print(f"[schemes] {len(task_ids)} tasks x {len(args.schemes)} schemes x {len(args.strategies)} "
+          f"strategies = {len(task_ids) * len(args.schemes) * len(args.strategies)} cells; "
+          f"{len(done)} done, {len(todo)} to run -> {out_path}")
+
+    #run the episodes for the todo list of tasks
+    t_start = time.time()
+    with out_path.open("a") as fh:
+        for k, (tid, scheme, strat) in enumerate(todo, 1):
+            elapsed = (time.time() - t_start) / 60
+            print(f"\n[schemes] {k}/{len(todo)}  task {tid}  {strat}/{scheme}  ({elapsed:.0f}m elapsed)")
+            try:
+                rec = run_episode(strat, scheme, tid, budget)
+            except KeyboardInterrupt:
+                print("[schemes] interrupted - completed episodes are saved")
+                raise
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                rec = {"strategy": strat, "scheme": scheme, "task_id": tid, "site": W.site_of(tid),
+                       "budget_level": budget, "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                       "error": f"{type(e).__name__}: {e}"}
+            fh.write(json.dumps(rec) + "\n")
+            fh.flush()
+    print(f"\n[schemes] finished in {(time.time() - t_start) / 60:.0f} minutes -> {out_path}")
+
+
+if __name__ == "__main__":
+    main()
