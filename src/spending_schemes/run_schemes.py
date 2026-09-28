@@ -250,7 +250,7 @@ def run_episode(strategy: str, scheme: str, task_id: int, budget: int) -> dict:
 def main() -> None:
     #parse the arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default="../data/processed/spending_schemes/schemes.jsonl")
+    ap.add_argument("--out", default="../data/processed/schemes_output/schemes.jsonl")
     ap.add_argument("--schemes", nargs="+", default=RUN_SCHEMES)
     ap.add_argument("--strategies", nargs="+", default=STRATEGIES)
     ap.add_argument("--n", type=int, default=None, help="first N tasks only")
