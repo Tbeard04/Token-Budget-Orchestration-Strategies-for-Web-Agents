@@ -86,8 +86,14 @@ def run_episode(strategy: str, scheme: str, task_id: int, budget: int) -> dict:
 
         #how much this step may spend, at what effort
         step_tokens, effort, _ = allowance(scheme, i, cap, spent, last_error, url_changed)
-        #limit is the maximum number of characters allowed in the prompt
-        limit = prompt_char_limit(step_tokens, calls_per_step, INSTRUCTION_TOKENS[mode], effort)
+
+        #calculate the output reserve
+        out_reserve = C.OUTPUT_MARGIN[effort] if mode == "execute" \
+            else C.OUTPUT_MARGIN[effort] + 2 * C.OUTPUT_MARGIN["low"]
+        usable = step_tokens - INSTRUCTION_TOKENS[mode] - out_reserve
+        #calculate the limit
+        limit = max(C.MIN_PROMPT_CHARS, (max(0, usable) // calls_per_step) * 4)
+
         #full is the full prompt
         full = W.build_prompt(obs, action_history, url_history)
         #base is the base prompt
@@ -100,7 +106,7 @@ def run_episode(strategy: str, scheme: str, task_id: int, budget: int) -> dict:
         agents = AGENTS[effort]
 
         #est_step is the estimated number of tokens for the step
-        est_step = calls_per_step * (len(base) // 4 + C.OUTPUT_MARGIN[effort]) + INSTRUCTION_TOKENS[mode]
+        est_step = calls_per_step * (len(base) // 4) + out_reserve + INSTRUCTION_TOKENS[mode]
         if spent + est_step > cap:
             reason = "budget_would_exceed"
             break
@@ -154,7 +160,7 @@ def run_episode(strategy: str, scheme: str, task_id: int, budget: int) -> dict:
             #if the budget is exhausted, break
             r_exec = W.call_agent(low["executor"], f"{base}\n\nPLANNER SUB-GOAL:\n{plan}")
             proposed = r_exec.output.action
-            record("executor", r_exec.usage(), proposed, {"proposed_action": proposed})
+            record("executor", r_exec.usage(), proposed, {"proposed_action": proposed, "effort": "low"})
             if in_tok + out_tok >= cap:
                 reason = "budget_exhausted_mid_step"
                 break
@@ -169,8 +175,7 @@ def run_episode(strategy: str, scheme: str, task_id: int, budget: int) -> dict:
             #if the action is revised, use the revised action, otherwise use the proposed action
             final_action = verdict.revised_action if revised else proposed
             critic_revisions += int(revised)
-            record("critic", r_crit.usage(), final_action,
-                   {"approved": verdict.approve, "revised": revised, "proposed_action": proposed})
+            record("critic", r_crit.usage(), final_action, {"approved": verdict.approve, "revised": revised, "proposed_action": proposed, "effort": "low"})
             print(f"   action: {final_action}   (cum {in_tok + out_tok})")
             if in_tok + out_tok >= cap:
                 reason = "safety_token_cap"
