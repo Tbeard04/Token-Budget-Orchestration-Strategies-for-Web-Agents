@@ -65,7 +65,6 @@ def main() -> None:
     ap.add_argument("--file", required=True, help="collection JSONL")
     ap.add_argument("--out", default=None, help="output path (default: sort the file in place, keeping a .bak)")
     ap.add_argument("--gap-minutes", type=int, default=30, help="gap that marks an episode as a late arrival ""(default 30)")
-    ap.add_argument("--dry-run", action="store_true", help="report what would change, write nothing")
     args = ap.parse_args()
  
     path = Path(args.file)
@@ -137,9 +136,6 @@ def main() -> None:
         print(f"task {tid:>4} @ {str(ep.get('budget_level')):>6}  "
               f"{ep.get('timestamp')}")
  
-    if args.dry_run:
-        print("\n--dry-run: no changes made.")
-        return
  
     # Write
     if args.out:
