@@ -3,17 +3,16 @@ build_transitions.py - turn final_episodes.jsonl into the two jsonl files the St
 """
 
 from __future__ import annotations
- 
+
 import argparse
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
- 
+
 ACTION_OF = {"A": "execute", "B": "cycle"}
 TIER_ORD = {"Easy": 0, "Medium": 1, "Hard": 2}
- 
-TASK_FIELDS = ["site", "task_category", "risk_level", "difficulty_tier", "pages_to_traverse", "retrieval_type", "interaction", "target_locatability", "rubric_total"]
 
+TASK_FIELDS = ["site", "task_category", "risk_level", "difficulty_tier", "pages_to_traverse", "retrieval_type", "interaction", "target_locatability", "rubric_total"]
 
 #load the jsonl file
 def load_jsonl(path: str | Path) -> list[dict]:
@@ -23,19 +22,18 @@ def load_jsonl(path: str | Path) -> list[dict]:
         if line:
             out.append(json.loads(line))
     return out
- 
+
  #check if the action_error is not None, "None", or empty
 def _has_error(entry: dict) -> bool:
     return entry.get("action_error") not in (None, "None", "")
- 
- 
+
+
 def _by_step(step_log: list[dict]) -> list[list[dict]]:
     #group the log entries by website step, in step order
     groups: dict[int, list[dict]] = defaultdict(list)
     for e in step_log:
         groups[e["step"]].append(e)
     return [groups[k] for k in sorted(groups)]
-
 
 
 #transitions
@@ -54,13 +52,13 @@ def episode_rows(ep: dict) -> list[dict]:
         **{f: ep.get(f) for f in TASK_FIELDS},
     }
     base["tier_ord"] = TIER_ORD.get(ep.get("difficulty_tier"))
- 
+
     rows = []
     cum_before = 0
     last_error = False
     url_changed = False
     consecutive_errors = 0
- 
+
     #loop through the steps
     for k, calls in enumerate(_by_step(ep.get("step_log") or [])):
         #get the maximum cumulative tokens
@@ -86,7 +84,7 @@ def episode_rows(ep: dict) -> list[dict]:
         consecutive_errors = consecutive_errors + 1 if last_error else 0
         #update the cumulative tokens
         cum_before = cum_after
- 
+
     #add the terminal stop row
     rows.append({
         **base,
@@ -112,7 +110,7 @@ def mode_pairs(episodes: list[dict]) -> list[dict]:
         if ep["strategy"] in ACTION_OF:
             #add the episode to the cells
             cells[(ep["task_id"], ep["budget_level"])][ep["strategy"]] = ep
- 
+
     #loop through the cells
     out = []
     for (tid, budget), arms in sorted(cells.items()):
@@ -154,8 +152,8 @@ def write_jsonl(rows: list[dict], path: Path) -> None:
     with path.open("w") as f:
         for r in rows:
             f.write(json.dumps(r) + "\n")
- 
- 
+
+#main function
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--episodes", default="../data/processed/6_budgets_ALL_tasks_decontaminated_batch/final_episodes.jsonl")
@@ -164,26 +162,26 @@ def main() -> None:
         "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/strategy_b.jsonl",])
     ap.add_argument("--out-dir", default="../data/processed/strategy_c_models")
     args = ap.parse_args()
- 
+
     #load the episodes
     episodes = load_jsonl(args.episodes)
     #attach the step logs
     restored = attach_step_logs(episodes, args.raw)
     print(f"[build] {len(episodes)} episodes"
           + (f", step_log restored from raw for {restored}" if restored else ""))
- 
+
     #create the transitions
     trans = [r for ep in episodes for r in episode_rows(ep)]
     #create the mode pairs
     pairs = mode_pairs(episodes)
- 
+
     #write the transitions and mode pairs to the output directory
     out = Path(args.out_dir)
     #write the transitions to the output directory
     write_jsonl(trans, out / "transitions.jsonl")
     #write the mode pairs to the output directory
     write_jsonl(pairs, out / "mode_pairs.jsonl")
-
+    
     #count the actions
     acts = Counter(r["action"] for r in trans)
     print(f"[build] transitions {len(trans):>6}  "

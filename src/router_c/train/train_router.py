@@ -9,14 +9,14 @@ R_mode = success * (1 - lambda * tokens / budget)  [[failure = 0, see build_mode
 """
 
 from __future__ import annotations
- 
+
 import argparse
 import json
 import math
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
- 
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -47,7 +47,7 @@ DEFAULT_CONFIG = {
     #used to pick the suggested threshold
     "min_success_kept": 0.90,
 }
- 
+
 #sites
 SITES = ["reddit", "shopping", "shopping_admin"]
 #categories
@@ -70,8 +70,8 @@ def task_features(r: dict) -> list[float]:
              math.log2(r["budget_level"])]
             + [1.0 if r["site"] == s else 0.0 for s in SITES]
             + [1.0 if r["task_category"] == c else 0.0 for c in CATEGORIES])
- 
- 
+
+
 def stop_features(r: dict) -> list[float]:
     return task_features(r) + [
         float(r["step_index"]),
@@ -254,13 +254,13 @@ def baselines(pairs: list[dict]) -> dict:
 #load the JSONL file
 def load_jsonl(path: str | Path) -> list[dict]:
     return [json.loads(l) for l in Path(path).read_text().splitlines() if l.strip()]
- 
+
 #run the router
 def run(pairs: list[dict], trans: list[dict], cfg: dict, out_dir: Path) -> dict:
     t0 = time.time()
     np.random.seed(cfg["seed"])
     lam, beta = cfg["lambda"], cfg["beta"]
- 
+
     P, Xm, Rm = build_mode_set(pairs, lam)
     S, Xs, Rs = build_stop_set(trans, lam)
     groups_m = np.array([p["task_id"] for p in P])
@@ -270,7 +270,7 @@ def run(pairs: list[dict], trans: list[dict], cfg: dict, out_dir: Path) -> dict:
     perm = np.random.default_rng(cfg["seed"]).permutation(task_ids) #shuffle the task ids
     #fold of the task ids
     fold_of = {int(t): i % cfg["folds"] for i, t in enumerate(perm)}
- 
+
     #out-of-fold predictions, both heads share the task folds
     oof_cycle = np.zeros(len(P))
     oof_stop = np.zeros(len(S))
@@ -285,7 +285,7 @@ def run(pairs: list[dict], trans: list[dict], cfg: dict, out_dir: Path) -> dict:
         Xe, Ae, We = expand(ns(Xs[tr_s]), Rs[tr_s], beta) #expand the features and returns
         net_s = train_head(Xe, Ae, We, cfg)
         oof_stop[~tr_s] = predict(net_s, ns(Xs[~tr_s]))
- 
+
     #metrics for the mode head
     p_cycle = {(p["task_id"], p["budget_level"]): float(q) for p, q in zip(P, oof_cycle)}
     better_b = np.array([Rm[i, 1] > Rm[i, 0] for i in range(len(P))]) #better arm
@@ -301,7 +301,7 @@ def run(pairs: list[dict], trans: list[dict], cfg: dict, out_dir: Path) -> dict:
             str(b): float(np.mean([q >= 0.5 for p, q in zip(P, oof_cycle) if p["budget_level"] == b]))
             for b in sorted({p["budget_level"] for p in P})}, #fraction of pairs that pick the cycle arm by budget
     }
- 
+
     #metrics for the stop head
     y_succ = np.array([t["episode_success"] for t in S])
     stop_metrics = {
@@ -311,7 +311,7 @@ def run(pairs: list[dict], trans: list[dict], cfg: dict, out_dir: Path) -> dict:
             tier: float(np.mean([q for t, q in zip(S, oof_stop) if t["difficulty_tier"] == tier]))
             for tier in ["Easy", "Medium", "Hard"]},
     }
- 
+
     #simulate the full policy on held-out pairs
     p_stop = defaultdict(list) #stop probabilities by strategy, task id, and budget level
     for t, q in zip(S, oof_stop):
@@ -338,19 +338,19 @@ def run(pairs: list[dict], trans: list[dict], cfg: dict, out_dir: Path) -> dict:
           and r["success_kept_vs_A"] is not None
           and r["success_kept_vs_A"] >= cfg["min_success_kept"]]
     suggested = max(ok, key=lambda r: r["tokens_saved_vs_A"])["threshold"] if ok else None
- 
+
     per_budget = {}
     for b in sorted({p["budget_level"] for p in P}):
         sub = [p for p in P if p["budget_level"] == b]
         per_budget[str(b)] = {"baselines": baselines(sub), "router": simulate(sub, p_cycle, p_stop, suggested or 1.1, eps)}
- 
+
     #final fit on everything, saved for the live runner
     nm, ns = Norm(Xm), Norm(Xs) #normalise the features
     Xe, Ae, We = expand(nm(Xm), Rm, beta) #expand the features and returns
     net_m = train_head(Xe, Ae, We, cfg) #train the mode head
     Xe, Ae, We = expand(ns(Xs), Rs, beta) #expand the features and returns
     net_s = train_head(Xe, Ae, We, cfg) #train the stop head
- 
+
     out_dir.mkdir(parents=True, exist_ok=True)
     #save the model
     torch.save({
@@ -362,7 +362,7 @@ def run(pairs: list[dict], trans: list[dict], cfg: dict, out_dir: Path) -> dict:
         "stop_threshold": suggested,
         "sites": SITES, "categories": CATEGORIES,
     }, out_dir / "router.pt")
- 
+
     metrics = {
         "config": cfg,
         "train_seconds": round(time.time() - t0, 1),
@@ -397,7 +397,7 @@ def main() -> None:
     ap.add_argument("--pairs", default="../data/processed/strategy_c_models/mode_pairs.jsonl")
     ap.add_argument("--transitions", default="../data/processed/strategy_c_models/transitions.jsonl")
     args = ap.parse_args()
- 
+
     #output directory
     out_dir = Path(__file__).parent / f"model_{args.model}"
     cfg_path = out_dir / "config.json"

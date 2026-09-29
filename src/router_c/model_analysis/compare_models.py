@@ -3,16 +3,16 @@ compare_models.py generates figures and one comparison table for the three route
 """
 
 from __future__ import annotations
- 
+
 import argparse
 import json
 from pathlib import Path
- 
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
- 
+
 # validated categorical slots 1-3 (all-pairs safe), one per model
 MODEL_COLOUR = {1: "#2a78d6", 2: "#eb6834", 3: "#1baf7a"}
 MODEL_MARKER = {1: "o", 2: "s", 3: "^"}
@@ -20,7 +20,7 @@ MODEL_MARKER = {1: "o", 2: "s", 3: "^"}
 TIER_COLOUR = {"Easy": "#86b6ef", "Medium": "#2a78d6", "Hard": "#104281"}
 INK, INK2, GRID, SURFACE = "#0b0b0b", "#52514e", "#e6e5e1", "#fcfcfb"
 BUDGETS = [2000, 4000, 8000, 16000, 32000, 64000]
- 
+
 plt.rcParams.update({
     "font.size": 10, "axes.edgecolor": INK2, "axes.labelcolor": INK2,
     "xtick.color": INK2, "ytick.color": INK2, "axes.spines.top": False,
@@ -43,25 +43,25 @@ def load(models_dir: Path) -> dict[int, dict]:
     if not out:
         raise SystemExit(f"no model_N/metrics.json under {models_dir}")
     return out
- 
- 
+
+
 #create a new figure
 def new_fig(title: str, size=(8, 5.2)):
     fig, ax = plt.subplots(figsize=size)
     fig.subplots_adjust(top=0.88)
     fig.text(0.02, 0.97, title, fontsize=13, fontweight="bold", color=INK, va="top")
     return fig, ax
- 
+
 #save the figure
 def save(fig, path: Path) -> None:
     fig.savefig(path, dpi=300, bbox_inches="tight", facecolor=SURFACE)
     plt.close(fig)
- 
+
 #get the frontier at a given quantile
 #frontier meaning the set of trade offs the router can offer between success and tokens saved
 def at_quantile(m: dict, q: float) -> dict:
     return next(r for r in m["frontier"] if r["quantile"] == q)
- 
+
 #get the suggested row
 def suggested_row(m: dict) -> dict:
     return next(r for r in m["frontier"] if r["threshold"] == m["suggested_threshold"])
@@ -99,7 +99,7 @@ def fig_frontier(models: dict, chosen: int, out: Path) -> None:
     ax.set_ylim(45, 112)
     ax.legend(loc="lower right", fontsize=9)
     save(fig, out / "frontier.png")
- 
+
 #figure for the mode head: P(cycle) on held-out task–budget pairs
 def fig_mode_p_cycle(models: dict, out: Path) -> None:
     fig, ax = new_fig("Mode head: P(cycle) on held-out task–budget pairs")
@@ -159,7 +159,7 @@ def fig_stop_by_step(models: dict, out: Path) -> None:
     ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
     ax.legend(fontsize=9, loc="lower right")
     save(fig, out / "stop_by_step.png")
- 
+
 #figure for the stop head: P(stop) at step 0 by budget and difficulty
 def fig_stop_step0(models: dict, chosen: int, out: Path) -> None:
     fig, ax = new_fig(f"Stop head: P(stop) at step 0 by budget and difficulty (model {chosen})")
@@ -179,7 +179,7 @@ def fig_stop_step0(models: dict, chosen: int, out: Path) -> None:
     ax.set_ylim(0, 1.18)
     ax.legend(title="Difficulty tier", fontsize=9, title_fontsize=9, loc="upper right", ncol=3)
     save(fig, out / "stop_step0.png")
- 
+
 #figure for the stop head: successes and tokens at each budget
 def fig_per_budget(models: dict, chosen: int, out: Path) -> None:
     m = models[chosen]["metrics"]
@@ -221,14 +221,13 @@ def main() -> None:
     models = load(Path(args.models))
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
- 
+
     fig_frontier(models, args.chosen, out)
     fig_mode_p_cycle(models, out)
     fig_mode_by_winner(models, args.chosen, out)
     fig_stop_by_step(models, out)
     fig_stop_step0(models, args.chosen, out)
     fig_per_budget(models, args.chosen, out)
- 
- 
+
 if __name__ == "__main__":
     main()
