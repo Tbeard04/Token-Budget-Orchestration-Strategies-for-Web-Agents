@@ -140,7 +140,7 @@ def plot_risk_groups(by_category: dict, out_dir: Path) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--input", required=True, help="task_intents.json from extract_task_intents.py")
+    ap.add_argument("--input", required=True)
     ap.add_argument("--out", default="../../data/processed/diagrams/task_list")
     args = ap.parse_args()
 
@@ -159,7 +159,6 @@ def main() -> None:
     plot_risk_groups(by_category, out_dir)
 
     print(f"\nDone.")
-
 
 if __name__ == "__main__":
     main()
