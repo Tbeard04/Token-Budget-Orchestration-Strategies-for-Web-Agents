@@ -5,7 +5,6 @@ import statistics
 from collections import defaultdict
 from pathlib import Path
 
-
 #Aggregate cost per task_id across one or more collection files
 def load_observed_cost(episode_paths) -> dict:
     if not episode_paths:
@@ -65,7 +64,7 @@ def load_observed_cost(episode_paths) -> dict:
         print(f"[observed] cost loaded for {len(observed)} tasks total")
     return observed
 
-
+#function to format the observed cost for the annotator prompt
 def format_observed(obs) -> str:
     #Render one task's cost for the annotator prompt. Empty when unknown
     if not obs:
@@ -78,7 +77,7 @@ def format_observed(obs) -> str:
         f"median tokens: {obs['median_tokens']:.0f}\n"
     )
 
-
+#function to summarise the hint for the hand-labelling row
 def summarise_hint(obs) -> dict:
     #The subset shown on a hand-labelling row
     return {"median_steps": obs["median_steps"], "max_steps": obs["max_steps"], "distinct_urls": obs["distinct_urls"],}

@@ -8,7 +8,7 @@ from collections import defaultdict
 
 from rubric import DIMENSIONS, tier_of, total_of
 
-
+#function to harmonise the templates
 def harmonise_templates(rows: list, protect: set | None = None) -> int:
     #Force instances of one template to share the group median scores
     protect = protect or set()
@@ -23,7 +23,7 @@ def harmonise_templates(rows: list, protect: set | None = None) -> int:
         # human-labelled rows set the standard
         basis = [r for r in grp if r["task_id"] not in protect] or grp
         medians = {d: int(statistics.median(r[d] for r in basis)) for d in DIMENSIONS}
-
+        #for each row in the group
         for r in grp:
             if r["task_id"] in protect:
                 r["template_adjusted"] = False
@@ -41,17 +41,16 @@ def harmonise_templates(rows: list, protect: set | None = None) -> int:
             adjusted += 1
     return adjusted
 
-
+#function to flag the rows for review
 def flag_for_review(rows: list, threshold: float) -> None:
     for r in rows:
         reasons = []
-
+        #if the confidence is less than the threshold
         if r["confidence"] < threshold:
             reasons.append(f"low confidence ({r['confidence']:.2f})")
-
+        #if the template was adjusted
         if r.get("template_adjusted"):
-            reasons.append("disagreed with template median on "
-                           + ", ".join(r.get("adjusted_dimensions", [])))
+            reasons.append("disagreed with template median on " + ", ".join(r.get("adjusted_dimensions", [])))
 
         # a page score that contradicts observed navigation
         obs = r.get("observed")
@@ -65,7 +64,7 @@ def flag_for_review(rows: list, threshold: float) -> None:
         r["needs_review"] = bool(reasons)
         r["review_reasons"] = reasons
 
-
+#function to re-derive totals and tiers from the stored dimension scores
 def reband(rows: list) -> int:
     #Re-derive totals and tiers from the stored dimension scores
     changed = 0

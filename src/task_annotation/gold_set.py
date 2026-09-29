@@ -75,8 +75,10 @@ def split_exemplars(gold: dict, n_exemplars: int, seed: int) -> tuple[dict, dict
     for s in sites:
         rng.shuffle(by_site[s])
 
+    #create a list to store the picked tasks
     picked: list = []
     i = 0
+    #while the number of picked tasks is less than the number of exemplars
     while len(picked) < n_exemplars:
         pool = by_site[sites[i % len(sites)]]
         if pool:
@@ -85,11 +87,13 @@ def split_exemplars(gold: dict, n_exemplars: int, seed: int) -> tuple[dict, dict
             break
         i += 1
 
+    #create a dictionary to store the exemplars
     ex = {t: gold[t] for t in picked}
+    #create a dictionary to store the heldout tasks
     held = {t: gold[t] for t in gold if t not in ex}
     return ex, held
 
-
+#function to format the exemplars as a calibration block for the system prompt
 def format_exemplars(ex: dict) -> str:
     #Render exemplars as a calibration block for the system prompt
     if not ex:
@@ -107,7 +111,7 @@ def format_exemplars(ex: dict) -> str:
         t = total_of(r)
         lines.append(f"[{r['site']}] {r['intent'][:150]}")
         lines.append(
-            f"   pages={r['pages_to_traverse']} retrieval={r['retrieval_type']} "
+            f" pages={r['pages_to_traverse']} retrieval={r['retrieval_type']} "
             f"interaction={r['interaction']} locatability={r['target_locatability']} "
             f"-> {t}/8 {tier_of(t)}"
         )
@@ -188,6 +192,7 @@ def apply_gold(pred_path: str, gold: dict, out: str) -> None:
         for r in rows:
             f.write(json.dumps(r) + "\n")
 
+    #function to print the number of human labels applied and the number of rows written
     n_human = sum(1 for r in rows if r.get("label_source") == "human")
     print(f"Wrote {len(rows)} rows to {out_path}")
     print(f"human labels applied: {n_human} ({replaced} differed from the model)")

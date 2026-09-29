@@ -62,9 +62,9 @@ def load_gold(path: str) -> list[dict]:
             rows.append(json.loads(line))
     return rows
 
-
+#function to cluster similar tasks by intent-template similarity
 def cluster_similar(rows: list, threshold: float = 0.85) -> dict:
-    #Single-link cluster task ids by intent-template similarity.
+    #Single-link cluster task ids by intent-template similarity
     tmpl = {r["task_id"]: normalise_template(r.get("intent", "")) for r in rows}
     ids = sorted(tmpl)
     parent = {i: i for i in ids}
@@ -104,8 +104,6 @@ def to_csv(gold_path: str, csv_path: str, threshold: float = 0.85) -> None:
         r.get("site", ""),
         r.get("task_id", 0),
     ))
-
-    counts = Counter(normalise_template(r.get("intent", "")) for r in rows)
 
     out = Path(csv_path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -252,10 +250,9 @@ def check(gold_path: str) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--gold", required=True, help="gold set jsonl")
+    ap.add_argument("--gold", required=True)
     ap.add_argument("--csv", default=None)
-    ap.add_argument("--out", default=None,
-                    help="where --from-csv writes; defaults to --gold in place")
+    ap.add_argument("--out", default=None)
     ap.add_argument("--to-csv", action="store_true")
     ap.add_argument("--from-csv", action="store_true")
     ap.add_argument("--check", action="store_true")

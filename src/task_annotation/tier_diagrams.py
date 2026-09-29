@@ -3,21 +3,21 @@ tier_diagrams.py - figures for the difficulty annotation
 """
 
 from __future__ import annotations
- 
+
 import argparse
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
- 
+
 import matplotlib
 matplotlib.use("Agg")
- 
+
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch, PathPatch
 from matplotlib.path import Path as MPath
- 
+
 from rubric import TIERS
- 
+
 # Colour tokens
 SURFACE = "#fcfcfb"
 INK = "#0b0b0b"
@@ -41,8 +41,8 @@ DPI = 300
 GAP_PT = 2.0
 # rounded data-end
 ROUND_PT = 4.0
- 
- 
+
+
 def _style() -> None:
     plt.rcParams.update({
         "figure.facecolor": SURFACE,
@@ -71,7 +71,7 @@ def _canvas(w: float, h: float, left: float, right: float, top: float, bottom: f
     fig, ax = plt.subplots(figsize=(w, h))
     fig.subplots_adjust(left=left, right=right, top=top, bottom=bottom)
     return fig, ax
- 
+
 # Add a title and subtitle to the figure
 def _header(fig, title: str, subtitle: str | None, x: float = 0.015) -> None:
     # one point, in figure fraction
@@ -79,17 +79,16 @@ def _header(fig, title: str, subtitle: str | None, x: float = 0.015) -> None:
     fig.text(x, 1 - 14 * pt, title, fontsize=12.5, fontweight="semibold", color=INK, va="top", ha="left")
     if subtitle:
         fig.text(x, 1 - 34 * pt, subtitle, fontsize=9.2, color=INK_SECONDARY, va="top", ha="left")
- 
+
 # Add a legend to the figure
 def _legend(fig, labels: list[str], colours: list[str], x: float = 0.015, y: float = 0.012) -> None:
     handles = [Patch(facecolor=c, edgecolor="none", label=l)
                for l, c in zip(labels, colours)]
     leg = fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(x, y), ncol=len(labels), frameon=False, fontsize=8.8,
-                     handlelength=0.85, handleheight=0.85, columnspacing=1.8,
-                     handletextpad=0.55)
+                     handlelength=0.85, handleheight=0.85, columnspacing=1.8, handletextpad=0.55)
     for t in leg.get_texts():
         t.set_color(INK_SECONDARY)
- 
+
 # Save the figure to a file
 def _save(fig, out: Path) -> None:
     fig.savefig(out, dpi=DPI, bbox_inches="tight", pad_inches=0.26)
@@ -103,11 +102,11 @@ def _luminance(hex_colour: str) -> float:
     # Calculate the luminance using the formula
     f = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
     return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
- 
+
 # Determine the ink or white inside a coloured fill, whichever clears contrast
 def _on_fill(hex_colour: str) -> str:
     return "#ffffff" if _luminance(hex_colour) < 0.42 else INK
- 
+
 # Convert points to data coordinates
 def _pt_to_data(ax, pts: float) -> tuple[float, float]:
     inv = ax.transData.inverted()
@@ -127,7 +126,7 @@ def _rounded_hbar(ax, y, width, height, colour) -> None:
     # Define the path codes
     codes = [MPath.MOVETO, MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO, MPath.CLOSEPOLY]
     ax.add_patch(PathPatch(MPath(verts, codes), facecolor=colour, edgecolor="none", lw=0, zorder=3))
- 
+
 
 def _fits(ax, text: str, seg_width_data: float, fontsize: float) -> bool:
     # Measure the rendered label before placing it inside a segment.
@@ -139,7 +138,7 @@ def _fits(ax, text: str, seg_width_data: float, fontsize: float) -> bool:
     w = abs(inv.transform((bb.width, 0))[0] - inv.transform((0, 0))[0])
     # Return True if the label fits inside the segment, False otherwise
     return w * 1.5 < abs(seg_width_data)
- 
+
  
 def _stacked_row(ax, y, parts, total, height, fontsize=8.5) -> None:
     # One 100%-stacked row. parts = [(value, colour), ...]
@@ -153,8 +152,8 @@ def _stacked_row(ax, y, parts, total, height, fontsize=8.5) -> None:
         if _fits(ax, str(value), w - gap_x, fontsize):
             ax.text(left + (w - gap_x) / 2, y, str(value), ha="center", va="center", fontsize=fontsize, color=_on_fill(colour), zorder=4)
         left += w
- 
- 
+
+
 def _pct_axis(ax) -> None:
     # Set the x-axis ticks and labels
     ax.set_xticks([0, 25, 50, 75, 100])
@@ -178,11 +177,9 @@ def fig_tier_distribution(rows: list, out: Path) -> None:
         c = counts.get(tier, 0)
         _rounded_hbar(ax, y, c, 0.5, TIER_COLOURS[tier])
         # Add the number of tasks in the tier
-        ax.text(c + top * 0.025, y, f"{c}", va="center", ha="left",
-                fontsize=10.5, color=INK)
-        ax.text(c + top * 0.025 + top * 0.085, y, f"{c / n:.0%}", va="center",
-                ha="left", fontsize=10.5, color=INK_MUTED)
- 
+        ax.text(c + top * 0.025, y, f"{c}", va="center", ha="left", fontsize=10.5, color=INK)
+        ax.text(c + top * 0.025 + top * 0.085, y, f"{c / n:.0%}", va="center", ha="left", fontsize=10.5, color=INK_MUTED)
+
     # Set the y-axis ticks and labels
     ax.set_yticks(ys)
     ax.set_yticklabels(TIERS, fontsize=10.5, color=INK)
@@ -191,9 +188,7 @@ def fig_tier_distribution(rows: list, out: Path) -> None:
     # Add a header to the figure
     _header(fig, "Task difficulty tiers", None)
     _save(fig, out / "tier_distribution.png")
- 
- 
- 
+
 #Create a figure and axis for the tier by site
 def fig_tier_by_site(rows: list, out: Path) -> None:
     # Count the number of tasks in each site
@@ -212,15 +207,15 @@ def fig_tier_by_site(rows: list, out: Path) -> None:
         total = sum(c.values())
         _stacked_row(ax, y, [(c.get(t, 0), TIER_COLOURS[t]) for t in TIERS], total, 0.5)
         ax.text(102, y, f"n={total}", va="center", ha="left", fontsize=9, color=INK_MUTED)
- 
+
     ax.set_yticks(ys)
     ax.set_yticklabels([SITE_LABELS.get(s, s) for s in sites], fontsize=10.5, color=INK)
     _pct_axis(ax)
     _header(fig, "Difficulty composition by site", None)
     _legend(fig, TIERS, [TIER_COLOURS[t] for t in TIERS])
     _save(fig, out / "tier_by_site.png")
- 
- 
+
+
 def fig_tier_by_category(rows: list, out: Path) -> None:
     # Count the number of tasks in each category
     by_cat = defaultdict(Counter)
@@ -240,7 +235,7 @@ def fig_tier_by_category(rows: list, out: Path) -> None:
         total = sum(c.values())
         _stacked_row(ax, y, [(c.get(t, 0), TIER_COLOURS[t]) for t in TIERS], total, 0.5, fontsize=8)
         ax.text(102, y, f"n={total}", va="center", ha="left", fontsize=8.5, color=INK_MUTED)
- 
+
     ax.set_yticks(ys)
     ax.set_yticklabels([c.replace("_", " ") for c in cats], fontsize=9.5, color=INK)
     # Set the x-axis ticks and labels
@@ -249,10 +244,9 @@ def fig_tier_by_category(rows: list, out: Path) -> None:
     _header(fig, "Difficulty composition by task category", None)
     _legend(fig, TIERS, [TIER_COLOURS[t] for t in TIERS])
     _save(fig, out / "tier_by_category.png")
- 
- 
+
+
 #main
- 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--metadata", default="../../data/processed/final_annotation_difficulty_tiers/task_metadata.jsonl")
@@ -261,19 +255,16 @@ def main() -> None:
  
     rows = [json.loads(l) for l in Path(args.metadata).read_text().splitlines()
             if l.strip()]
-    if not rows:
-        raise SystemExit(f"no rows in {args.metadata}")
- 
+
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
- 
+
     _style()
     fig_tier_distribution(rows, out)
     # fig_rubric_total(rows, out)
     fig_tier_by_site(rows, out)
     # fig_dimension_profiles(rows, out)
     fig_tier_by_category(rows, out)
- 
- 
+
 if __name__ == "__main__":
     main()

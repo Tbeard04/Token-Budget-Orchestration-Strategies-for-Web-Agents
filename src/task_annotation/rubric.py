@@ -7,13 +7,18 @@ import re
 
 from pydantic import BaseModel, Field
 
+#define the dimensions
 DIMENSIONS = ["pages_to_traverse", "retrieval_type", "interaction", "target_locatability"]
+
+#define the tiers
 TIERS = ["Easy", "Medium", "Hard"]
 
+#define the easy max
 EASY_MAX = 2
+#define the medium max
 MEDIUM_MAX = 5
 
-
+#define the task annotation model
 class TaskAnnotation(BaseModel):
     pages_to_traverse: int = Field(ge=0, le=2, description="0 single page, 1 two-to-three pages, 2 four-plus or unbounded")
     retrieval_type: int = Field(ge=0, le=2, description="0 read one value, 1 compare or filter a few, 2 aggregate or count over a set")
@@ -21,7 +26,7 @@ class TaskAnnotation(BaseModel):
     target_locatability: int = Field(ge=0, le=2, description="0 target named explicitly, 1 derivable from the page, 2 must be discovered by scanning")
     confidence: float = Field(ge=0.0, le=1.0, description="Honest confidence. Use below 0.7 when the task text is ambiguous about how much navigation it requires.")
 
-
+#define the annotator instructions
 ANNOTATOR_INSTRUCTIONS = """\
 You score WebArena web-agent tasks on four difficulty dimensions for a study of token budgets.
 
@@ -59,6 +64,7 @@ Give an honest confidence. Use below 0.7 when the task text leaves the amount
 of navigation genuinely ambiguous.
 """
 
+#define the rubric summary
 RUBRIC_SUMMARY = """\
   pages_to_traverse    0 one page        1 two-three      2 four+/unbounded
   retrieval_type       0 one value       1 compare/filter 2 aggregate/count
@@ -80,15 +86,24 @@ def total_of(row) -> int:
         return sum(int(row[d]) for d in DIMENSIONS)
     return sum(int(getattr(row, d)) for d in DIMENSIONS)
 
-
+#function to normalise the template
 def normalise_template(intent: str) -> str:
+    #normalise the template
     t = intent
+    #replace the quoted strings with X
     t = re.sub(r'"[^"]*"', "X", t)
+    #replace the single quoted strings with X
     t = re.sub(r"'[^']*'", "X", t)
+    #replace the user strings with USER
     t = re.sub(r"\b[A-Z][a-z]+_[A-Z][a-z]+\d*\b", "USER", t)
     t = re.sub(r"\b[a-zA-Z]+\d+\b", "USER", t)
+    #replace the numbers with N
     t = re.sub(r"\$?\d[\d,.]*\b", "N", t)
+    #replace the subreddit strings with subreddit X
     t = re.sub(r"\bsubreddit \w+", "subreddit X", t)
+    #replace the forum strings with forum X
     t = re.sub(r"\bforum \w+", "forum X", t)
+    #replace the r/ strings with r/X
     t = re.sub(r"\br/\w+", "r/X", t)
+    #replace the whitespace with a single space
     return re.sub(r"\s+", " ", t).strip().lower()
