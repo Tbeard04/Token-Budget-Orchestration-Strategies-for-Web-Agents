@@ -91,9 +91,8 @@ if not hasattr(openai, "ChatCompletion"):
 
 
 
-# WebArena's fuzzy-match evaluators call openai.ChatCompletion (removed in
-# 1.0) and hardcode gpt-4-1106-preview (retired). Replace with a v1 client.
-# NOTE: this changes the grader model relative to the original paper
+#WebArena's fuzzy-match evaluators call openai.ChatCompletion (removed in 1.0) and hardcode gpt-4-1106-preview (retired). Replace with a v1 client.
+#this changes the grader model relative to the original paper
 
 def _patch_webarena_openai() -> None:
     try:
@@ -105,8 +104,8 @@ def _patch_webarena_openai() -> None:
     from openai import OpenAI
     _client = OpenAI()
 
-    def _v1_chat(messages, model, temperature, max_tokens, top_p,
-                 context_length, stop_token=None):
+    #v1 chat completion function
+    def _v1_chat(messages, model, temperature, max_tokens, top_p, context_length, stop_token=None):
         resp = _client.chat.completions.create(
             model=EVAL_MODEL,
             messages=messages,
@@ -119,7 +118,7 @@ def _patch_webarena_openai() -> None:
 
     _ou.generate_from_openai_chat_completion = _v1_chat
 
-    # The evaluator may have imported the function directly, holding its own reference that the module-level patch above does not reach. So I patch it here too.
+    #The evaluator may have imported the function directly, holding its own reference that the module-level patch above does not reach. So I patch it here too.
     for _mod_name in ("evaluation_harness.evaluators",
                       "webarena.evaluation_harness.evaluators"):
         try:
@@ -133,39 +132,32 @@ def _patch_webarena_openai() -> None:
 
     print(f"[wa_env] patched WebArena openai_utils (eval model: {EVAL_MODEL})")
 
-
 _patch_webarena_openai()
 
-# --- browsergym: everything above must already have run ----------------------
-import gymnasium as gym                                  # noqa: E402
-import browsergym.webarena                               # noqa: E402,F401
-from browsergym.utils.obs import flatten_axtree_to_str   # noqa: E402
-from pydantic_ai import Agent                            # noqa: E402
+#browsergym: everything above must already have run
+import gymnasium as gym
+import browsergym.webarena
+from browsergym.utils.obs import flatten_axtree_to_str
+from pydantic_ai import Agent
 
 
-# ----------------------------------------------------------------------------
-# Shared configuration - identical for every strategy
-# ----------------------------------------------------------------------------
+#shared configuration - identical for every strategy
 MODEL = "openai:gpt-5-mini"
 REASONING_EFFORT = "low"
 MAX_STEPS = 25
 SITES = ["shopping", "shopping_admin", "reddit"]
 BUDGETS = [2000, 4000, 8000, 16000, 32000, 64000]
 
-# Guard thresholds (applied to A, B and C alike)
-# page will not respond to any action
+#Guard thresholds (applied to A, B and C alike) page will not respond to any action
 MAX_CONSECUTIVE_ERRORS = 4
 
-# agent is circling
+#agent is circling
 MAX_SAME_ACTION_FROM_PAGE = 3
 
-# prior actions shown in the prompt
+#prior actions shown in the prompt
 ACTION_HISTORY_LEN = 8
 
-
-# ----------------------------------------------------------------------------
-# Task configs
-# ----------------------------------------------------------------------------
+#Task configs
 def config_dir() -> Path:
     import webarena
 
@@ -184,10 +176,10 @@ def config_dir() -> Path:
         + ", ".join(str(c) for c in candidates)
     )
 
-
+#config cache
 _CONFIG_CACHE: list[dict] | None = None
 
-
+#load the configs
 def load_configs() -> list[dict]:
     global _CONFIG_CACHE
     if _CONFIG_CACHE is None:
@@ -199,7 +191,7 @@ def load_configs() -> list[dict]:
             _CONFIG_CACHE = json.loads((d / "test.raw.json").read_text())
     return _CONFIG_CACHE
 
-
+#get the site of a task
 def site_of(task_id: int) -> str:
     for cfg in load_configs():
         if cfg.get("task_id") == task_id:
@@ -207,7 +199,7 @@ def site_of(task_id: int) -> str:
             return sites[0] if sites else "unknown"
     return "unknown"
 
-
+#get the single site tasks
 def single_site_tasks(sites: list[str] | None = None) -> dict[str, list[int]]:
     sites = sites or SITES
     out: dict[str, list[int]] = {s: [] for s in sites}
@@ -217,16 +209,9 @@ def single_site_tasks(sites: list[str] | None = None) -> dict[str, list[int]]:
             out[cfg_sites[0]].append(cfg["task_id"])
     return out
 
-
-# ----------------------------------------------------------------------------
-# Observation --> prompt
-# ----------------------------------------------------------------------------
-def build_prompt(obs: dict,
-                 history: list[str] | None = None,
-                 urls: list[str] | None = None) -> str:
-    goal = obs.get("goal") or " ".join(
-        p.get("text", "") for p in obs.get("goal_object", [])
-    )
+#Observation --> prompt
+def build_prompt(obs: dict, history: list[str] | None = None, urls: list[str] | None = None) -> str:
+    goal = obs.get("goal") or " ".join(p.get("text", "") for p in obs.get("goal_object", []))
 
     try:
         axtree = flatten_axtree_to_str(
@@ -241,15 +226,17 @@ def build_prompt(obs: dict,
 
     err = obs.get("last_action_error") or "none"
     if err != "none" and "Timeout" in err and "exceeded" in err:
-        # A timeout may mean the action landed and only the navigation wait
-        # expired, OR that the element genuinely cannot be actioned. If the
-        # same action just failed with no page change, it is the latter.
+        #A timeout may mean the action landed and only the navigation wait expired, OR that the element genuinely cannot be actioned. If the
+        # same action just failed with no page change
         repeated = (
             history is not None and len(history) >= 2
             and history[-1] == history[-2]
             and urls is not None and len(urls) >= 2
             and urls[-1] == urls[-2]
         )
+        #if the action has been repeated more than twice and the page has not changed, 
+        #set the error to "this exact action has FAILED more than once and the page has not changed. 
+        #It will not work. Choose a DIFFERENT element or a different approach and not to rety it"
         if repeated:
             err = ("this exact action has FAILED more than once and the page has "
                    "not changed. It will not work. Choose a DIFFERENT element or "
@@ -257,7 +244,6 @@ def build_prompt(obs: dict,
         else:
             err = ("previous action timed out waiting for the page to settle - "
                    "it may have succeeded. Check the current page before retrying.")
-
     hist = "none yet"
     if history:
         rows = []
@@ -274,16 +260,13 @@ def build_prompt(obs: dict,
         f"PAGE (AXTree):\n{axtree}"
     )
 
-
+#get the goal of a task
 def goal_of(obs: dict) -> str:
     return obs.get("goal") or " ".join(
         p.get("text", "") for p in obs.get("goal_object", [])
     )
 
-
-# ----------------------------------------------------------------------------
-# Agent construction and invocation
-# ----------------------------------------------------------------------------
+#Agent construction and invocation
 def make_agent(instructions: str, output_type, label: str = "agent") -> Agent:
     try:
         from pydantic_ai.models.openai import (
@@ -291,11 +274,8 @@ def make_agent(instructions: str, output_type, label: str = "agent") -> Agent:
             OpenAIResponsesModelSettings,
         )
         model = OpenAIResponsesModel(MODEL.split(":", 1)[1])
-        settings = OpenAIResponsesModelSettings(
-            openai_reasoning_effort=REASONING_EFFORT
-        )
-        a = Agent(model, output_type=output_type,
-                  instructions=instructions, model_settings=settings)
+        settings = OpenAIResponsesModelSettings(openai_reasoning_effort=REASONING_EFFORT)
+        a = Agent(model, output_type=output_type, instructions=instructions, model_settings=settings)
         print(f"[wa_env] {label}: reasoning_effort='{REASONING_EFFORT}'")
         return a
     except Exception as _e:
@@ -303,14 +283,13 @@ def make_agent(instructions: str, output_type, label: str = "agent") -> Agent:
         return Agent(MODEL, output_type=output_type, instructions=instructions)
 
 
-# Playwright's sync API runs inside an event loop; agent.run_sync() would try
-# to start another inside it. Calling from a worker thread avoids the clash.
+#Playwright's sync API runs inside an event loop; agent.run_sync() would try to start another inside it. Calling from a worker thread avoids the clash
 _executor = ThreadPoolExecutor(max_workers=1)
 
-
+#call the agent
 def call_agent(agent: Agent, prompt: str):
     return _executor.submit(agent.run_sync, prompt).result()
 
-
+#make the environment
 def make_env(task_id: int, timeout: int = 10000):
     return gym.make(f"browsergym/webarena.{task_id}", timeout=timeout)

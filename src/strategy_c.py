@@ -17,7 +17,6 @@ import strategy_a
 import strategy_b
 from router_c.train.train_router import MLP, task_features, stop_features
 
-
 DEFAULT_BUDGET = 16_000
 #Path to the router-directed dynamic strategy model
 ROUTER_DIR = Path("../data/processed/router_c_models/model_2")
@@ -30,7 +29,6 @@ TIER_ORD = {"Easy": 0, "Medium": 1, "Hard": 2}
 
 #What a router-initiated stop submits. "none": end the episode with no answer
 STOP_ANSWER = "none"
-
 
 #router class for the router-directed dynamic strategy
 class Router:
@@ -70,7 +68,7 @@ class Router:
         #print the router loaded from the model directory
         print(f"[strategy_c] router loaded from {model_dir}  alpha={self.alpha}  "
               f"stop_threshold={self.threshold:.6f}")
- 
+
     #helper function to compute the probability of a network output
     def _p1(self, net: MLP, x: list[float], mean, std) -> float:
         #normalize the input
@@ -78,16 +76,16 @@ class Router:
         #compute the probability of the network output
         with torch.no_grad():
             return float(torch.softmax(net(torch.tensor(z)[None]), -1)[0, 1])
- 
+
     #choose the mode based on the task features
     def choose_mode(self, task_row: dict) -> tuple[str, float]:
         p_cycle = self._p1(self.mode_net, task_features(task_row), self.mode_mean, self.mode_std)
         return ("cycle" if p_cycle >= 0.5 else "execute"), p_cycle
- 
+
     #compute the probability of a stop based on the state features
     def p_stop(self, state_row: dict) -> float:
         return self._p1(self.stop_net, stop_features(state_row), self.stop_mean, self.stop_std)
- 
+
  #global router and tasks variables
 _router: Router | None = None
 #global tasks variable
@@ -142,7 +140,6 @@ def _ready() -> tuple[Router, dict[int, dict]]:
         configure()
     return _router, _tasks
 
-
 #episode function for the router-directed dynamic strategy
 def run_episode(task_id: int, budget: int | None = None) -> dict:
     #get the router and tasks
@@ -158,7 +155,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
     #print the task id, site, budget, and mode
     print(f"\n{'=' * 60}\nTASK {task_id}  (site: {site})  [C, budget {cap}]  "
           f"router -> {mode} (p_cycle={p_cycle:.3f})\n{'=' * 60}")
- 
+
     #make the environment
     env = W.make_env(task_id)
     #reset the environment
@@ -167,7 +164,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
     goal = W.goal_of(obs)
     #print the goal and start URL
     print(f"Goal: {goal}\nStart URL: {obs.get('url', 'unknown')}\n")
- 
+
     #initialize the input and output tokens
     in_tok = out_tok = 0
     #create a list to store the steps
@@ -195,7 +192,8 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
     stop_step: int | None = None
     #initialize the time
     t0 = time.time()
- 
+
+    #loop through the steps
     for i in range(W.MAX_STEPS):
         #compute the spent tokens
         spent = in_tok + out_tok
@@ -226,12 +224,12 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
                 if reward >= 1.0:
                     success = True
             break
- 
+
         #build the base prompt
         base = W.build_prompt(obs, action_history, url_history)
         #get the current url
         cur_url = obs.get("url", "")
- 
+
         #if the mode is "execute", take one website step
         if mode == "execute":
             #compute the estimated input tokens
@@ -265,7 +263,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
             if in_tok + out_tok >= cap:
                 reason = "safety_token_cap"
                 break
- 
+
         #if the mode is "cycle", take one website step
         else:
             #compute the estimated step
@@ -341,7 +339,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
             if in_tok + out_tok >= cap:
                 reason = "safety_token_cap"
                 break
- 
+
         #update the action history
         action_history.append(final_action)
         #create a pair of the current url and the final action
@@ -350,7 +348,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         url_action_counts[pair] += 1
         #get the number of times the pair has been seen
         pair_n = url_action_counts[pair]
- 
+
         #step the environment
         obs, reward, terminated, truncated, _ = env.step(final_action)
         #get the new url
@@ -365,7 +363,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         last_error = bool(err)
         #update the url changed
         url_changed = new_url != cur_url
- 
+
         #update the steps
         for s in steps:
             #if the step index is the current step, update the step
@@ -373,10 +371,10 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
                 s["action_error"] = str(err) if err else None
                 s["step_reward"] = reward
                 s["next_url"] = new_url
- 
+
         #print the result
         print(f"result: reward={reward}{'  ERROR: ' + str(err)[:70] if err else '  (action accepted)'}")
- 
+
         #if the reward is 1.0, set the success to True and reason to "success"
         if reward >= 1.0:
             success, reason = True, "success"
@@ -390,7 +388,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         if pair_n >= W.MAX_SAME_ACTION_FROM_PAGE:
             reason = "navigation_cycle"
             break
- 
+
     env.close()
     #get the logical steps
     logical_steps = len({s["step"] for s in steps})
@@ -400,7 +398,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
     for s in steps:
         #update the tokens by role
         by_role[s["agent_role"]] += s["input_tokens"] + s["output_tokens"]
- 
+
     #create a dictionary to store the record output
     record_out = {
         "strategy": "C",
@@ -446,6 +444,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
           f"{'' if stop_step is None else f' at step {stop_step}'}")
     return record_out
 
+#main function
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("tasks", nargs="*", type=int)
@@ -470,7 +469,6 @@ def main() -> None:
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
     print(f"\nWrote {len(args.tasks)} episodes to {out_path}")
-
 
 if __name__ == "__main__":
     main()

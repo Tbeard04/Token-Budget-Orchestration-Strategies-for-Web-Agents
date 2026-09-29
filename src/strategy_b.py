@@ -1,5 +1,5 @@
 """
-strategy_b.py - Strategy B: fixed Planner --> Executor --> Critic pipeline.
+strategy_b.py - Strategy B: fixed Planner --> Executor --> Critic pipeline
 """
 from __future__ import annotations
 
@@ -14,35 +14,33 @@ from pydantic import BaseModel, Field
 import wa_env as W
 import strategy_a
 
-
+#default budget
 DEFAULT_BUDGET = 16_000
 
 
 #Structured outputs -- one per role.
 class PlannerPlan(BaseModel):
     reasoning: str = Field(description="One sentence of analysis")
-    plan: str = Field(
-        description="The next sub-goal in plain English, NOT an action string"
-    )
+    plan: str = Field(description="The next sub-goal in plain English, NOT an action string")
 
-
+#structured output for the executor
 class ExecutorAction(BaseModel):
     reasoning: str = Field(description="One sentence justifying the action")
     action: str = Field(description="A single BrowserGym action string")
 
-
+#structured output for the critic
 class CriticVerdict(BaseModel):
     approve: bool = Field(description="True if the proposed action should be executed unchanged")
     reasoning: str = Field(description="One sentence explaining the verdict")
     revised_action: str | None = Field(default=None, description="A corrected BrowserGym action string, only when approve is False",)
 
 
-# Role instructions
-# _ACTION_VOCAB is the part of Strategy A's instructions before "Rules:" - the environment interface. Everything after it here is role-specific: the Planner
-# never emits an action so needs no answer-formatting rules; the Executor never chooses strategy so needs no exploration heuristics.
+#Role instructions
+#_ACTION_VOCAB is the part of Strategy A's instructions before "Rules:" - the environment interface. Everything after it here is role-specific: the Planner
+#never emits an action so needs no answer-formatting rules; the Executor never chooses strategy so needs no exploration heuristics
 _ACTION_VOCAB = strategy_a.INSTRUCTIONS.split("Rules:")[0]
 
-
+#instructions for the planner
 PLANNER_INSTRUCTIONS = f"""\
 You are the PLANNER in a three-agent web-navigation pipeline. You decide what
 should happen next. You do NOT produce actions and you do NOT answer the task.
@@ -112,7 +110,7 @@ ERROR RECOVERY
   back and try a different route.
 """
 
-
+#instructions for the executor
 EXECUTOR_INSTRUCTIONS = f"""\
 You are the EXECUTOR in a three-agent web-navigation pipeline. A Planner has
 given you one sub-goal. Translate it into exactly one action.
@@ -145,7 +143,7 @@ NAVIGATION
 - On a page error (500, 502, 504), use go_back().
 """
 
-
+#instructions for the critic
 CRITIC_INSTRUCTIONS = f"""\
 You are the CRITIC in a three-agent web-navigation pipeline. You are shown the
 goal, current page, the Planner's sub-goal and the Executor's proposed action.
@@ -188,15 +186,13 @@ reject because you would have chosen a different route - only when the action
 is wrong.
 """
 
-
+#make the agents
 planner = W.make_agent(PLANNER_INSTRUCTIONS, PlannerPlan, label="planner")
 executor = W.make_agent(EXECUTOR_INSTRUCTIONS, ExecutorAction, label="executor")
 critic = W.make_agent(CRITIC_INSTRUCTIONS, CriticVerdict, label="critic")
 
-# QUICK CHECK ON INSTANCE TO SEE IF ACTION VOCABULARY IS VISIBLE TO AGENTS
-for _label, _instr in [("planner", PLANNER_INSTRUCTIONS),
-                       ("executor", EXECUTOR_INSTRUCTIONS),
-                       ("critic", CRITIC_INSTRUCTIONS)]:
+#QUICK CHECK ON INSTANCE TO SEE IF ACTION VOCABULARY IS VISIBLE TO AGENTS
+for _label, _instr in [("planner", PLANNER_INSTRUCTIONS), ("executor", EXECUTOR_INSTRUCTIONS), ("critic", CRITIC_INSTRUCTIONS)]:
     if "click('a31')" not in _instr:
         raise RuntimeError(
             f"{_label} instructions do not contain the action vocabulary. "
@@ -211,21 +207,25 @@ _INSTRUCTION_TOKENS = (
 ) // 4
 _OUTPUT_MARGIN = 900
 
-# ----------------------------------------------------------------------------
+#run the episode
 def run_episode(task_id: int, budget: int | None = None) -> dict:
+    #initialize the budget
     cap = budget if budget is not None else DEFAULT_BUDGET
+    #get the site of the task
     site = W.site_of(task_id)
+    #print the task information
     print(f"\n{'=' * 60}\nTask {task_id}  (site: {site})  [B, budget {cap}]\n{'=' * 60}")
 
     env = W.make_env(task_id)
     obs, _ = env.reset()
-
+    #get the goal of the task
     goal = W.goal_of(obs)
+    #print the goal and start url
     print(f"Goal: {goal}")
     print(f"Start URL: {obs.get('url', 'unknown')}\n")
-
+    #initialize the input and output tokens
     in_tok = out_tok = 0
-    steps: list[dict] = []
+    steps: list[dict] = [] #initialize the steps
     action_history: list[str] = []
     url_history: list[str] = [obs.get("url", "")]
     url_action_counts: Counter = Counter()
@@ -261,8 +261,8 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         base = W.build_prompt(obs, action_history, url_history)
         cur_url = obs.get("url", "")
 
-        # Pre-step check. Committing to a step means committing to three calls, so estimate three prompts plus a margin for the appended plan/action
-        # text and the three outputs.
+        #Pre-step check. Committing to a step means committing to three calls, so estimate three prompts plus a margin for the appended plan/action text and the three outputs
+        #if the spent tokens plus the estimated step tokens is greater than the budget, set the reason to "budget_would_exceed"
         spent = in_tok + out_tok
         est_step = (len(base) // 4) * 3 + _INSTRUCTION_TOKENS + _OUTPUT_MARGIN
         if spent + est_step > cap:
@@ -295,7 +295,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
             break
         print(f"proposed: {proposed}")
 
-        # --- 3. Critic: approve or revise ------------------------------------
+        #3. Critic: approve or revise
         crit_prompt = (f"{base}\n\nPLANNER SUB-GOAL:\n{plan}\n\n"
                        f"EXECUTOR PROPOSED ACTION:\n{proposed}")
         r_crit = W.call_agent(critic, crit_prompt)
@@ -328,8 +328,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         err = obs.get("last_action_error")
         consecutive_errors = consecutive_errors + 1 if err else 0
 
-        #Attach the outcome to all three role records for this step.
-        #Required by Strategy C: the router must know "the previous action failed" to decide whether to invoke the Critic or Stop.
+        #Attach the outcome to all three role records for this step
         for s in steps:
             if s["step"] == i:
                 s["action_error"] = str(err) if err else None
@@ -394,7 +393,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
 #main
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("tasks", nargs="+", type=int, help="task ids")
+    ap.add_argument("tasks", nargs="+", type=int)
     ap.add_argument("--budget", type=int, default=None)
     ap.add_argument("--out", default="../data/raw/strategy_b_results.jsonl")
     args = ap.parse_args()
@@ -429,7 +428,6 @@ def main() -> None:
                   f"  {r['termination_reason']}")
 
     print(f"\nWrote {len(results)} episodes to {out_path}")
-
 
 if __name__ == "__main__":
     main()

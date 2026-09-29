@@ -18,6 +18,7 @@ import strategy_a
 import strategy_b
 import strategy_c
 
+
 def sample_tasks(n: int, sites: list[str], seed: int) -> dict[str, list[int]]:
     pools = W.single_site_tasks(sites)
     rng = random.Random(seed)

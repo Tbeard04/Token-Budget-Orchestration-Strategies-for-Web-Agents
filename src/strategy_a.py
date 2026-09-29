@@ -19,15 +19,13 @@ import wa_env as W
 DEFAULT_BUDGET = 16_000
 
 
-# ----------------------------------------------------------------------------
-# Structured output: the model is constrained to emit a valid shape, so no
-# regex extraction of the action is needed.
-# ----------------------------------------------------------------------------
+
+#Structured output: the model is constrained to emit a valid shape, so no regex extraction of the action is needed
 class AgentAction(BaseModel):
     reasoning: str = Field(description="One short sentence justifying the action")
     action: str = Field(description="A single BrowserGym action string")
 
-
+#instructions for the agent Strategy A
 INSTRUCTIONS = """\
 You are a web-navigation agent operating a website through BrowserGym.
 You are given a task goal and the page's accessibility tree (AXTree). Each
@@ -77,8 +75,8 @@ Rules:
 Answering with send_msg_to_user - the answer is graded by EXACT MATCH:
 - Send ONLY the answer itself. No explanation, no preamble, no quotes,
   no sentence wrapping it.
-  Correct:   send_msg_to_user('Sprite Stasis Ball 65 cm')
-  Wrong:     send_msg_to_user('The top seller is Sprite Stasis Ball 65 cm')
+  Correct: send_msg_to_user('Sprite Stasis Ball 65 cm')
+  Wrong: send_msg_to_user('The top seller is Sprite Stasis Ball 65 cm')
 - For a list of items, comma-separate them: send_msg_to_user('Alice, Bob')
 - If nothing on the page satisfies the criteria, send exactly:
   send_msg_to_user('N/A')
@@ -88,10 +86,10 @@ Answering with send_msg_to_user - the answer is graded by EXACT MATCH:
   cannot be undone.
 """
 
+#make the agent
 agent = W.make_agent(INSTRUCTIONS, AgentAction, label="strategy_a")
 
-
-# ----------------------------------------------------------------------------
+#run the episode
 def run_episode(task_id: int, budget: int | None = None) -> dict:
     cap = budget if budget is not None else DEFAULT_BUDGET
     site = W.site_of(task_id)
@@ -104,21 +102,23 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
     print(f"Goal: {goal}")
     print(f"Start URL: {obs.get('url', 'unknown')}\n")
 
+    #initialize the input and output tokens
     in_tok = out_tok = 0
     steps: list[dict] = []
     action_history: list[str] = []
-    url_history: list[str] = [obs.get("url", "")]
-    url_action_counts: Counter = Counter()
-    consecutive_errors = 0
-    success = False
-    reason = "max_steps"
-    reward = 0.0
-    t0 = time.time()
+    url_history: list[str] = [obs.get("url", "")] #initialize the url history with the current url
+    url_action_counts: Counter = Counter() #initialize the url action counts
+    consecutive_errors = 0 #initialize the consecutive errors
+    success = False #initialize the success
+    reason = "max_steps" #initialize the reason
+    reward = 0.0 #initialize the reward
+    t0 = time.time() #initialize the time
 
+    #loop through the steps
     for i in range(W.MAX_STEPS):
         prompt = W.build_prompt(obs, action_history, url_history)
 
-        # Check BEFORE paying: an episode must never exceed its stated budget.
+        #Check BEFORE paying: an episode must never exceed its stated budget.
         spent = in_tok + out_tok
         est_in = len(prompt) // 4
         if spent + est_in > cap:
@@ -136,7 +136,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         decided = result.output
         action_history.append(decided.action)
 
-        # Count this action taken FROM this page (obs is still pre-step here)
+        #Count this action taken FROM this page (obs is still pre-step here)
         pair = (obs.get("url", ""), decided.action)
         url_action_counts[pair] += 1
         pair_n = url_action_counts[pair]
@@ -186,14 +186,13 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
             reason = "env_terminated"
             break
 
-        # Shared environment constraints (identical for A, B and C).
-        # NB: URL change is deliberately NOT the progress signal - AJAX
-        # workflows (admin grids, filter panels, forms) legitimately operate
-        # on a single URL for many steps.
+        #Shared environment constraints (identical for A, B and C).
+        #if the consecutive errors is greater than or equal to the maximum consecutive errors, set the reason to "repeated_action_failure"
         if consecutive_errors >= W.MAX_CONSECUTIVE_ERRORS:
             reason = "repeated_action_failure"
             print(f"STALL: {consecutive_errors} consecutive failed actions")
             break
+        #if the pair number is greater than or equal to the maximum same action from page, set the reason to "navigation_cycle"
         if pair_n >= W.MAX_SAME_ACTION_FROM_PAGE:
             reason = "navigation_cycle"
             print(f"CYCLE: same action from same page {pair_n}x")
@@ -269,7 +268,6 @@ def main() -> None:
                   f"{r['wall_clock_seconds']:>8}  {r['termination_reason']}")
 
     print(f"\nWrote {len(results)} episodes to {args.out}")
-
 
 if __name__ == "__main__":
     main()
