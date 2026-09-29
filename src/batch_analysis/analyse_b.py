@@ -21,17 +21,24 @@ def _critic_steps(df: pd.DataFrame):
             if s.get("agent_role") == "critic":
                 yield row, s
 
-
+#extract revisions
 def _extract_revisions(df: pd.DataFrame) -> list[dict]:
+    #revisions is a list of dictionaries
     revisions = []
+    #for each row and step in the dataframe
     for row, s in _critic_steps(df):
+        #if the step is not revised, continue
         if not s.get("revised"):
             continue
+        #steps is the step log
         steps = row["step_log"]
+        #step_n is the step number
         step_n = s["step"]
 
         #State at the time of the revision
+        #prev is the previous step
         prev = [x for x in steps if x["step"] == step_n - 1]
+        #prev_error is True if the previous step had an error
         prev_error = any(x.get("action_error") not in (None, "None") for x in prev) if prev else False
 
         #Did the revised action work
@@ -63,27 +70,32 @@ def _extract_revisions(df: pd.DataFrame) -> list[dict]:
 
 def critic_analysis(df: pd.DataFrame) -> None:
     print_section("Critic Analysis: Rate and Outcome")
-
+    #total_calls is the total number of critic calls
     total_calls = sum(1 for _ in _critic_steps(df))
     total_revisions = int(df["critic_revisions"].sum())
+    #eps_with is the number of episodes with revisions
     eps_with = int((df["critic_revisions"] > 0).sum())
 
-    print(f" episodes: {len(df)}")
-    print(f" episodes with revisions: {eps_with}  ({eps_with/len(df):.1%})")
-    print(f" total critic calls: {total_calls}")
-    print(f" total revisions: {total_revisions}")
+    print(f"episodes: {len(df)}")
+    print(f"episodes with revisions: {eps_with}  ({eps_with/len(df):.1%})")
+    print(f"total critic calls: {total_calls}")
+    print(f"total revisions: {total_revisions}")
     if total_calls:
         print(f" revision rate: {total_revisions/total_calls:.1%}")
         print(f" rubber-stamp rate: "
               f"{(total_calls-total_revisions)/total_calls:.1%}")
 
+    #revised is the number of episodes with revisions
     revised = df[df["critic_revisions"] > 0]
+    #unrevised is the number of episodes without revisions
     unrevised = df[df["critic_revisions"] == 0]
+    #r_sr is the success rate of episodes with revisions
+    #u_sr is the success rate of episodes without revisions
     r_sr = revised["success"].mean() if len(revised) else 0
     u_sr = unrevised["success"].mean() if len(unrevised) else 0
 
-    print(f"\n SR of episodes WITH revisions   : {r_sr:.1%}  (n={len(revised)})")
-    print(f" SR of episodes WITHOUT revisions: {u_sr:.1%}  (n={len(unrevised)})")
+    print(f"\n SR of episodes WITH revisions: {r_sr:.1%}  (n={len(revised)})")
+    print(f"SR of episodes WITHOUT revisions: {u_sr:.1%}  (n={len(unrevised)})")
 
     print("\n By budget level:")
     for budget, grp in df.groupby("budget_level"):
@@ -92,7 +104,7 @@ def critic_analysis(df: pd.DataFrame) -> None:
         rate = revs / calls if calls else 0
         print(f" {budget:>6}: {calls:>5} calls  {revs:>3} revisions  ({rate:.1%})")
 
-
+#revision State Profile (Strategy C routing signal)
 def revision_state_profile(df: pd.DataFrame) -> None:
     print_section("Revision State Profile (Strategy C routing signal)")
 
@@ -106,11 +118,14 @@ def revision_state_profile(df: pd.DataFrame) -> None:
 
     print(f"revisions analysed: {n}\n")
 
+    #with_err is the number of revisions preceded by an action error
     with_err = rev["prev_step_had_error"].sum()
     print(f" preceded by an action error : {with_err:>4}  ({with_err/n:.0%})")
     print(f" preceded by a clean step: {n-with_err:>4}  ({(n-with_err)/n:.0%})")
 
+    #all_calls is the total number of critic calls
     all_calls = 0
+    #calls_after_error is the number of critic calls after an action error
     calls_after_error = 0
     for row, s in _critic_steps(df):
         all_calls += 1
@@ -137,7 +152,9 @@ def revision_state_profile(df: pd.DataFrame) -> None:
     print(f"\n Budget remaining at revision:")
     print(f" median: {rev['budget_frac_remaining'].median():.0%}")
 
+    #worked is the number of revisions that worked
     worked = rev["revision_worked"].sum()
+    #led_to_success is the number of revisions that led to a successful episode
     print(f"\n Revised action executed without error: {worked}/{n} ({worked/n:.0%})")
     led_to_success = rev["episode_success"].sum()
     print(f" Revisions in episodes that succeeded : {led_to_success}/{n} "
@@ -154,7 +171,7 @@ def revision_state_profile(df: pd.DataFrame) -> None:
         for tier, grp in rev.groupby("difficulty_tier"):
             print(f" {str(tier):10s}: {len(grp):>3} revisions")
 
-
+#Critic Revision Details
 def critic_revision_details(df: pd.DataFrame, limit: int | None = 20) -> None:
     revisions = _extract_revisions(df)
     if not revisions:
@@ -173,10 +190,10 @@ def critic_revision_details(df: pd.DataFrame, limit: int | None = 20) -> None:
         print(f" revised: {str(r['revised_to'])[:66]}")
         print(f" outcome: revision {worked}, episode {outcome}")
         print(f" reason: {str(r['reasoning'])[:110]}")
-
+#Rubber-Stamp Cost (Strategy C savings ceiling)
 def rubber_stamp_cost(df: pd.DataFrame) -> None:
     print_section("Rubber-Stamp Cost (Strategy C savings ceiling)")
-
+    #tokens_by_role is a column in the dataframe
     if "tokens_by_role" not in df.columns:
         print("tokens_by_role not present.")
         return
@@ -186,10 +203,14 @@ def rubber_stamp_cost(df: pd.DataFrame) -> None:
     critic_tokens_total = 0
     approval_tokens = 0
 
+    #for each row and step in the dataframe
     for row, s in _critic_steps(df):
         total_calls += 1
+        #call_tokens is the total tokens for the critic call
         call_tokens = s.get("input_tokens", 0) + s.get("output_tokens", 0)
+        #critic_tokens_total is the total tokens for all critic calls
         critic_tokens_total += call_tokens
+        #if the step is not revised, add to approval_calls and approval_tokens
         if not s.get("revised"):
             approval_calls += 1
             approval_tokens += call_tokens
@@ -207,21 +228,23 @@ def rubber_stamp_cost(df: pd.DataFrame) -> None:
     print(f"Recoverable by perfect routing: "
           f"{approval_tokens/max(episode_tokens,1):.1%} of all tokens")
 
-
+#Per-Role Token Cost
 def per_role_cost(df: pd.DataFrame) -> None:
     print_section("Per-Role Token Cost")
 
     if "tokens_by_role" not in df.columns:
         print("tokens_by_role not present.")
         return
-
+    #totals is a dictionary of the total tokens for each role
     totals = {"planner": 0, "executor": 0, "critic": 0}
+    #for each row in the dataframe
     for _, row in df.iterrows():
+        #tbr is the tokens by role
         tbr = row.get("tokens_by_role")
         if isinstance(tbr, dict):
             for role in totals:
                 totals[role] += tbr.get(role, 0)
-
+    #grand is the total tokens for all roles
     grand = sum(totals.values())
     if not grand:
         print("no role token data")
@@ -240,14 +263,15 @@ def per_role_cost(df: pd.DataFrame) -> None:
             print(f" {role:9s}: {tok/total_steps:>6.0f}")
         print(f" {'TOTAL':9s}: {grand/total_steps:>6.0f}")
 
-
+#Planner vs Critic Value
 def planner_value_analysis(df: pd.DataFrame) -> None:
     print_section("Planner vs Critic Value")
-
+    #no_rev is the number of episodes with no revisions
     no_rev = df[df["critic_revisions"] == 0]
     with_rev = df[df["critic_revisions"] > 0]
-
+    #no_rev_succ is the number of episodes with no revisions that succeeded
     no_rev_succ = no_rev[no_rev["success"] == True]
+    #with_rev_succ is the number of episodes with revisions that succeeded
     with_rev_succ = with_rev[with_rev["success"] == True]
 
     print(f"successes with NO critic revision : {len(no_rev_succ)}")
