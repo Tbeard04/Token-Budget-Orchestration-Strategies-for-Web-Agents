@@ -2,11 +2,10 @@ import argparse
 import json
 import re
 from collections import defaultdict
- 
+
 TARGET_SITES = {"shopping", "shopping_admin", "reddit"}
 
 #Pattern Groups
-
 #if the task asks a question or requests information, it is read-only no matter what other nouns appear in the sentence.
 READ_ONLY_PATTERNS = [
     r"show me", r"show all", r"show the", r"show my", r"show \d",
@@ -84,47 +83,48 @@ PURCHASE_PATTERNS = [r"\bbuy\b", r"\bpurchase\b", r"\bcheckout\b", r"\bplace an 
 #helper function to check if the intent matches any of the patterns
 def _matches(intent: str, patterns: list[str]) -> bool:
     return any(re.search(p, intent) for p in patterns)
- 
+
 #categorise the intent into one of the categories
 def categorise(intent: str) -> str:
     i = (intent or "").lower()
- 
+
     if _matches(i, READ_ONLY_PATTERNS):
         return "information_retrieval"
- 
+
     if _matches(i, NAVIGATION_PATTERNS):
         return "navigation"
- 
+
     if _matches(i, BULK_ACTION_PATTERNS):
         return "bulk_action"
- 
+
     if _matches(i, DELETE_PATTERNS):
         return "delete"
- 
+
     if _matches(i, MODIFY_PATTERNS):
         return "modify_value"
- 
+
     if _matches(i, PURCHASE_PATTERNS):
         return "purchase"
- 
+
     if _matches(i, CREATE_PATTERNS):
         return "create"
- 
+
     return "other"
 
+#main function
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", default="test_raw.json")
     ap.add_argument("--output", default="task_intents.json")
     args = ap.parse_args()
- 
- 
+
     data = json.load(open(args.input))
- 
+
+    #load the tasks
     tasks = [t for t in data
              if len(t.get("sites", [])) == 1
              and t["sites"][0] in TARGET_SITES]
- 
+
     output = {
         "summary": {
             "total_tasks": len(tasks),
@@ -134,10 +134,11 @@ def main():
         "task_categories": {},
         "sites": {},
     }
- 
+
     by_site = defaultdict(list)
     by_cat = defaultdict(int)
- 
+
+    #for each task in the tasks
     for t in tasks:
         site = t["sites"][0]
         cat = categorise(t["intent"])
@@ -152,15 +153,15 @@ def main():
             "requires_state_change": t.get("require_reset", False),
         })
         by_cat[cat] += 1
- 
+    #for each site in the sites
     for site in ["shopping", "shopping_admin", "reddit"]:
         site_tasks = by_site[site]
         output["summary"]["by_site"][site] = len(site_tasks)
- 
+        #create a dictionary to store the tasks by category
         site_by_cat = defaultdict(list)
         for t in site_tasks:
             site_by_cat[t["category"]].append(t)
- 
+        #create a dictionary to store the categories
         output["sites"][site] = {"total": len(site_tasks), "categories": {}}
         for cat in sorted(site_by_cat):
             cat_tasks = site_by_cat[cat]
@@ -170,7 +171,7 @@ def main():
                 if tmpl not in seen:
                     seen.add(tmpl)
                     unique.append(t)
- 
+
             output["sites"][site]["categories"][cat] = {
                 "count": len(cat_tasks),
                 "distinct_templates": len(unique),
@@ -180,13 +181,13 @@ def main():
                     "eval_type": t["eval_type"],
                 } for t in unique],
             }
- 
+
     output["summary"]["by_category"] = dict(sorted(by_cat.items(), key=lambda x: -x[1]))
- 
+
     with open(args.output, "w") as f:
         json.dump(output, f, indent=2)
- 
-    # ── Report ──────────────────────────────────────────────────────────
+
+    #Report
     print(f"Extracted {len(tasks)} tasks to {args.output}")
     print(f"per-task category mapping: {len(output['task_categories'])} tasks")
     n_repr = sum(len(c["tasks"])
@@ -201,7 +202,7 @@ def main():
     print("\nBy category:")
     for cat, n in output["summary"]["by_category"].items():
         print(f"  {cat:25s} {n:>3} tasks")
- 
+
     print("\n\nTask types the agent must handle:")
     print("=" * 70)
     for site in ["shopping", "shopping_admin", "reddit"]:
@@ -211,7 +212,6 @@ def main():
                   f"{info['distinct_templates']} types):")
             for t in info["tasks"]:
                 print(f"    {t['task_id']:>4}  {t['intent'][:65]}")
- 
- 
+
 if __name__ == "__main__":
     main()

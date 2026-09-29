@@ -46,10 +46,8 @@ def plot_overall(by_category: dict, out_dir: Path) -> None:
 
     #Count and percentage at the end of each bar
     for bar, v in zip(bars, values):
-        ax.text(bar.get_width() + total * 0.008,
-                bar.get_y() + bar.get_height() / 2,
-                f"{v}  ({v/total:.0%})",
-                va="center", fontsize=10)
+        ax.text(bar.get_width() + total * 0.008, bar.get_y() + bar.get_height() / 2,
+                f"{v}  ({v/total:.0%})", va="center", fontsize=10)
 
     ax.set_xlabel("Number of Tasks")
     ax.set_title(f"WebArena Task Categories ({total} single-site tasks)")
@@ -74,9 +72,13 @@ def plot_by_site(sites: dict, out_dir: Path) -> None:
     width = 0.8 / n_cats
     x = range(len(site_names))
 
+    #for each category in the categories
     for i, cat in enumerate(all_cats):
+        #get the counts for the category
         counts = [sites.get(s, {}).get("categories", {}).get(cat, {}).get("count", 0) for s in site_names]
+        #calculate the offset
         offset = (i - n_cats / 2 + 0.5) * width
+        #plot the bar
         ax.bar([p + offset for p in x], counts, width, label=cat.replace("_", " "), color=CATEGORY_COLOURS.get(cat, "#90A4AE"), alpha=0.85)
 
     ax.set_ylabel("Number of Tasks")
@@ -92,21 +94,21 @@ def plot_by_site(sites: dict, out_dir: Path) -> None:
     print(f"saved: {path}")
     plt.close()
 
-
+#function to plot the risk groups
 def plot_risk_groups(by_category: dict, out_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(9, 5))
 
     bottom = 0
     total = sum(by_category.values())
-    legend_handles = []
-
+    #for each group in the risk groups
     for group_label, cats in RISK_GROUPS.items():
         group_total = 0
+        #for each category in the categories
         for cat in cats:
+            #get the count for the category
             n = by_category.get(cat, 0)
             if not n:
                 continue
-            bar = ax.bar(0, n, bottom=bottom, width=0.5, color=CATEGORY_COLOURS.get(cat, "#90A4AE"), alpha=0.85, edgecolor="white", linewidth=1.5)
             #Label inside the segment if there is room
             if n >= total * 0.04:
                 ax.text(0, bottom + n / 2, f"{cat.replace('_',' ')}  {n}", ha="center", va="center", fontsize=9, color="white", fontweight="bold")
