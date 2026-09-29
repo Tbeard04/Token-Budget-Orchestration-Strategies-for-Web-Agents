@@ -234,10 +234,6 @@ def main() -> None:
     # ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args()
 
-    # if args.self_test:
-    #     self_test()
-    #     return
-
     episodes = load_jsonl(args.episodes)
     meta = {r["task_id"]: r for r in load_jsonl(args.metadata)}
     risk = {r["task_id"]: r for r in load_jsonl(args.risk)}
