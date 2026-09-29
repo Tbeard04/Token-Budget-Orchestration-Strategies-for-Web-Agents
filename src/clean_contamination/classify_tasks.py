@@ -54,7 +54,7 @@ def _has_phrase(intent: str, phrases: list[str]) -> bool:
 def _has_pattern(intent: str, patterns: list[str]) -> bool:
     return any(re.search(p, intent) for p in patterns)
 
-
+#function to check if the task is impossible
 def is_impossible(cfg: dict) -> bool:
     #get the reference answers
     ans = (cfg.get("eval") or {}).get("reference_answers")
@@ -71,8 +71,8 @@ def is_impossible(cfg: dict) -> bool:
             values.extend(str(x) for x in v)
     #every accepted answer must be N/A - a task that merely allows N/A among other answers is a real task
     return bool(values) and all(v.strip().upper() == "N/A" for v in values)
- 
- 
+
+#function to load the impossible tasks
 def load_impossible(configs_path: str | None) -> set:
     #if the configs path is not provided
     if not configs_path:
@@ -106,6 +106,7 @@ def classify(intent: str, category: str, impossible: bool = False) -> tuple[str,
     if impossible:
         return "read_only", f"{category}: impossible task, evaluator expects N/A"
 
+    #if the category is a state change category
     if category in STATE_CHANGE_CATEGORIES:
         if (not _has_pattern(bare, STRONG_WRITE_PATTERNS)
                 and _has_phrase(bare, ACTUALLY_READ_ONLY_KEYWORDS)
@@ -224,9 +225,9 @@ def main() -> None:
     #count the number of clean tasks
     clean = counts.get("read_only", 0)
     #print the number of clean tasks
-    print(f"\n   {clean} tasks ({clean / n:.0%}) cannot be contaminated at all.")
+    print(f"\n {clean} tasks ({clean / n:.0%}) cannot be contaminated at all.")
     #print the number of tasks that need the first-success rule
-    print(f"   {n - clean} tasks ({1 - clean / n:.0%}) need the first-success rule.")
+    print(f"{n - clean} tasks ({1 - clean / n:.0%}) need the first-success rule.")
 
     #print the risk level by site
     print(f"\n{'=' * 70}\nRisk level by site\n{'=' * 70}")
@@ -241,13 +242,16 @@ def main() -> None:
 
     #print the category -> risk level
     print(f"\n{'=' * 70}\nCategory -> risk level\n{'=' * 70}")
+    #by_cat is a dictionary of the risk levels by category
     by_cat = defaultdict(Counter)
+    #for each row in the rows list
     for r in rows:
         by_cat[r["task_category"]][r["risk_level"]] += 1
+    #for each category in the by_cat dictionary
     for cat in sorted(by_cat, key=lambda c: -sum(by_cat[c].values())):
         c = by_cat[cat]
         parts = "  ".join(f"{lv}:{c[lv]}" for lv in RISK_LEVELS if c[lv])
-        print(f"   {cat:22s} {parts}")
+        print(f" {cat:22s} {parts}")
 
     #print the examples
     if args.show:
