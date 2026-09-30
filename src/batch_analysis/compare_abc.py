@@ -31,31 +31,25 @@ def budget_labels(budgets) -> list[str]:
     return [f"{b // 1000}k" for b in budgets]
 
 #table for success rate by budget
-def comparison_table(a: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
-    print_section("A vs B: Success Rate by Budget")
+def comparison_table(d: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    print_section(f"{vs(d)}: Success Rate by Budget")
 
-
-
+    budgets = sorted(set().union(*[set(df["budget_level"]) for df in d.values()]))
     rows = []
-    for budget in sorted(set(a["budget_level"]) | set(b["budget_level"])):
-        #get the episodes by budget level
-        ag = a[a["budget_level"] == budget]
-        #get the episodes by budget level
-        bg = b[b["budget_level"] == budget]
-        #add the rows to the list
-        rows.append({
-            "budget": budget,
-            "A_n": len(ag),
-            "A_SR": ag["success"].mean() if len(ag) else float("nan"),
-            "A_med_tok": ag["total_tokens"].median() if len(ag) else float("nan"),
-            "B_n": len(bg),
-            "B_SR": bg["success"].mean() if len(bg) else float("nan"),
-            "B_med_tok": bg["total_tokens"].median() if len(bg) else float("nan"),
-        })
+    for budget in budgets:
+        row = {"budget": budget}
+        for s, df in d.items():
+            g = df[df["budget_level"] == budget]
+            row[f"{s}_n"] = len(g)
+            row[f"{s}_SR"] = g["success"].mean() if len(g) else float("nan")
+            row[f"{s}_med_tok"] = g["total_tokens"].median() if len(g) else float("nan")
+        rows.append(row)
     tbl = pd.DataFrame(rows).set_index("budget")
-    tbl["SR_gap"] = tbl["B_SR"] - tbl["A_SR"]
+    #success-rate gap for each pair, second minus first (positive = second is better)
+    for x, y in present_pairs(d):
+        tbl[f"{y}-{x}_SR"] = tbl[f"{y}_SR"] - tbl[f"{x}_SR"]
 
-    with pd.option_context("display.float_format", lambda x: f"{x:.3f}"):
+    with pd.option_context("display.float_format", lambda x: f"{x:.3f}", "display.width", 200):
         print(tbl.to_string())
     return tbl
 
