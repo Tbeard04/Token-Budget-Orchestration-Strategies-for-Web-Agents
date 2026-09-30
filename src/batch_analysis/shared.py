@@ -78,7 +78,6 @@ def mcnemar_exact(x_only: int, y_only: int) -> float:
 def print_section(title: str) -> None:
     print(f"\n{'=' * 70}\n{title}\n{'=' * 70}")
 
-
 # Loading
 def load(path: str, clean: bool = True) -> pd.DataFrame:
     rows = []
@@ -109,7 +108,12 @@ def join_tiers(df: pd.DataFrame, tiers_path: str) -> pd.DataFrame:
     if not tiers_path or not Path(tiers_path).exists():
         return df
     tiers = pd.read_json(tiers_path, lines=True)
-    cols = [c for c in ["task_id", "difficulty_tier", "task_category", "rubric_total"] if c in tiers.columns]
+    #final_episodes files already carry the labels; merging again would create _x/_y columns
+    cols = [c for c in ["task_id", "difficulty_tier", "task_category", "rubric_total"]
+            if c in tiers.columns and (c == "task_id" or c not in df.columns)]
+    if cols == ["task_id"]:
+        print("Difficulty tiers already present in the episodes (--tiers not needed)")
+        return df
     df = df.merge(tiers[cols], on="task_id", how="left")
     matched = df["difficulty_tier"].notna().sum()
     print(f"Joined difficulty tiers: {matched}/{len(df)} episodes matched")
