@@ -1,7 +1,5 @@
 """
-analysis/compare_ab.py - Strategy A vs Strategy B comparison
-
-Need to add comparison between A, B & C
+analysis/compare_ab.py - Strategy A vs Strategy B vs Strategy C comparison
 """
 from __future__ import annotations
 
@@ -14,10 +12,29 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from batch_analysis.shared import (load, join_tiers, print_section, COLOURS,BUDGET_TERMINATIONS, STUCK_TERMINATIONS,)
+from batch_analysis.shared import (load, join_tiers, print_section, wilson, mcnemar_exact, outcome_group,COLOURS, MARKERS, NAMES, TIER_ORDER, OUTCOME_ORDER, OUTCOME_COLOURS)
 
+#pairs of strategies to compare
+PAIRS = [("A", "B"), ("A", "C"), ("B", "C")]
+
+#"A vs B" or "A vs B vs C" depending on what was loaded
+def vs(d: dict) -> str:
+    return " vs ".join(d)
+
+
+#the strategy pairs that were loaded
+def present_pairs(d: dict) -> list[tuple[str, str]]:
+    return [(x, y) for x, y in PAIRS if x in d and y in d]
+
+#function to label the budgets
+def budget_labels(budgets) -> list[str]:
+    return [f"{b // 1000}k" for b in budgets]
+
+#table for success rate by budget
 def comparison_table(a: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
     print_section("A vs B: Success Rate by Budget")
+
+
 
     rows = []
     for budget in sorted(set(a["budget_level"]) | set(b["budget_level"])):
