@@ -359,7 +359,7 @@ def main() -> None:
     args = ap.parse_args()
 
     paths = {"A": args.a, "B": args.b, "C": args.c}
-    d = {s: load(p, clean=not args.all_rows) for s, p in paths.items() if p}
+    d = {s: load(p) for s, p in paths.items() if p}
     print("Loaded " + ", ".join(f"{len(df)} {s}" for s, df in d.items()) + " episodes")
 
     if args.tiers:
