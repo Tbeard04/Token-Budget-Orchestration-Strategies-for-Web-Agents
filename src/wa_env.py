@@ -41,9 +41,7 @@ for _wa, _bare in [
     if os.getenv(_wa) and not os.getenv(_bare):
         os.environ[_bare] = os.environ[_wa]
 
-# openai>=1.0 compatibility
-# WebArena's codebase targets openai 0.x. pydantic-ai requires openai 1.x.
-# Rather than downgrade, shim the removed surfaces WebArena still references.
+#openai>=1.0 compatibility, WebArena's codebase targets openai 0.x. pydantic-ai requires openai 1.x.
 import openai
 
 if not hasattr(openai, "error"):
@@ -57,9 +55,8 @@ if not hasattr(openai, "error"):
 
 EVAL_MODEL = "gpt-4o-mini"
 
-# WebArena's evaluators call openai.ChatCompletion.create(), removed in
-# openai>=1.0. Rather than patching every import path that references it,
-# put a compatible shim on the openai module itself so ALL callers are covered.
+#WebArena's evaluators call openai.ChatCompletion.create(), removed in openai>=1.0. Rather than patching every import path that references it,
+#put a compatible shim on the openai module itself so ALL callers are covered
 if not hasattr(openai, "ChatCompletion"):
     from openai import OpenAI as _OpenAI
     _chat_client = _OpenAI()
