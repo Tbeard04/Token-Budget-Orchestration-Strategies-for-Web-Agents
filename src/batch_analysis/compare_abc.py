@@ -54,18 +54,22 @@ def comparison_table(d: dict[str, pd.DataFrame]) -> pd.DataFrame:
     return tbl
 
 
-def equivalent_budget(a: pd.DataFrame, b: pd.DataFrame) -> None:
-    print_section("A vs B: Equivalent Budget")
+def equivalent_budget(d: dict[str, pd.DataFrame]) -> None:
+    if "A" not in d:
+        return
+    print_section(f"{vs(d)}: Equivalent Budget (relative to A)")
 
-    a_sr = a.groupby("budget_level")["success"].mean()
-    b_sr = b.groupby("budget_level")["success"].mean()
-
-    for b_budget, b_val in b_sr.items():
-        closest = (a_sr - b_val).abs().idxmin()
-        ratio = b_budget / closest if closest else float("inf")
-        print(f"   B @ {b_budget//1000:>2}k ({b_val:>5.1%})  "
-              f"~=  A @ {closest//1000:>2}k ({a_sr[closest]:>5.1%})   "
-              f"[B needs {ratio:.1f}x the budget]")
+    a_sr = d["A"].groupby("budget_level")["success"].mean()
+    for s, df in d.items():
+        if s == "A":
+            continue
+        print(f"\n Strategy {s}")
+        for s_budget, s_val in df.groupby("budget_level")["success"].mean().items():
+            closest = (a_sr - s_val).abs().idxmin()
+            ratio = s_budget / closest if closest else float("inf")
+            print(f" {s} @ {s_budget//1000:>2}k ({s_val:>5.1%})  "
+                  f"~=  A @ {closest//1000:>2}k ({a_sr[closest]:>5.1%})   "
+                  f"[{s} needs {ratio:.1f}x the budget]")
 
 
 def cost_ratio(a: pd.DataFrame, b: pd.DataFrame) -> None:
