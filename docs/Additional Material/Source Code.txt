@@ -1,4 +1,4 @@
-## Batch Analysis
+## Batch Analysis Module
 
 ### analyse_a.py
 
@@ -13,7 +13,7 @@
 
 
 
-## Clean Contamination
+## Clean Contamination Module
 
 ### classify_tasks.py
 
@@ -31,7 +31,7 @@
 
 
 
-## Task Analysis
+## Task Analysis Module
 
 ### extract_task_intent.py
 
