@@ -225,7 +225,7 @@ def _has_tiers(d: dict) -> bool:
 def difficulty_table(d: dict[str, pd.DataFrame]) -> None:
     if not _has_tiers(d):
         return
-    print_section(f"{vs(d)}: Success Rate by Difficulty Tier (RQ2)")
+    print_section(f"{vs(d)}: Success Rate by Difficulty Tier")
     rows = []
     for tier in TIER_ORDER:
         row = {"tier": tier}
@@ -249,7 +249,7 @@ def difficulty_table(d: dict[str, pd.DataFrame]) -> None:
 def paired_tests_by_tier(d: dict[str, pd.DataFrame]) -> None:
     if not _has_tiers(d):
         return
-    print_section(f"{vs(d)}: Paired Comparison within each Difficulty Tier, exact McNemar (RQ2)")
+    print_section(f"{vs(d)}: Paired Comparison within each Difficulty Tier, exact McNemar")
     key = ["task_id", "budget_level"]
     for x, y in present_pairs(d):
         m = d[x][key + ["success", "difficulty_tier"]].merge(
@@ -273,7 +273,7 @@ def paired_tests_by_tier(d: dict[str, pd.DataFrame]) -> None:
 def difficulty_sensitivity(d: dict[str, pd.DataFrame], reps: int = 2000, seed: int = 42) -> dict | None:
     if not _has_tiers(d):
         return None
-    print_section(f"{vs(d)}: Difficulty Sensitivity, Easy -> Hard (RQ2)")
+    print_section(f"{vs(d)}: Difficulty Sensitivity, Easy to Hard")
  
     tiers = (pd.concat([df[["task_id", "difficulty_tier"]] for df in d.values()])
              .drop_duplicates("task_id").set_index("task_id")["difficulty_tier"])
