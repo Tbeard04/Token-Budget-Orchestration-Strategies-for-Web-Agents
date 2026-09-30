@@ -133,11 +133,11 @@ def paired_tests(d: dict[str, pd.DataFrame]) -> None:
 #differences in task-level performance
 def task_level_comparison(d: dict[str, pd.DataFrame]) -> None:
     print_section(f"{vs(d)}: Task-Level Comparison (solved at any budget)")
- 
+
     names = list(d)
     solved = {s: set(df.loc[df["success"] == True, "task_id"]) for s, df in d.items()}
     all_tasks = set().union(*[set(df["task_id"]) for df in d.values()])
- 
+
     #every solved / not-solved pattern across the loaded strategies
     for pattern in itertools.product([True, False], repeat=len(names)):
         tasks = {t for t in all_tasks
@@ -145,8 +145,8 @@ def task_level_comparison(d: dict[str, pd.DataFrame]) -> None:
         winners = [s for s, want in zip(names, pattern) if want]
         label = ("neither" if len(names) == 2 else "none") if not winners else \
             (" + ".join(winners) + (" only" if len(winners) < len(names) else " (all)"))
-        print(f"   solved by {label:14s} {len(tasks):>4}")
- 
+        print(f"solved by {label:14s} {len(tasks):>4}")
+
     #B's wins over A: did the Critic contribute?
     if "A" in d and "B" in d:
         a, b = d["A"], d["B"]
@@ -161,11 +161,11 @@ def task_level_comparison(d: dict[str, pd.DataFrame]) -> None:
                 with_rev += bool(revs)
                 a_eps = a[a["task_id"] == tid]
                 a_reason = a_eps.loc[a_eps["budget_level"].idxmax(), "termination_reason"] if len(a_eps) else "not run"
-                print(f"   task {tid:>4} @ {ep['budget_level']:>6}: {ep['steps']} steps, "
+                print(f"task {tid:>4} @ {ep['budget_level']:>6}: {ep['steps']} steps, "
                       f"{revs} revisions   (A failed: {a_reason})")
             print(f"\n {with_rev}/{len(b_only)} involved a Critic revision")
             print(f"{len(b_only) - with_rev}/{len(b_only)} succeeded with the Planner alone")
- 
+
     #did the Critic contribute to B's wins over A
     if "A" in d and "C" in d:
         c = d["C"]
@@ -178,26 +178,21 @@ def task_level_comparison(d: dict[str, pd.DataFrame]) -> None:
         print(f"Tasks C solved that A never did: {len(gained)}"
               + (f"{sorted(gained)[:15]}" if gained else ""))
 
+#failure mode shift analysis for each strategy
+def failure_mode_shift(d: dict[str, pd.DataFrame]) -> None:
+    print_section(f"{vs(d)}: Failure Mode Shift")
 
-def failure_mode_shift(a: pd.DataFrame, b: pd.DataFrame) -> None:
-    print_section("A vs B: Failure Mode Shift")
-
-    def profile(df, label):
+    for s, df in d.items():
         fails = df[df["success"] == False]
         if fails.empty:
-            return
-        budget = fails["termination_reason"].isin(BUDGET_TERMINATIONS).sum()
-        stuck = fails["termination_reason"].isin(STUCK_TERMINATIONS).sum()
-        wrong = (fails["termination_reason"] == "env_terminated").sum()
+            continue
+        groups = fails["termination_reason"].map(outcome_group).value_counts()
         n = len(fails)
-        print(f" {label}: {n} failures")
-        print(f" budget exhausted: {budget:>5}  ({budget/n:.0%})")
-        print(f" stuck (guards): {stuck:>5}  ({stuck/n:.0%})")
-        print(f"wrong answer: {wrong:>5}  ({wrong/n:.0%})")
-
-    profile(a, "Strategy A")
-    print()
-    profile(b, "Strategy B")
+        print(f" Strategy {s}: {n} failures")
+        for g in OUTCOME_ORDER[1:]:
+            if groups.get(g, 0):
+                print(f"{g:18s} {groups[g]:>5}  ({groups[g] / n:.0%})")
+        print()
 
 
 def strategy_c_ceiling(a: pd.DataFrame, b: pd.DataFrame) -> None:
