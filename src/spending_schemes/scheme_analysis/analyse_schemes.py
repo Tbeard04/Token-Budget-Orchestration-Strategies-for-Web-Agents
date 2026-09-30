@@ -156,7 +156,7 @@ def paired_strategy_tests(df: pd.DataFrame) -> None:
             common = a.index.intersection(b.index)
             if not len(common):
                 continue
-            #get the success rates
+            # Get the success rates
             sa, sb = a.loc[common].astype(bool), b.loc[common].astype(bool)
             x_only, y_only = int((sa & ~sb).sum()), int((~sa & sb).sum())
             rows.append({"scheme": SCHEME_LABELS[sc], "pair": f"{x} vs {y}", "tasks": len(common),
