@@ -14,26 +14,48 @@ plt.rcParams.update({
     "figure.figsize": (10, 6),
     "axes.spines.top": False,
     "axes.spines.right": False,
-    "font.size": 11,
+    "font.size": 11
 })
+#colours for the different strategies
 COLOURS = {
-    "A": "#2196F3", # blue
-    "B": "#FF9800", # orange
-    "C": "#4CAF50", # green
+    "A": "#2196F3", #blue
+    "B": "#FF9800", #orange
+    "C": "#4CAF50" #green
 }
 
 # Terminations caused by running out of budget rather than by agent behaviour
-BUDGET_TERMINATIONS = {"safety_token_cap", "budget_would_exceed", "budget_exhausted_mid_step",}
+BUDGET_TERMINATIONS = {"safety_token_cap", "budget_would_exceed", "budget_exhausted_mid_step"}
 #terminations caused by the agent getting stuck -- these are Stop examples
-STUCK_TERMINATIONS = {"navigation_cycle", "repeated_action_failure",}
+STUCK_TERMINATIONS = {"navigation_cycle", "repeated_action_failure"}
 
+#Strategy C only
+#the router chose to stop (its own category, never a failure mode of the agent)
+ROUTER_TERMINATIONS = {"router_stop"}
+ROUTER_COLOUR = "#4a3aa7" #violet
+
+#function to collapse a termination_reason into the five groups used in every figure
+def outcome_group(reason: str) -> str:
+    if reason == "success":
+        return "success"
+    if reason in ROUTER_TERMINATIONS:
+        return "router stop"
+    if reason in BUDGET_TERMINATIONS:
+        return "budget exhausted"
+    if reason in STUCK_TERMINATIONS:
+        return "stuck (guards)"
+    if reason == "env_terminated":
+        return "wrong answer"
+    return "other"
+
+#order and colours for the different outcome groups
+OUTCOME_ORDER = ["success", "wrong answer", "budget exhausted", "stuck (guards)", "router stop", "other"]
+OUTCOME_COLOURS = {"success": "#1baf7a", "wrong answer": "#9E9E9E", "budget exhausted": "#eb6834", "stuck (guards)": "#e34948", "router stop": ROUTER_COLOUR, "other": "#c9c8c2"}
 
 def print_section(title: str) -> None:
     print(f"\n{'=' * 70}\n{title}\n{'=' * 70}")
 
 
 # Loading
-
 def load(path: str) -> pd.DataFrame:
     rows = []
     with open(path) as f:
@@ -63,7 +85,6 @@ def join_tiers(df: pd.DataFrame, tiers_path: str) -> pd.DataFrame:
 
 
 # Shared tables
-
 def success_by_budget(df: pd.DataFrame) -> pd.DataFrame:
     print_section("Success Rate by Budget Level (Cost Curve)")
 
@@ -92,7 +113,7 @@ def success_by_budget(df: pd.DataFrame) -> pd.DataFrame:
           f" ({any_success/total_tasks:.0%})")
     return tbl
 
-
+#table for success rate by site
 def success_by_site(df: pd.DataFrame) -> pd.DataFrame:
     print_section("Success Rate by Site")
     rows = []
@@ -113,7 +134,7 @@ def success_by_site(df: pd.DataFrame) -> pd.DataFrame:
     print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
     return tbl
 
-
+#table for task solvability
 def task_solvability(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     print_section("Task Solvability")
 
@@ -145,7 +166,7 @@ def task_solvability(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
 
     return solved
 
-
+#table for termination reasons
 def termination_reasons(df: pd.DataFrame) -> pd.Series:
     print_section("Termination Reasons")
     counts = df["termination_reason"].value_counts()
@@ -159,7 +180,7 @@ def termination_reasons(df: pd.DataFrame) -> pd.Series:
     print(f"stuck (guard-fired): {stuck:5d}  ({stuck/total:.0%})")
     return counts
 
-
+#table for token distribution
 def token_distribution(df: pd.DataFrame) -> None:
     print_section("Token Distribution")
     toks = df["total_tokens"].dropna()
@@ -173,7 +194,7 @@ def token_distribution(df: pd.DataFrame) -> None:
     if len(succ):
         print(f" median of successes: {succ.median():.0f}  (n={len(succ)})")
 
-
+#table for per-step token cost
 def per_step_cost(df: pd.DataFrame) -> None:
     print_section("Per-step Token Cost")
     df_valid = df[df["steps"] > 0].copy()
@@ -187,7 +208,7 @@ def per_step_cost(df: pd.DataFrame) -> None:
     print(f"\n overall median: {overall.median():.0f}  "
           f"mean: {overall.mean():.0f}  std: {overall.std():.0f}")
 
-
+#table for success rate by difficulty tier
 def difficulty_breakdown(df: pd.DataFrame) -> None:
     if "difficulty_tier" not in df.columns:
         return
@@ -213,7 +234,6 @@ def difficulty_breakdown(df: pd.DataFrame) -> None:
     print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
 
 #Shared plots
-
 def _strategy_of(df: pd.DataFrame) -> str:
     return df["strategy"].iloc[0] if "strategy" in df.columns else "?"
 
