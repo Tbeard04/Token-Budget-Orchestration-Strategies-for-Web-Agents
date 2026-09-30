@@ -216,6 +216,147 @@ def task_level_comparison(d: dict[str, pd.DataFrame]) -> None:
         print(f"Tasks C solved that A never did: {len(gained)}"
               + (f"{sorted(gained)[:15]}" if gained else ""))
 
+#helper function to check if the data has tiers
+def _has_tiers(d: dict) -> bool:
+    return all("difficulty_tier" in df.columns for df in d.values())
+
+
+#success rate per tier (all budgets pooled) with 95% intervals, plus tier x budget per strategy
+def difficulty_table(d: dict[str, pd.DataFrame]) -> None:
+    if not _has_tiers(d):
+        return
+    print_section(f"{vs(d)}: Success Rate by Difficulty Tier (RQ2)")
+    rows = []
+    for tier in TIER_ORDER:
+        row = {"tier": tier}
+        for s, df in d.items():
+            g = df[df["difficulty_tier"] == tier]["success"]
+            k, n = int(g.sum()), len(g)
+            lo, hi = wilson(k, n)
+            row[f"{s}_n"] = n
+            row[f"{s}_SR"] = f"{k / n:.1%}" if n else "n/a"
+            row[f"{s}_95%CI"] = f"{lo:.1%}-{hi:.1%}" if n else ""
+        rows.append(row)
+    print(pd.DataFrame(rows).set_index("tier").to_string())
+
+    print("\n success rate by tier and budget:")
+    piv = pd.concat({s: df.pivot_table(values="success", index="difficulty_tier", columns="budget_level", aggfunc="mean").reindex(TIER_ORDER) for s, df in d.items()}, names=["strategy", "tier"])
+    piv.columns = budget_labels(piv.columns)
+    with pd.option_context("display.float_format", lambda x: f"{x:.3f}"):
+        print(piv.to_string())
+
+#same task, same budget, both strategies kept: McNemar within each tier (budgets pooled)
+def paired_tests_by_tier(d: dict[str, pd.DataFrame]) -> None:
+    if not _has_tiers(d):
+        return
+    print_section(f"{vs(d)}: Paired Comparison within each Difficulty Tier, exact McNemar (RQ2)")
+    key = ["task_id", "budget_level"]
+    for x, y in present_pairs(d):
+        m = d[x][key + ["success", "difficulty_tier"]].merge(
+            d[y][key + ["success"]], on=key, suffixes=(f"_{x}", f"_{y}"))
+        rows = []
+        for tier in TIER_ORDER:
+            g = m[m["difficulty_tier"] == tier]
+            if g.empty:
+                continue
+            sx = g[f"success_{x}"].astype(bool)
+            sy = g[f"success_{y}"].astype(bool)
+            x_only, y_only = int((sx & ~sy).sum()), int((~sx & sy).sum())
+            rows.append({"tier": tier, "pairs": len(g), f"{x}_SR": round(sx.mean(), 3),
+                         f"{y}_SR": round(sy.mean(), 3), f"{x}_only": x_only, f"{y}_only": y_only, "p": f"{mcnemar_exact(x_only, y_only):.4f}"})
+        print(f" {x} vs {y}")
+        print(pd.DataFrame(rows).set_index("tier").to_string())
+        print()
+
+#difficulty sensitivity analysis
+#how much each strategy loses from Easy to Hard, with 95% intervals from a bootstrap that resamples TASKS
+def difficulty_sensitivity(d: dict[str, pd.DataFrame], reps: int = 2000, seed: int = 42) -> dict | None:
+    if not _has_tiers(d):
+        return None
+    print_section(f"{vs(d)}: Difficulty Sensitivity, Easy -> Hard (RQ2)")
+ 
+    tiers = (pd.concat([df[["task_id", "difficulty_tier"]] for df in d.values()])
+             .drop_duplicates("task_id").set_index("task_id")["difficulty_tier"])
+    rng = np.random.default_rng(seed)
+    #per tier: task ids, and each strategy's successes / episodes per task aligned to them
+    ids = {t: tiers[tiers == t].index.to_numpy() for t in ("Easy", "Hard")}
+    arrays = {}
+    for s, df in d.items():
+        per = df.groupby("task_id")["success"].agg(["sum", "count"])
+        arrays[s] = {t: (per["sum"].reindex(ids[t]).fillna(0).to_numpy(), per["count"].reindex(ids[t]).fillna(0).to_numpy()) for t in ids}
+    draws = {t: rng.integers(0, len(ids[t]), size=(reps, len(ids[t]))) for t in ids}
+
+    point, boot = {}, {}
+    for s in d:
+        sr = {t: arrays[s][t][0].sum() / arrays[s][t][1].sum() for t in ids}
+        point[s] = (sr["Easy"] - sr["Hard"], sr["Hard"] / sr["Easy"] if sr["Easy"] else np.nan)
+        b = {}
+        for t in ids:
+            k, n = arrays[s][t]
+            b[t] = k[draws[t]].sum(axis=1) / np.maximum(n[draws[t]].sum(axis=1), 1)
+        boot[s] = (b["Easy"] - b["Hard"], np.where(b["Easy"] > 0, b["Hard"] / np.where(b["Easy"] > 0, b["Easy"], 1), np.nan))
+
+    def ci(a):
+        lo, hi = np.nanpercentile(a, [2.5, 97.5])
+        return f"{lo:.2f} to {hi:.2f}"
+
+    rows = []
+    for s in d:
+        rows.append({"strategy": s,
+                     "drop_Easy_to_Hard (pp)": f"{100 * point[s][0]:.1f}",
+                     "95%CI (pp)": ci(100 * boot[s][0]),
+                     "Hard/Easy ratio": f"{point[s][1]:.2f}",
+                     "95%CI": ci(boot[s][1])})
+    print(pd.DataFrame(rows).set_index("strategy").to_string())
+    print("\n difference in Hard/Easy ratio between strategies (paired bootstrap):")
+    for x, y in present_pairs(d):
+        diff = boot[y][1] - boot[x][1]
+        lo, hi = np.nanpercentile(diff, [2.5, 97.5])
+        verdict = "differs" if (lo > 0 or hi < 0) else "no clear difference"
+        print(f"{y} - {x}: {point[y][1] - point[x][1]:+.2f}  (95% CI {lo:+.2f} to {hi:+.2f})  -> {verdict}")
+    return {"point": point, "boot": boot}
+
+#failure-mode mix per strategy and tier, as shares of failures, with a chi-square per strategy
+def failure_modes_by_tier(d: dict[str, pd.DataFrame]) -> None:
+    if not _has_tiers(d):
+        return
+    print_section(f"{vs(d)}: Failure Modes by Difficulty Tier (RQ2)")
+    try:
+        from scipy.stats import chi2_contingency
+    except ImportError:
+        chi2_contingency = None
+    for s, df in d.items():
+        fails = df[df["success"] == False]
+        counts = (pd.crosstab(fails["difficulty_tier"], fails["termination_reason"].map(outcome_group)).reindex(index=TIER_ORDER, fill_value=0))
+        counts = counts[[g for g in OUTCOME_ORDER[1:] if g in counts.columns]]
+        shares = counts.div(counts.sum(axis=1), axis=0)
+        shares.insert(0, "failures", counts.sum(axis=1))
+        shares.columns.name = None
+        shares.index.name = "tier"
+        print(f" Strategy {s}")
+        print(shares.to_string(float_format=lambda x: f"{x:.0%}" if x <= 1 else f"{x:.0f}"))
+        c = counts.loc[counts.sum(axis=1) > 0, counts.sum(axis=0) > 0]
+        if chi2_contingency and c.shape[0] > 1 and c.shape[1] > 1:
+            chi2, p, dof, _ = chi2_contingency(c.values)
+            print(f" chi-square: chi2={chi2:.1f}, dof={dof}, p={p:.4f}  -> "
+                  f"{'the failure mix changes with difficulty' if p < 0.05 else 'no evidence the mix changes with difficulty'}")
+        print()
+
+#failure mode shift analysis for each strategy
+def failure_mode_shift(d: dict[str, pd.DataFrame]) -> None:
+    print_section(f"{vs(d)}: Failure Mode Shift")
+    for s, df in d.items():
+        fails = df[df["success"] == False]
+        if fails.empty:
+            continue
+        groups = fails["termination_reason"].map(outcome_group).value_counts()
+        n = len(fails)
+        print(f" Strategy {s}: {n} failures")
+        for g in OUTCOME_ORDER[1:]:
+            if groups.get(g, 0):
+                print(f"{g:18s} {groups[g]:>5}  ({groups[g] / n:.0%})")
+        print()
+
 #failure mode shift analysis for each strategy
 def failure_mode_shift(d: dict[str, pd.DataFrame]) -> None:
     print_section(f"{vs(d)}: Failure Mode Shift")
