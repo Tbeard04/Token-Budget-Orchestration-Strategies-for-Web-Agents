@@ -104,6 +104,8 @@ def cost_ratio(d: dict[str, pd.DataFrame]) -> None:
 
 #same task, same budget, both strategies kept after decontamination ---> one pair
 #exact McNemar on the pairs where only one of the two succeeded
+#McNemar, Q. (1947) "Note on the sampling error of the difference between correlated proportions or percentages"
+#AI-Generated
 def paired_tests(d: dict[str, pd.DataFrame]) -> None:
     print_section(f"{vs(d)}: Paired Comparison (same task, same budget), exact McNemar")
 
@@ -130,6 +132,7 @@ def paired_tests(d: dict[str, pd.DataFrame]) -> None:
         print(f" {x} vs {y}")
         print(pd.DataFrame(rows).set_index("budget").to_string())
         print()
+#AI-Generated
 
 #router vs fixed policies comparison
 def router_vs_fixed_policies(d: dict[str, pd.DataFrame]) -> None:
@@ -245,7 +248,9 @@ def difficulty_table(d: dict[str, pd.DataFrame]) -> None:
     with pd.option_context("display.float_format", lambda x: f"{x:.3f}"):
         print(piv.to_string())
 
+
 #same task, same budget, both strategies kept: McNemar within each tier (budgets pooled)
+#AI-Generated
 def paired_tests_by_tier(d: dict[str, pd.DataFrame]) -> None:
     if not _has_tiers(d):
         return
@@ -267,6 +272,8 @@ def paired_tests_by_tier(d: dict[str, pd.DataFrame]) -> None:
         print(f" {x} vs {y}")
         print(pd.DataFrame(rows).set_index("tier").to_string())
         print()
+#AI-Generated
+
 
 #difficulty sensitivity analysis
 #how much each strategy loses from Easy to Hard, with 95% intervals from a bootstrap that resamples TASKS

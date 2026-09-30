@@ -107,6 +107,7 @@ def grid_table(df: pd.DataFrame) -> pd.DataFrame:
 
 #paired comparison within each strategy
 #paired on task: the same task under two schemes, within one strategy
+#AI-Generated
 def paired_scheme_tests(df: pd.DataFrame) -> None:
     print_section("Scheme vs Scheme within each Strategy (paired on task)")
     schemes = schemes_in(df)
@@ -139,9 +140,10 @@ def paired_scheme_tests(df: pd.DataFrame) -> None:
         print(f" Strategy {st}")
         print(pd.DataFrame(rows).set_index("comparison").to_string())
         print()
-
+#AI-Generated
 
 #the same scheme, compared across strategies (A vs B vs C under identical allocation)
+#AI-Generated
 def paired_strategy_tests(df: pd.DataFrame) -> None:
     print_section("Strategy vs Strategy under the Same Scheme (paired on task)")
     pairs = [(x, y) for x, y in [("A", "B"), ("A", "C"), ("B", "C")] if x in strategies_in(df) and y in strategies_in(df)]
@@ -162,7 +164,7 @@ def paired_strategy_tests(df: pd.DataFrame) -> None:
                          "first_only": x_only, "second_only": y_only,
                          "p": f"{mcnemar_exact(x_only, y_only):.4f}"})
     print(pd.DataFrame(rows).set_index(["scheme", "pair"]).to_string())
-
+#AI-Generated
 
 #paired bootstrap over tasks: each scheme's change against a reference scheme, per strategy
 def scheme_effects(df: pd.DataFrame, reference: str, reps: int = 2000, seed: int = 42) -> pd.DataFrame | None:

@@ -357,7 +357,7 @@ def self_test() -> None:
             failures.append((intent[:55], cat, expected, got, reason))
 
 
-     # impossible tasks override the category (tasks 794-798)
+     #impossible tasks override the category (tasks 794-798)
     imp_cases = [
         ("Change the delivery address for my most recent order to 4000 Forbes "
          "Ave, Pittsburgh, PA.", "modify_value", "read_only"),
@@ -373,7 +373,7 @@ def self_test() -> None:
         if got != expected:
             failures.append((intent[:55], cat, expected, got, "impossible=False"))
  
-    # the N/A detector itself
+    #the N/A detector itself
     detector_cases = [
         ({"eval": {"reference_answers": {"fuzzy_match": "N/A"}}}, True),
         ({"eval": {"reference_answers": {"fuzzy_match": ["N/A"]}}}, True),
