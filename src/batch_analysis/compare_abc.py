@@ -525,6 +525,97 @@ def plot_difficulty_comparison(d: dict, out_dir: Path, tag: str) -> None:
     ax.set_title(f"Success by Difficulty Tier: {vs(d)}")
     _finish(fig, ax, out_dir, f"difficulty_{tag}.png")
 
+def plot_difficulty_by_budget(d: dict, out_dir: Path, tag: str) -> None:
+    if not _has_tiers(d):
+        return
+    budgets = sorted(set().union(*[set(df["budget_level"]) for df in d.values()]))
+    top = max(df.groupby(["difficulty_tier", "budget_level"])["success"].mean().max() for df in d.values())
+    for tier in TIER_ORDER:
+        fig, ax = plt.subplots()
+        for s, df in d.items():
+            g = df[df["difficulty_tier"] == tier].groupby("budget_level")["success"].agg(["sum", "count"])
+            if g.empty:
+                continue
+            lo, hi = zip(*[wilson(int(k), int(n)) for k, n in zip(g["sum"], g["count"])])
+            ax.fill_between(g.index, lo, hi, color=COLOURS[s], alpha=0.10, linewidth=0)
+            ax.plot(g.index, g["sum"] / g["count"], MARKERS[s], color=COLOURS[s], linewidth=2, markersize=8, label=NAMES[s])
+        ax.set_xscale("log", base=2)
+        ax.set_xticks(budgets)
+        ax.set_xticklabels(budget_labels(budgets))
+        ax.minorticks_off()
+        ax.set_ylim(0, min(1, top * 1.35))
+        ax.set_xlabel("Token Budget")
+        ax.set_ylabel("Success Rate (shaded: 95% interval)")
+        ax.set_title(f"{tier} Tasks: Success Rate vs Token Budget, {vs(d)}")
+        _finish(fig, ax, out_dir, f"difficulty_{tier.lower()}_by_budget_{tag}.png")
+
+
+#plot the outcome mix by difficulty tier
+#how episodes end, per strategy and tier, as shares of 100%
+def plot_outcome_mix_by_tier(d: dict, out_dir: Path, tag: str) -> None:
+    if not _has_tiers(d):
+        return
+    labels, shares = [], []
+    for s, df in d.items():
+        for tier in TIER_ORDER:
+            g = df[df["difficulty_tier"] == tier]
+            counts = g["termination_reason"].map(outcome_group).value_counts()
+            labels.append(f"{s}  {tier}")
+            shares.append(counts / counts.sum() if counts.sum() else counts)
+    groups = [g for g in OUTCOME_ORDER if any(sh.get(g, 0) for sh in shares)]
+
+    #a gap between strategies so the three blocks read as groups
+    y = np.array([i + (i // len(TIER_ORDER)) * 0.6 for i in range(len(labels))])
+    fig, ax = plt.subplots(figsize=(10, 1.6 + 0.5 * len(labels)))
+    left = np.zeros(len(labels))
+    for g in groups:
+        vals = np.array([sh.get(g, 0) for sh in shares])
+        ax.barh(y, vals, left=left, height=0.85, color=OUTCOME_COLOURS[g], edgecolor="white", linewidth=2, label=g)
+        for yi, v, l in zip(y, vals, left):
+            if v >= 0.07:
+                ax.text(l + v / 2, yi, f"{v:.0%}", ha="center", va="center", fontsize=8, color="white")
+        left += vals
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels)
+    ax.invert_yaxis()
+    ax.set_xlim(0, 1)
+    ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0))
+    ax.set_xlabel("Share of Episodes")
+    ax.set_title(f"How Episodes End by Difficulty Tier: {vs(d)}")
+    ax.legend(ncol=len(groups), loc="upper center", bbox_to_anchor=(0.5, -0.08 - 1.2 / len(labels)), frameon=False, fontsize=9)
+    ax.grid(False)
+    fig.tight_layout()
+    path = out_dir / f"outcome_mix_by_tier_{tag}.png"
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    print(f"saved: {path}")
+    plt.close(fig)
+
+
+#plot the difficulty sensitivit
+#share of Easy-tier success each strategy keeps on Hard tasks, with bootstrap 95% CI
+def plot_difficulty_sensitivity(d: dict, sens: dict | None, out_dir: Path, tag: str) -> None:
+    if not sens:
+        return
+    fig, ax = plt.subplots(figsize=(10, 1.8 + 0.7 * len(d)))
+    for i, s in enumerate(d):
+        ratio = sens["point"][s][1]
+        lo, hi = np.nanpercentile(sens["boot"][s][1], [2.5, 97.5])
+        ax.errorbar(ratio, i, xerr=[[max(0, ratio - lo)], [max(0, hi - ratio)]], fmt=MARKERS[s][0], color=COLOURS[s], markersize=10, capsize=4, elinewidth=2, label=NAMES[s])
+        ax.annotate(f"{ratio:.2f}", (ratio, i), textcoords="offset points", xytext=(0, 10), ha="center", fontsize=9, color="#52514e")
+    ax.axvline(1.0, color="#9E9E9E", linewidth=1, linestyle=":")
+    ax.set_yticks(range(len(d)))
+    ax.set_yticklabels([f"Strategy {s}" for s in d])
+    #top-down order, with headroom so the value labels clear the title
+    ax.set_ylim(len(d) - 0.5, -0.8)
+    ax.set_xlim(0, 1.1)
+    ax.set_xlabel("Hard-tier success as a share of Easy-tier success (1.0 = no drop; 95% bootstrap interval)")
+    ax.set_title(f"Difficulty Sensitivity: {vs(d)}")
+    ax.grid(axis="x", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / f"difficulty_sensitivity_{tag}.png"
+    fig.savefig(path, dpi=150)
+    print(f"saved: {path}")
+    plt.close(fig)
 
 # Main function to run the comparison
 def main() -> None:
@@ -556,6 +647,10 @@ def main() -> None:
     router_vs_fixed_policies(d)
     task_level_comparison(d)
     failure_mode_shift(d)
+    difficulty_table(d)
+    paired_tests_by_tier(d)
+    sens = difficulty_sensitivity(d)
+    failure_modes_by_tier(d)
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -568,6 +663,9 @@ def main() -> None:
     plot_token_efficiency(d, out_dir, tag)
     plot_outcome_mix(d, out_dir, tag)
     plot_difficulty_comparison(d, out_dir, tag)
+    plot_difficulty_by_budget(d, out_dir, tag)
+    plot_outcome_mix_by_tier(d, out_dir, tag)
+    plot_difficulty_sensitivity(d, sens, out_dir, tag)
 
 
 if __name__ == "__main__":
