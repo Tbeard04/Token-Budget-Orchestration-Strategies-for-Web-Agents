@@ -1,0 +1,1665 @@
+{
+  "summary": {
+    "total_tasks": 475,
+    "by_site": {
+      "shopping": 187,
+      "shopping_admin": 182,
+      "reddit": 106
+    },
+    "by_category": {
+      "information_retrieval": 182,
+      "create": 114,
+      "modify_value": 73,
+      "other": 31,
+      "navigation": 30,
+      "bulk_action": 22,
+      "purchase": 17,
+      "delete": 6
+    }
+  },
+  "task_categories": {
+    "0": "information_retrieval",
+    "1": "information_retrieval",
+    "2": "information_retrieval",
+    "3": "information_retrieval",
+    "4": "information_retrieval",
+    "5": "information_retrieval",
+    "6": "information_retrieval",
+    "11": "information_retrieval",
+    "12": "information_retrieval",
+    "13": "information_retrieval",
+    "14": "information_retrieval",
+    "15": "information_retrieval",
+    "21": "information_retrieval",
+    "22": "information_retrieval",
+    "23": "information_retrieval",
+    "24": "information_retrieval",
+    "25": "information_retrieval",
+    "26": "information_retrieval",
+    "27": "information_retrieval",
+    "28": "information_retrieval",
+    "29": "information_retrieval",
+    "30": "information_retrieval",
+    "31": "information_retrieval",
+    "41": "information_retrieval",
+    "42": "information_retrieval",
+    "43": "information_retrieval",
+    "47": "information_retrieval",
+    "48": "information_retrieval",
+    "49": "information_retrieval",
+    "50": "information_retrieval",
+    "51": "information_retrieval",
+    "62": "information_retrieval",
+    "63": "information_retrieval",
+    "64": "information_retrieval",
+    "65": "information_retrieval",
+    "66": "information_retrieval",
+    "67": "information_retrieval",
+    "68": "information_retrieval",
+    "69": "information_retrieval",
+    "77": "information_retrieval",
+    "78": "information_retrieval",
+    "79": "information_retrieval",
+    "94": "information_retrieval",
+    "95": "information_retrieval",
+    "96": "information_retrieval",
+    "107": "information_retrieval",
+    "108": "information_retrieval",
+    "109": "information_retrieval",
+    "110": "information_retrieval",
+    "111": "information_retrieval",
+    "112": "information_retrieval",
+    "113": "information_retrieval",
+    "114": "information_retrieval",
+    "115": "information_retrieval",
+    "116": "information_retrieval",
+    "117": "information_retrieval",
+    "118": "information_retrieval",
+    "119": "information_retrieval",
+    "120": "information_retrieval",
+    "121": "information_retrieval",
+    "122": "information_retrieval",
+    "123": "information_retrieval",
+    "124": "information_retrieval",
+    "125": "information_retrieval",
+    "126": "information_retrieval",
+    "127": "information_retrieval",
+    "128": "information_retrieval",
+    "129": "information_retrieval",
+    "130": "information_retrieval",
+    "131": "information_retrieval",
+    "141": "information_retrieval",
+    "142": "information_retrieval",
+    "143": "information_retrieval",
+    "144": "information_retrieval",
+    "145": "information_retrieval",
+    "146": "information_retrieval",
+    "147": "information_retrieval",
+    "148": "information_retrieval",
+    "149": "information_retrieval",
+    "150": "information_retrieval",
+    "157": "information_retrieval",
+    "158": "navigation",
+    "159": "navigation",
+    "160": "navigation",
+    "161": "navigation",
+    "162": "navigation",
+    "163": "information_retrieval",
+    "164": "information_retrieval",
+    "165": "information_retrieval",
+    "166": "information_retrieval",
+    "167": "information_retrieval",
+    "183": "information_retrieval",
+    "184": "information_retrieval",
+    "185": "information_retrieval",
+    "186": "information_retrieval",
+    "187": "information_retrieval",
+    "188": "information_retrieval",
+    "189": "information_retrieval",
+    "190": "information_retrieval",
+    "191": "information_retrieval",
+    "192": "information_retrieval",
+    "193": "other",
+    "194": "other",
+    "195": "other",
+    "196": "information_retrieval",
+    "197": "other",
+    "198": "other",
+    "199": "other",
+    "200": "other",
+    "201": "other",
+    "202": "information_retrieval",
+    "203": "purchase",
+    "204": "other",
+    "208": "navigation",
+    "209": "navigation",
+    "210": "navigation",
+    "211": "navigation",
+    "212": "navigation",
+    "213": "information_retrieval",
+    "214": "information_retrieval",
+    "215": "information_retrieval",
+    "216": "information_retrieval",
+    "217": "information_retrieval",
+    "225": "information_retrieval",
+    "226": "information_retrieval",
+    "227": "information_retrieval",
+    "228": "information_retrieval",
+    "229": "information_retrieval",
+    "230": "information_retrieval",
+    "231": "other",
+    "232": "other",
+    "233": "other",
+    "234": "other",
+    "235": "other",
+    "238": "information_retrieval",
+    "239": "information_retrieval",
+    "240": "information_retrieval",
+    "241": "information_retrieval",
+    "242": "information_retrieval",
+    "243": "information_retrieval",
+    "244": "information_retrieval",
+    "245": "information_retrieval",
+    "246": "information_retrieval",
+    "247": "information_retrieval",
+    "260": "navigation",
+    "261": "navigation",
+    "262": "navigation",
+    "263": "navigation",
+    "264": "navigation",
+    "269": "information_retrieval",
+    "270": "information_retrieval",
+    "271": "information_retrieval",
+    "272": "information_retrieval",
+    "273": "information_retrieval",
+    "274": "navigation",
+    "275": "navigation",
+    "276": "navigation",
+    "277": "navigation",
+    "278": "navigation",
+    "279": "information_retrieval",
+    "280": "information_retrieval",
+    "281": "information_retrieval",
+    "282": "information_retrieval",
+    "283": "navigation",
+    "284": "information_retrieval",
+    "285": "information_retrieval",
+    "286": "information_retrieval",
+    "288": "information_retrieval",
+    "289": "information_retrieval",
+    "290": "information_retrieval",
+    "291": "information_retrieval",
+    "292": "information_retrieval",
+    "298": "information_retrieval",
+    "299": "information_retrieval",
+    "300": "information_retrieval",
+    "301": "information_retrieval",
+    "302": "information_retrieval",
+    "313": "information_retrieval",
+    "319": "information_retrieval",
+    "320": "information_retrieval",
+    "321": "information_retrieval",
+    "322": "information_retrieval",
+    "323": "information_retrieval",
+    "324": "information_retrieval",
+    "325": "information_retrieval",
+    "326": "information_retrieval",
+    "327": "information_retrieval",
+    "328": "information_retrieval",
+    "329": "information_retrieval",
+    "330": "information_retrieval",
+    "331": "information_retrieval",
+    "332": "information_retrieval",
+    "333": "information_retrieval",
+    "334": "information_retrieval",
+    "335": "information_retrieval",
+    "336": "information_retrieval",
+    "337": "information_retrieval",
+    "338": "information_retrieval",
+    "344": "information_retrieval",
+    "345": "information_retrieval",
+    "346": "information_retrieval",
+    "347": "information_retrieval",
+    "348": "information_retrieval",
+    "351": "other",
+    "352": "other",
+    "353": "other",
+    "354": "other",
+    "355": "other",
+    "358": "information_retrieval",
+    "359": "information_retrieval",
+    "360": "information_retrieval",
+    "361": "information_retrieval",
+    "362": "information_retrieval",
+    "368": "navigation",
+    "374": "information_retrieval",
+    "375": "information_retrieval",
+    "376": "information_retrieval",
+    "384": "information_retrieval",
+    "385": "information_retrieval",
+    "386": "information_retrieval",
+    "387": "other",
+    "388": "other",
+    "399": "modify_value",
+    "400": "modify_value",
+    "401": "modify_value",
+    "402": "modify_value",
+    "403": "modify_value",
+    "404": "bulk_action",
+    "405": "bulk_action",
+    "406": "bulk_action",
+    "407": "bulk_action",
+    "408": "bulk_action",
+    "409": "create",
+    "410": "create",
+    "423": "modify_value",
+    "431": "create",
+    "432": "create",
+    "433": "create",
+    "434": "create",
+    "435": "create",
+    "436": "other",
+    "437": "other",
+    "438": "other",
+    "439": "other",
+    "440": "other",
+    "453": "modify_value",
+    "454": "modify_value",
+    "455": "modify_value",
+    "456": "modify_value",
+    "457": "modify_value",
+    "458": "modify_value",
+    "459": "modify_value",
+    "460": "modify_value",
+    "461": "modify_value",
+    "462": "modify_value",
+    "463": "modify_value",
+    "464": "modify_value",
+    "465": "create",
+    "466": "create",
+    "467": "create",
+    "468": "create",
+    "469": "create",
+    "470": "modify_value",
+    "471": "modify_value",
+    "472": "modify_value",
+    "473": "modify_value",
+    "474": "modify_value",
+    "486": "modify_value",
+    "487": "modify_value",
+    "488": "modify_value",
+    "489": "modify_value",
+    "490": "modify_value",
+    "491": "create",
+    "492": "modify_value",
+    "493": "create",
+    "494": "create",
+    "495": "create",
+    "496": "modify_value",
+    "497": "modify_value",
+    "498": "modify_value",
+    "499": "modify_value",
+    "500": "modify_value",
+    "501": "modify_value",
+    "502": "modify_value",
+    "503": "modify_value",
+    "504": "modify_value",
+    "505": "modify_value",
+    "506": "purchase",
+    "507": "purchase",
+    "508": "purchase",
+    "509": "purchase",
+    "510": "purchase",
+    "511": "create",
+    "512": "create",
+    "513": "create",
+    "514": "create",
+    "515": "create",
+    "516": "create",
+    "517": "create",
+    "518": "create",
+    "519": "create",
+    "520": "create",
+    "521": "create",
+    "528": "create",
+    "529": "create",
+    "530": "create",
+    "531": "create",
+    "532": "create",
+    "538": "modify_value",
+    "539": "modify_value",
+    "540": "modify_value",
+    "541": "modify_value",
+    "542": "modify_value",
+    "543": "modify_value",
+    "544": "modify_value",
+    "545": "modify_value",
+    "546": "modify_value",
+    "547": "create",
+    "548": "create",
+    "549": "create",
+    "550": "create",
+    "551": "create",
+    "571": "modify_value",
+    "572": "modify_value",
+    "573": "modify_value",
+    "574": "modify_value",
+    "575": "modify_value",
+    "580": "create",
+    "581": "create",
+    "582": "create",
+    "583": "create",
+    "584": "create",
+    "585": "purchase",
+    "586": "purchase",
+    "587": "purchase",
+    "588": "purchase",
+    "589": "purchase",
+    "595": "create",
+    "596": "create",
+    "597": "create",
+    "598": "create",
+    "599": "create",
+    "600": "information_retrieval",
+    "601": "create",
+    "602": "create",
+    "603": "create",
+    "604": "information_retrieval",
+    "605": "information_retrieval",
+    "606": "navigation",
+    "607": "navigation",
+    "608": "navigation",
+    "609": "information_retrieval",
+    "610": "create",
+    "611": "create",
+    "612": "create",
+    "613": "create",
+    "614": "create",
+    "615": "create",
+    "616": "create",
+    "617": "create",
+    "618": "create",
+    "619": "create",
+    "620": "create",
+    "621": "create",
+    "622": "create",
+    "623": "create",
+    "624": "create",
+    "625": "create",
+    "626": "create",
+    "627": "create",
+    "628": "create",
+    "629": "create",
+    "630": "create",
+    "631": "create",
+    "632": "create",
+    "633": "create",
+    "634": "create",
+    "635": "create",
+    "636": "create",
+    "637": "create",
+    "638": "create",
+    "639": "create",
+    "640": "create",
+    "641": "create",
+    "642": "create",
+    "643": "create",
+    "644": "create",
+    "645": "create",
+    "646": "create",
+    "647": "create",
+    "648": "create",
+    "649": "create",
+    "650": "create",
+    "651": "create",
+    "652": "create",
+    "653": "create",
+    "654": "create",
+    "655": "create",
+    "656": "create",
+    "657": "create",
+    "676": "navigation",
+    "677": "navigation",
+    "678": "navigation",
+    "679": "navigation",
+    "680": "navigation",
+    "689": "create",
+    "690": "create",
+    "691": "purchase",
+    "692": "create",
+    "693": "create",
+    "694": "create",
+    "695": "create",
+    "696": "create",
+    "697": "create",
+    "698": "create",
+    "699": "create",
+    "700": "purchase",
+    "701": "purchase",
+    "702": "create",
+    "703": "purchase",
+    "704": "other",
+    "705": "other",
+    "706": "other",
+    "707": "other",
+    "708": "other",
+    "709": "create",
+    "710": "create",
+    "711": "create",
+    "712": "create",
+    "713": "create",
+    "714": "bulk_action",
+    "715": "bulk_action",
+    "716": "bulk_action",
+    "717": "bulk_action",
+    "718": "bulk_action",
+    "719": "bulk_action",
+    "720": "bulk_action",
+    "721": "bulk_action",
+    "722": "bulk_action",
+    "723": "bulk_action",
+    "724": "bulk_action",
+    "725": "bulk_action",
+    "726": "bulk_action",
+    "727": "bulk_action",
+    "728": "bulk_action",
+    "729": "bulk_action",
+    "730": "bulk_action",
+    "731": "modify_value",
+    "732": "modify_value",
+    "733": "modify_value",
+    "734": "modify_value",
+    "735": "modify_value",
+    "768": "modify_value",
+    "769": "modify_value",
+    "770": "modify_value",
+    "771": "modify_value",
+    "772": "delete",
+    "773": "delete",
+    "774": "delete",
+    "775": "delete",
+    "776": "delete",
+    "777": "modify_value",
+    "778": "modify_value",
+    "779": "modify_value",
+    "780": "modify_value",
+    "781": "modify_value",
+    "782": "modify_value",
+    "790": "delete",
+    "792": "purchase",
+    "793": "purchase",
+    "794": "modify_value",
+    "795": "modify_value",
+    "796": "modify_value",
+    "797": "modify_value",
+    "798": "modify_value"
+  },
+  "sites": {
+    "shopping": {
+      "total": 187,
+      "categories": {
+        "create": {
+          "count": 35,
+          "distinct_templates": 8,
+          "tasks": [
+            {
+              "task_id": 431,
+              "intent": "Add the product with the lowest per unit price from my open tabs to the shopping cart",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 465,
+              "intent": "Add Tide PODS Spring Meadow Scent HE Turbo Laundry Detergent Pacs, 81 Count to my wish list",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 511,
+              "intent": "Add a laundry detergent to my wish list.",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 516,
+              "intent": "Add this product to my wishlist",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 521,
+              "intent": "Subscribe to the newsletter of OneStopMarket",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 528,
+              "intent": "Draft a refund message via their \"contact us\" form for the phone screen protector I bought March 2023. It broke after three days of use. The shop requires the order id, the reason and the amount to refund in the message. Don't submit yet",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 653,
+              "intent": "Fill the \"contact us\" form in the site for a refund on the phone screen protector I bought, stating that it broke after just three days of use. Also, ensure to include the order number #000000180 and the product SKU. Don't submit yet, I will check.",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 689,
+              "intent": "Draft an email to the shop owner via their contact us function for a coupon as I am a loyal customer",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            }
+          ]
+        },
+        "information_retrieval": {
+          "count": 95,
+          "distinct_templates": 33,
+          "tasks": [
+            {
+              "task_id": 21,
+              "intent": "List out reviewers, if exist, who mention about ear cups being small",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 47,
+              "intent": "Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 96,
+              "intent": "Tell me the status of my latest order and when will it arrive",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 117,
+              "intent": "What is the date when I made my first purchase on this site?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 118,
+              "intent": "I have jaw bruxism problem, show me something that could alleviate the problem.",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 124,
+              "intent": "What is the price range of wireless earphone in the One Stop Market?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 141,
+              "intent": "How much I spent on food-related shopping during March 2023",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 146,
+              "intent": "What is the size configuration of the picture frame I bought Sep 2022",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 163,
+              "intent": "What are the main criticisms of this product? Please extract the relevant sentences.",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 188,
+              "intent": "Tell me the total cost of my latest cancelled order?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 225,
+              "intent": "What do customers say about brush from sephora",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 226,
+              "intent": "What is the price range for products from Amazon basic?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 238,
+              "intent": "I am doing a market survey for one stop market, show me the most expensive product from PS4 accessories category",
+              "eval_type": [
+                "url_match"
+              ]
+            },
+            {
+              "task_id": 269,
+              "intent": "Show me products under $25 in \"women shoes\" category",
+              "eval_type": [
+                "url_match"
+              ]
+            },
+            {
+              "task_id": 279,
+              "intent": "Provide me with the complete names of Bluetooth headphones from Sony, and also share the price range for the available models",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 280,
+              "intent": "Provide me with the full names of chargers from Anker, and also share the price range for the available models",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 281,
+              "intent": "Please provide me with the complete product names of Oral B brush heads designed for children, along with their corresponding price range per brush",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 282,
+              "intent": "List the full product names of slide slippers from Nike and tell me the price range of the available products",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 284,
+              "intent": "Show the least expensive shoe storage with a minimum storage capacity of 12 pairs.",
+              "eval_type": [
+                "url_match"
+              ]
+            },
+            {
+              "task_id": 298,
+              "intent": "Show the most recent completed order",
+              "eval_type": [
+                "url_match"
+              ]
+            },
+            {
+              "task_id": 313,
+              "intent": "Which number to call for the customer service?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 319,
+              "intent": "How much refund I should expect from my order canlled in April 2022, including shipping fee",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 322,
+              "intent": "How much refund I should expect from my order canlled in May 2023 if I cannot get the shipping fee refunded?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 323,
+              "intent": "How much refund I should expect from my order canlled in 2022/03? I only kept the AC-DC Adapter and the shop told me that I cannot get the shipping fee back",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 324,
+              "intent": "Show me the \"chairs\" listings by ascending price.",
+              "eval_type": [
+                "url_match"
+              ]
+            },
+            {
+              "task_id": 329,
+              "intent": "How much I spend on 4/19/2023 on shopping at One Stop Market?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 333,
+              "intent": "How much did I spend on shopping at One Stop Market on November 2022? They gave me a 20% discount on the total amount for orders exceeding $200 in cash",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 334,
+              "intent": "Tell me when I last ordered my muffin cornbread mix?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 358,
+              "intent": "Show me the shipping method for order number 187.",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 376,
+              "intent": "Summarize customer reviews for Amazon Echo Dot 3rd generation.",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 384,
+              "intent": "List the customer names who complain about the quality of EYZUTAK phone cases",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 385,
+              "intent": "List the customer names who thinks EYZUTAK phone cases are of good looking",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 386,
+              "intent": "What is the rating of Ugreen lightning to 3.5mm cable. Please round to the nearest whole number",
+              "eval_type": [
+                "string_match"
+              ]
+            }
+          ]
+        },
+        "modify_value": {
+          "count": 10,
+          "distinct_templates": 2,
+          "tasks": [
+            {
+              "task_id": 571,
+              "intent": "I recently moved, my address is 231 Willow Way, Suite 100, Chicago, IL, 60601, update my information on OneStopShopping accordingly",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 794,
+              "intent": "Change the delivery address for my most recent order to 4000 Forbes Ave, Pittsburgh, PA.",
+              "eval_type": [
+                "string_match"
+              ]
+            }
+          ]
+        },
+        "navigation": {
+          "count": 17,
+          "distinct_templates": 5,
+          "tasks": [
+            {
+              "task_id": 158,
+              "intent": "I have a lot of Nintendo Switch game cards now, help me find the best storage option to fit all 11 cards",
+              "eval_type": [
+                "url_match"
+              ]
+            },
+            {
+              "task_id": 260,
+              "intent": "I want to browse the products in the Video Game category",
+              "eval_type": [
+                "url_match"
+              ]
+            },
+            {
+              "task_id": 274,
+              "intent": "Search for \"usb wifi\"",
+              "eval_type": [
+                "url_match"
+              ]
+            },
+            {
+              "task_id": 283,
+              "intent": "Look up the most recent models of XBox controllers released between 2020-2021?",
+              "eval_type": [
+                "url_match"
+              ]
+            },
+            {
+              "task_id": 368,
+              "intent": "find discounted items.",
+              "eval_type": [
+                "string_match"
+              ]
+            }
+          ]
+        },
+        "other": {
+          "count": 17,
+          "distinct_templates": 4,
+          "tasks": [
+            {
+              "task_id": 231,
+              "intent": "Get the order number of my most recent cancelled order ",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 351,
+              "intent": "List products from PS4 accessories category by ascending price",
+              "eval_type": [
+                "url_match"
+              ]
+            },
+            {
+              "task_id": 387,
+              "intent": "Who gave 4 or 5 stars for phone cases from EYZUTAK",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 436,
+              "intent": "I previously ordered some a mattress foundation around Feb or March 2023 and later cancelled. Can you reorder it for me?",
+              "eval_type": [
+                "program_html"
+              ]
+            }
+          ]
+        },
+        "purchase": {
+          "count": 13,
+          "distinct_templates": 4,
+          "tasks": [
+            {
+              "task_id": 506,
+              "intent": "Buy the highest rated product from the meat substitute category within a budget between 100 and 200.",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 509,
+              "intent": "Buy the best rating product from \"Men's shoe\" category with at least 5 reviews and the product is least expensive",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 585,
+              "intent": "Rate my recent purchase of floor lamp with 5 stars, using my nickname Emma Lopez?",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 691,
+              "intent": "Draft an email to the shop owner via their contact us function for a coupon as I plan to make a bulk purchase",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "shopping_admin": {
+      "total": 182,
+      "categories": {
+        "create": {
+          "count": 21,
+          "distinct_templates": 9,
+          "tasks": [
+            {
+              "task_id": 491,
+              "intent": "Notify Sarah Miller in their most recent pending order with message \"the order is ready to be shipped soon!\"",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 547,
+              "intent": "Add a new color option brown to the size S of Phoebe Zipper Sweatshirt",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 548,
+              "intent": "Add a new color blue to size S and M of Frankie Sweatshirt",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 549,
+              "intent": "Add a new size XXXL to green Minerva LumaTech V-Tee",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 551,
+              "intent": "Add new size 30 and 31 to all color variants of Diana Tights",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 694,
+              "intent": "Add a simple product named Energy-Bulk Women Shirt with 50 in stock, available in size S and color blue, priced at $60",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 699,
+              "intent": "Draft a new marketing price rule for spring sale that offers a 20 percent discount site-wide for all customers",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 709,
+              "intent": "Create an orders report from beginning of May 2021 to end of March 2022",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 710,
+              "intent": "Create a shipping report from 08/05/2022 to 03/01/2023",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            }
+          ]
+        },
+        "delete": {
+          "count": 6,
+          "distinct_templates": 1,
+          "tasks": [
+            {
+              "task_id": 772,
+              "intent": "Delete all pending negative reviews for Circe fleece",
+              "eval_type": [
+                "program_html"
+              ]
+            }
+          ]
+        },
+        "information_retrieval": {
+          "count": 74,
+          "distinct_templates": 28,
+          "tasks": [
+            {
+              "task_id": 0,
+              "intent": "What is the top-1 best-selling product in 2022",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 1,
+              "intent": "What is the top-1 best-selling brand in Quarter 1 2022",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 2,
+              "intent": "What is the top-1 best-selling product type in Quarter 1 2022",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 3,
+              "intent": "What are the top-2 best-selling product in 2022",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 4,
+              "intent": "What are the top-3 best-selling product in Jan 2023",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 11,
+              "intent": "Tell me the the number of reviews that our store received by far that mention term \"disappointed\"",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 41,
+              "intent": "List the top 1 search terms in my store",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 62,
+              "intent": "Which customer has completed the most number of orders in the entire history?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 63,
+              "intent": "Which customer(s) has completed the second most number of orders in the entire history?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 64,
+              "intent": "Which customer has placed 2 orders in the entire history?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 77,
+              "intent": "What is the total count of Pending reviews amongst all the reviews?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 94,
+              "intent": "Telll me the grand total of invoice 000000001.",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 107,
+              "intent": "Presents the monthly count of successful orders from May to December 2022 in MM:COUNT format",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 112,
+              "intent": "Show me the customers who have expressed dissatisfaction with Circe fleece?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 115,
+              "intent": "Show me the name of the customers who have expressed dissatisfaction with Chloe tank",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 116,
+              "intent": "Show me the name of the customers who have expressed dissatisfaction with tanks products?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 119,
+              "intent": "Tell me the reasons why customers like Antonia Racer Tank",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 127,
+              "intent": "What brands appear most frequently among the top search terms?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 128,
+              "intent": "What's the total number of items sold in the most recent 2 orders?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 157,
+              "intent": "Show all customers",
+              "eval_type": [
+                "url_match"
+              ]
+            },
+            {
+              "task_id": 183,
+              "intent": "Give me the SKU of the products that have 10 units left",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 196,
+              "intent": "Compare the payment difference of the last 4 cancelled orders and completed orders",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 202,
+              "intent": "Get the date of the most recent canlled order",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 213,
+              "intent": "What are the key aspects that the customers don't like about Antonia Racer Tank",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 243,
+              "intent": "Show me the email address of the customer who is the most unhappy with Circe fleece",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 288,
+              "intent": "Tell me the name of the customer who has the most cancellations in the history",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 344,
+              "intent": "How many reviews our shop received by far?",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 374,
+              "intent": "Preview the Magento Blank theme for my shop",
+              "eval_type": [
+                "url_match"
+              ]
+            }
+          ]
+        },
+        "modify_value": {
+          "count": 53,
+          "distinct_templates": 16,
+          "tasks": [
+            {
+              "task_id": 423,
+              "intent": "Mark all Hollister shirts on sale",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 453,
+              "intent": "Disable Teton pullover hoodie from the site, they are facing some quality issues.",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 458,
+              "intent": "Reduce the price of this product by $5",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 464,
+              "intent": "Update the product description of Antonia Racer Tank to highlight the real user positive reviews by quoting the comments",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 470,
+              "intent": "Cancel order 302",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 486,
+              "intent": "Change the page title of \"404 Not Found\" page on my site to \"Bruh bro you clicked the wrong page\".",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 492,
+              "intent": "Notify Jane Doe in their most recent pending order with message \"sorry we are out of stock, please reorder\"",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 496,
+              "intent": "Update order #299 with the Federal Express tracking number 8974568499",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 501,
+              "intent": "Make all Taurus Elements Shell as out of stock",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 538,
+              "intent": "Modify the address of order #299 to 456 Oak Avenue, Apartment 5B, New York, NY, 10001",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 544,
+              "intent": "Update the description of Selena Yoga Hoodie to highlight the real user positive reviews by quoting the comments",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 768,
+              "intent": "5 blue Cronus yoga pants with size 33 arrived, update the stock",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 769,
+              "intent": "We've received 378 brown Aero daily fitness tee in every size, please update the inventory.",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 770,
+              "intent": "We've received 12 white Cora parachute pant of size 28 and 56 blue of size 29, update the inventory.",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 771,
+              "intent": "Approve the positive reviews to display in our store.",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 777,
+              "intent": "Reduce the price of green Hollister backyard sweater in all size by $5",
+              "eval_type": [
+                "program_html"
+              ]
+            }
+          ]
+        },
+        "navigation": {
+          "count": 10,
+          "distinct_templates": 2,
+          "tasks": [
+            {
+              "task_id": 208,
+              "intent": "Find the customer name and email with phone number +1 2058812302",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 676,
+              "intent": "Lookup orders that are suspected of being fraudulent",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            }
+          ]
+        },
+        "other": {
+          "count": 14,
+          "distinct_templates": 3,
+          "tasks": [
+            {
+              "task_id": 193,
+              "intent": "Get the total payment amount of the last 2 completed orders",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 198,
+              "intent": "Get the customer name of the most recent cancelled order",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 704,
+              "intent": "Today is 3/15/2023, generate a sales order report for last month",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            }
+          ]
+        },
+        "purchase": {
+          "count": 4,
+          "distinct_templates": 2,
+          "tasks": [
+            {
+              "task_id": 203,
+              "intent": "Get the purchase date and order id of the most recent pending order",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 700,
+              "intent": "Draft a new marketing price rule for fall discount that offers $10 discount on checkout for all customers",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "reddit": {
+      "total": 106,
+      "categories": {
+        "bulk_action": {
+          "count": 22,
+          "distinct_templates": 4,
+          "tasks": [
+            {
+              "task_id": 404,
+              "intent": "Upvote the newest post in books subreddit",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 714,
+              "intent": "Thumbs down the top 1 post ever in gadgets.",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 719,
+              "intent": "Like all submissions created by ThetaGang_wsb in subreddit wallstreetbets",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 725,
+              "intent": "DisLike all submissions created by RickyDontLoseThat in subreddit massachusetts",
+              "eval_type": [
+                "program_html"
+              ]
+            }
+          ]
+        },
+        "create": {
+          "count": 58,
+          "distinct_templates": 17,
+          "tasks": [
+            {
+              "task_id": 409,
+              "intent": "Reply to the manager of the website in this post with \"thanks! I am a big fan of your website.\"",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 580,
+              "intent": "Create a new forum named sci_fi, with a description of A wild place for sci-fi enthusiasts, and include ['New', 'Classic', 'Movies', 'Post my novel', 'Random'] in the sidebar?",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 595,
+              "intent": "Open the thread of a trending post on the forum \"space\" and subscribe.",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 601,
+              "intent": "Post my question, \"is car necessary in NYC\", in a subreddit where I'm likely to get an answer",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 610,
+              "intent": "Post a review of my recent reading \"To Kill a Mockingbird by Harper Lee\" in the r/books with my comment \"good book!\".",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 615,
+              "intent": "Re-post the image of Bald Eagle in this page to earthporn subreddit and note \"from /f/pics\"",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 620,
+              "intent": "Ask for advice about deal with long-distance relationships in a subreddit for relations",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 625,
+              "intent": "Create a discussion post about \"the effectiveness of online learning\" in a relevant subreddit and ask users for their opinions with the simple prompt, \"your opinion\"",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 630,
+              "intent": "Ask for product recommendations for noise-cancelling headphones within a budget of $200 in r/headphones",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 635,
+              "intent": "Post in the most appropriate subreddit and ask for recommendations for noise-cancelling headphones products within a budget of $200",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 640,
+              "intent": "Post a notice on a virtual meetup for book reading enthusiasts on March 15th in the r/books subreddit",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 645,
+              "intent": "Post in books subreddit about what could machine learning help the correpong field.",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 646,
+              "intent": "Post in DIY subreddit about what could midjourney help the correpong field.",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 647,
+              "intent": "Post in technology forum about what could open-source LLMs help the correpong field.",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 648,
+              "intent": "Post in dataisbeautiful forum about what could large language models help the correpong field.",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 649,
+              "intent": "Post in history subreddit about what could diffusion model help the correpong field.",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 650,
+              "intent": "Reply to the post with my comment \"I am a big fan of the bookorg\"",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            }
+          ]
+        },
+        "information_retrieval": {
+          "count": 13,
+          "distinct_templates": 4,
+          "tasks": [
+            {
+              "task_id": 27,
+              "intent": "Tell me the count of comments that have received more downvotes than upvotes for the user who made the latest post on the Showerthoughts forum.",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 66,
+              "intent": "Among the top 10 post in \"books\" forum, show me the post URLs that recommand a single book",
+              "eval_type": [
+                "string_match"
+              ]
+            },
+            {
+              "task_id": 600,
+              "intent": "Post my question, \"what is the recommended console to buy these days\", in a subreddit where I'm likely to get an answer",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 605,
+              "intent": "Find a subreddit focused on topics related to gaming consoles, and post my question, \"what is the recommended console to buy these days\" there",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            }
+          ]
+        },
+        "modify_value": {
+          "count": 10,
+          "distinct_templates": 2,
+          "tasks": [
+            {
+              "task_id": 399,
+              "intent": "Change my reddit bio to \"I am a robot\"",
+              "eval_type": [
+                "program_html"
+              ]
+            },
+            {
+              "task_id": 731,
+              "intent": "Edit my post on Nvidia RTX 4090 by adding a line to the body that says \"EDIT: This news aged well\"",
+              "eval_type": [
+                "program_html"
+              ]
+            }
+          ]
+        },
+        "navigation": {
+          "count": 3,
+          "distinct_templates": 1,
+          "tasks": [
+            {
+              "task_id": 606,
+              "intent": "Find a subreddit focused on topics related to NYC, and post my question, \"is car necessary\" there",
+              "eval_type": [
+                "url_match",
+                "program_html"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,51 @@
+task_id,site,group,intent,eval_type,eval_target,obs_median_steps,obs_max_steps,obs_urls,pages_to_traverse,retrieval_type,interaction,target_locatability
+47,shopping,G1,"Today is 6/12/2023. Tell me how many fulfilled orders I have over the past month, and the total amount of money I spent.",string_match,"fuzzy_match: 0 order, $0 total spend",3,3,3,2,1,1,2
+48,shopping,G1,"Today is 6/12/2023. Tell me how many fulfilled orders I have over the past three days, and the total amount of money I spent.",string_match,"fuzzy_match: 0 order, $0 total spend",3,3,3,2,1,1,2
+49,shopping,G1,"Today is 6/12/2023. Tell me how many fulfilled orders I have over the past four month, and the total amount of money I spent.",string_match,"fuzzy_match: 3 orders, $845.49 total spend",3,3,3,2,1,1,2
+107,shopping_admin,G2,Presents the monthly count of successful orders from May to December 2022 in MM:COUNT format,string_match,"fuzzy_match: May: 8 orders, June: 13 orders, July: 9 orders, August: 8 orders, Sepetember: 10 orders, October: 4 orders, November: 5 orders, December: 10 orders",4.5,11,3,2,2,1,1
+109,shopping_admin,G2,Presents the monthly count of successful orders from Jan to December 2022 in MM:COUNT format,string_match,"fuzzy_match: January: 11 orders, Feburary: 16 orders, March: 14 orders, April: 7 orders, May: 8 orders, June: 13 orders, July: 9 orders, August: 8 orders, Sepetember: 10 orders, Octorbor: 4 orders, November: 5 ord",4.5,10,5,2,2,1,1
+146,shopping,G3,What is the size configuration of the picture frame I bought Sep 2022,string_match,must_include: 16x24,4.5,10,9,2,0,0,2
+147,shopping,G3,What is the size configuration of the picture frame I bought 2022,string_match,must_include: 16x24,4.5,8,6,2,0,0,2
+213,shopping_admin,G4,What are the key aspects that the customers don't like about Antonia Racer Tank,string_match,fuzzy_match: Not suitable for high-impact workouts,4,7,4,1,2,0,0
+217,shopping_admin,G4,What are the key aspects that the customers don't like about Pursuit Tone Band,string_match,fuzzy_match: Insufficient resistance for their workouts.,4,10,2,1,2,0,0
+240,shopping,G5,"I am doing a market survey for one stop market, show me the most expensive product from competitive swimwear category",url_match,url: __SHOPPING__/women-cross-flower-beachwear-tankini-bandeau-bandage-bikini-set-push-up-swimwear-bathing-suit-two-pieces-swimsuits.html,4.5,20,8,2,1,0,2
+241,shopping,G5,"I am doing a market survey for one stop market, show me the most expensive product from skin care tool category",url_match,url: __SHOPPING__/professional-medi-spa-scar-stretch-mark-reduction-system.html,4,12,9,2,1,0,2
+374,shopping_admin,G6,Preview the Magento Blank theme for my shop,url_match,url: __SHOPPING_ADMIN__/admin/system_design_theme/edit/id/1,3,5,4,1,0,0,0
+375,shopping_admin,G6,Preview the Magento Luma theme for my shop,url_match,url: __SHOPPING_ADMIN__/admin/system_design_theme/edit/id/3/key/,6,17,7,1,0,0,0
+600,reddit,G7,"Post my question, ""what is the recommended console to buy these days"", in a subreddit where I'm likely to get an answer",url_match+program_html,url: __REDDIT__/f/consoles,6,8,5,1,1,1,2
+604,reddit,G7,"Post my question, ""what is the SOTA web navigation agent repo"", in a subreddit where I'm likely to get an answer",url_match+program_html,url: __REDDIT__/f/deeplearning |OR| __REDDIT__/f/MachineLearning |OR| __REDDIT__/f/singularity,4,6,5,1,1,1,2
+30,reddit,,Tell me the count of comments that have received more downvotes than upvotes for the user who made the latest post on the space forum.,string_match,must_include: 0,5.5,9,9,2,2,0,2
+403,reddit,,"Change my reddit bio to ""Awesome Prompt Artist""",program_html,DOM check x1 on 1 page(s),3,5,5,1,0,1,0
+404,reddit,,Upvote the newest post in books subreddit,program_html,DOM check x1 on 1 page(s),3,7,5,1,1,1,1
+407,reddit,,Upvote the newest post in deeplearning subreddit,program_html,DOM check x1 on 1 page(s),4,7,5,1,1,1,1
+597,reddit,,"Open the thread of a trending post on the forum ""consoles"" and subscribe.",url_match+program_html,url: __REDDIT__/f/consoles,1,10,6,1,1,1,1
+638,reddit,,Post in the most appropriate subreddit and ask for recommendations for must-have product in my life products within a budget of $30,url_match+program_html,url: __REDDIT__/f/BuyItForLife,6.5,10,5,1,1,1,2
+650,reddit,,"Reply to the post with my comment ""I am a big fan of the bookorg""",url_match+program_html,url: __REDDIT__/f/books/59421/friendly-reminder-bookshop-org-exists,2,2,3,0,0,1,0
+716,reddit,,Thumbs down the top 3 post ever in books.,program_html,DOM check x3 on 3 page(s),2,10,6,1,1,2,1
+724,reddit,,Like all submissions created by Hrekires in subreddit news,program_html (truncated),"{""eval_types"": [""program_html""], ""reference_answers"": null, ""reference_url"": """", ""program_html"": [{""url"": ""__REDDIT__/f/",3.5,10,5,1,1,2,2
+233,shopping,,Get the order number of my most recent complete order ,string_match,must_include: 180,3,3,3,1,1,0,1
+261,shopping,,I want to browse the products in the Headphones category,url_match,url: __SHOPPING__/electronics/headphones.html,4.5,10,7,1,0,0,0
+351,shopping,,List products from PS4 accessories category by ascending price,url_match,url: __SHOPPING__/video-games/playstation-4/accessories.html?product_list_order=price,5.5,10,6,1,0,0,0
+352,shopping,,List products from nutrition bars and drinks category by ascending price,url_match,url: __SHOPPING__/health-household/diet-sports-nutrition/nutrition-bars-drinks.html?product_list_order=price,4.5,10,7,1,0,0,0
+360,shopping,,Show me the product names for order number 148.,string_match,"must_include: Bornbridge Artificial Spiral Topiary Tree - Indoor / Outdoor Topiary Trees - Artificial Outdoor Plants (2 Pack, 4' Cypress), Russound 5B45W 4"" Indoor Outdoor Speakers White",4.5,10,8,1,0,0,0
+436,shopping,,I previously ordered some a mattress foundation around Feb or March 2023 and later cancelled. Can you reorder it for me?,program_html,DOM check x1 on 1 page(s),4.5,12,5,1,1,2,2
+506,shopping,,Buy the highest rated product from the meat substitute category within a budget between 100 and 200.,program_html,DOM check x1 on 1 page(s),4.5,14,9,2,2,2,2
+510,shopping,,"Buy the best rating product from ""Home Audio Speaker"" category with at least 5 reviews and the product is least expensive",program_html,DOM check x1 on 1 page(s),5,12,6,2,2,2,2
+518,shopping,,Add this product to my wishlist,program_html,DOM check x1 on 1 page(s),1,1,2,1,0,0,0
+521,shopping,,Subscribe to the newsletter of OneStopMarket,program_html,DOM check x1 on 1 page(s),1,4,3,1,0,1,0
+586,shopping,,"Rate my recent purchase of Jiffy Corn Muffin Cornbread Mix with 4 stars, using my nickname ShoppingEmma?",program_html,DOM check x2 on 1 page(s),5,11,6,1,0,1,0
+693,shopping,,Draft an email to the shop owner via their contact us function for a coupon as my refund is suppoed to be replaced by a coupon,url_match+program_html,url: __SHOPPING__/contact,3,7,3,1,0,1,0
+795,shopping,,"Change the delivery address for my most recent order to 6726 McPherson Blvd, Pittsburgh, PA.",string_match,fuzzy_match: N/A,1,1,2,1,0,0,1
+1,shopping_admin,,What is the top-1 best-selling brand in Quarter 1 2022,string_match,exact_match: Sprite,2,6,2,1,1,0,1
+15,shopping_admin,,"Tell me the the number of reviews that our store received by far that mention term ""best""",string_match,must_include: 2,4,5,5,1,2,0,1
+95,shopping_admin,,Telll me the grand total of invoice 000000002.,string_match,must_include: 39.64,3,4,2,1,0,0,0
+127,shopping_admin,,What brands appear most frequently among the top search terms?,string_match,"must_include: Hollister, Joust, Antonia",3,3,3,1,2,0,1
+128,shopping_admin,,What's the total number of items sold in the most recent 2 orders?,string_match,must_include: 9,1,1,1,0,1,0,1
+198,shopping_admin,,Get the customer name of the most recent cancelled order,string_match,exact_match: Lily Potter,3,3,2,1,1,0,1
+348,shopping_admin,,How many reviews our shop received in May 2023?,string_match,must_include: 0,3.5,21,11,1,2,0,1
+454,shopping_admin,,"Disable Ryker Tee Crew Neck from the site, they are facing some quality issues.",program_html,DOM check x1 on 1 page(s),4.5,13,2,1,0,1,0
+460,shopping_admin,,Reduce the price of this product by 15%,program_html,DOM check x1 on 1 page(s),5.5,25,1,0,1,1,0
+487,shopping_admin,,"Change the page title of ""Enable Cookies"" page on my site to ""Cookie monster coming to your place"".",program_html,DOM check x1 on 1 page(s),1,6,4,1,0,1,0
+698,shopping_admin,,"Add a simple product named Lelelumon Yoga Mat with 42 in stock, available in size uni-size and color black, priced at $769.99",url_match+program_html,url: __SHOPPING_ADMIN__/catalog/product,5.5,14,3,1,0,2,0
+702,shopping_admin,,Draft a new marketing price rule for Pride Month that offers 45% off on all products for all customers,url_match+program_html,url: __SHOPPING_ADMIN__/sales_rule/promo_quote,5,21,4,1,0,2,0
+780,shopping_admin,,Increase the price of white Ingrid Running with size L and above by $17,program_html,DOM check x2 on 2 page(s),5.5,9,4,2,1,2,1
