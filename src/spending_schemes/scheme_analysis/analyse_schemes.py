@@ -181,13 +181,21 @@ def scheme_effects(df: pd.DataFrame, reference: str, reps: int = 2000, seed: int
             common = ref.index.intersection(cur.index)
             if not len(common):
                 continue
+            #get the success and tokens for the common tasks
             s0 = ref.loc[common, "success"].astype(float).to_numpy()
+            #get the success and tokens for the current scheme
             s1 = cur.loc[common, "success"].astype(float).to_numpy()
+            #get the tokens for the reference scheme
             t0 = ref.loc[common, "total_tokens"].astype(float).to_numpy()
+            #get the tokens for the current scheme
             t1 = cur.loc[common, "total_tokens"].astype(float).to_numpy()
+            #get the indices for the bootstrap samples
             idx = rng.integers(0, len(common), size=(reps, len(common)))
+            #get the change in success rate
             d_sr = (s1[idx].mean(1) - s0[idx].mean(1)) * 100
+            #get the change in tokens
             d_tok = (t1[idx].sum(1) / np.maximum(t0[idx].sum(1), 1) - 1) * 100
+            #add the rows to the dataframe
             rows.append({
                 "strategy": st, "scheme": sc, "tasks": len(common),
                 "dSR_pp": (s1.mean() - s0.mean()) * 100,
@@ -282,11 +290,11 @@ def plot_success(df, out_dir):
                   lambda g: g["success"].mean(), err=lambda g: wilson(int(g["success"].sum()), len(g)))
 
 def plot_tokens(df, out_dir):
-    _grouped_bars(df, out_dir, "rq3_tokens_by_scheme.png", "Mean Tokens Spent by Spending Scheme and Strategy",
+    _grouped_bars(df, out_dir, "tokens_by_scheme.png", "Mean Tokens Spent by Spending Scheme and Strategy",
                   "Mean Tokens per Episode", lambda g: g["total_tokens"].mean())
 
 def plot_tokens_per_success(df, out_dir):
-    _grouped_bars(df, out_dir, "rq3_tokens_per_success.png", "Token Cost per Success by Spending Scheme and Strategy",
+    _grouped_bars(df, out_dir, "tokens_per_success.png", "Token Cost per Success by Spending Scheme and Strategy",
                   "Tokens per Successful Episode (lower is better)", lambda g: g["total_tokens"].sum() / g["success"].sum() if g["success"].sum() else np.nan)
 
 
