@@ -89,7 +89,6 @@ def review_queue(rows: list, show: int = 15) -> None:
         print(f" {r['task_id']:>4} {r['difficulty_tier']:6s} {r['intent'][:44]}")
         print(f" {'; '.join(r['review_reasons'])[:66]}")
 
-
 #function to print the report
 def report(rows: list, sites: list) -> None:
     if not rows:
