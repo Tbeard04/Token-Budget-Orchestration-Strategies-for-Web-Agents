@@ -7,6 +7,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
+import math
 
 
 #Styling
@@ -50,6 +51,29 @@ def outcome_group(reason: str) -> str:
 #order and colours for the different outcome groups
 OUTCOME_ORDER = ["success", "wrong answer", "budget exhausted", "stuck (guards)", "router stop", "other"]
 OUTCOME_COLOURS = {"success": "#1baf7a", "wrong answer": "#9E9E9E", "budget exhausted": "#eb6834", "stuck (guards)": "#e34948", "router stop": ROUTER_COLOUR, "other": "#c9c8c2"}
+
+
+#95% Wilson interval for k successes out of n (stays inside 0-1 at small n)
+#used for confidence intervals in the cost curve plot
+#wilson puts error bars on a success rate
+def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    if n == 0:
+        return float("nan"), float("nan")
+    p = k / n
+    d = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / d
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return max(0.0, centre - half), min(1.0, centre + half)
+
+#function for the exact two-sided McNemar test on the discordant pairs (x wins, y wins)
+#mcnemar_exact tests whether one strategy beats another or just got lucky
+def mcnemar_exact(x_only: int, y_only: int) -> float:
+    n = x_only + y_only
+    if n == 0:
+        return 1.0
+    k = min(x_only, y_only)
+    return min(1.0, 2 * sum(math.comb(n, i) for i in range(k + 1)) / 2 ** n)
+
 
 def print_section(title: str) -> None:
     print(f"\n{'=' * 70}\n{title}\n{'=' * 70}")
