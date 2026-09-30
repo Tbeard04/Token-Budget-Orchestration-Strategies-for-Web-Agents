@@ -8,7 +8,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-
+#update the plot parameters
 plt.rcParams.update({
     "figure.figsize": (10, 6),
     "axes.spines.top": False,
@@ -16,6 +16,7 @@ plt.rcParams.update({
     "font.size": 11,
 })
 
+#category colours
 CATEGORY_COLOURS = {
     "information_retrieval":"#2196F3",
     "navigation":"#03A9F4",
@@ -33,12 +34,16 @@ RISK_GROUPS = {
     "state-change (contamination possible)": ["create", "modify_value", "bulk_action", "delete", "purchase",],
 }
 
-
+#function to plot the overall categories
 def plot_overall(by_category: dict, out_dir: Path) -> None:
+    #items = the categories sorted by the number of tasks
     items = sorted(by_category.items(), key=lambda x: x[1])
+    #labels = the categories replaced with spaces
     labels = [k.replace("_", " ") for k, _ in items]
+    #values = the number of tasks for each category
     values = [v for _, v in items]
     colours = [CATEGORY_COLOURS.get(k, "#90A4AE") for k, _ in items]
+    #total = the total number of tasks
     total = sum(values)
 
     fig, ax = plt.subplots()
@@ -60,16 +65,19 @@ def plot_overall(by_category: dict, out_dir: Path) -> None:
     print(f"saved: {path}")
     plt.close()
 
-
+#function to plot the categories by site
 def plot_by_site(sites: dict, out_dir: Path) -> None:
     site_names = ["shopping", "shopping_admin", "reddit"]
+    #all_cats = the categories sorted by the number of tasks
     all_cats = sorted(
         {c for s in site_names for c in sites.get(s, {}).get("categories", {})},
         key=lambda c: -sum(sites.get(s, {}).get("categories", {}).get(c, {}).get("count", 0) for s in site_names))
 
     fig, ax = plt.subplots(figsize=(12, 6))
+    #n_cats = the number of categories
     n_cats = len(all_cats)
     width = 0.8 / n_cats
+    #x = the range of the site names
     x = range(len(site_names))
 
     #for each category in the categories
@@ -97,8 +105,9 @@ def plot_by_site(sites: dict, out_dir: Path) -> None:
 #function to plot the risk groups
 def plot_risk_groups(by_category: dict, out_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(9, 5))
-
+    #bottom = the bottom of the plot
     bottom = 0
+    #total = the total number of tasks
     total = sum(by_category.values())
     #for each group in the risk groups
     for group_label, cats in RISK_GROUPS.items():
@@ -138,6 +147,7 @@ def plot_risk_groups(by_category: dict, out_dir: Path) -> None:
     print(f"saved: {path}")
     plt.close()
 
+#function to main
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", required=True)

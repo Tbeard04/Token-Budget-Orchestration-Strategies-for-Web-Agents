@@ -253,8 +253,7 @@ def main() -> None:
     ap.add_argument("--out", default="../../data/processed/diagrams/difficulty_tiers")
     args = ap.parse_args()
  
-    rows = [json.loads(l) for l in Path(args.metadata).read_text().splitlines()
-            if l.strip()]
+    rows = [json.loads(l) for l in Path(args.metadata).read_text().splitlines() if l.strip()]
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)

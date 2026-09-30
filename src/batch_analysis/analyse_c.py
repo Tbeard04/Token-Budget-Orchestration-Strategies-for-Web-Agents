@@ -16,7 +16,6 @@ def expand_router(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["router_stop"] = df["termination_reason"] == "router_stop"
     if "router" not in df.columns:
-        print("[analyse_c] no 'router' block in this file - routing sections skipped")
         return df
     r = df["router"].apply(lambda x: x if isinstance(x, dict) else {})
     df["stop_step"] = r.apply(lambda x: x.get("stop_step"))

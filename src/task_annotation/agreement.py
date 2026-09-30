@@ -10,9 +10,13 @@ def confusion(a: list, b: list, labels: list) -> list[list[int]]:
     #Rows = rater a (human), cols = rater b (model)
     idx = {v: i for i, v in enumerate(labels)}
 
+    #m = the confusion matrix
     m = [[0] * len(labels) for _ in labels]
+    #for each x and y in the zip of a and b
     for x, y in zip(a, b):
+        #increment the value at the index of x and y in the confusion matrix
         m[idx[x]][idx[y]] += 1
+    #return the confusion matrix
     return m
 
 #function to calculate the Cohen's kappa

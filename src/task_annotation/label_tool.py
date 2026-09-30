@@ -14,18 +14,20 @@ from pathlib import Path
 
 from rubric import DIMENSIONS, RUBRIC_SUMMARY, TIERS, normalise_template, tier_of
 
+#columns for the CSV
 COLUMNS = [
     "task_id", "site", "group", "intent", "eval_type", "eval_target",
     "obs_median_steps", "obs_max_steps", "obs_urls",
     "pages_to_traverse", "retrieval_type", "interaction", "target_locatability",
 ]
 
-
+#function to summarise the evaluation criteria
 # Making the evaluation criteria readable
 def summarise_eval(raw: str) -> tuple[str, str]:
     #Return (eval_type, target) from the stored criteria JSON.
     if not raw:
         return "", ""
+    #try to load the raw as JSON
     try:
         e = json.loads(raw)
     except json.JSONDecodeError:
@@ -53,13 +55,16 @@ def summarise_eval(raw: str) -> tuple[str, str]:
 
     return types, ""
 
-# JSONL <--> CSV conversion
+# JSONL <---> CSV conversion
 def load_gold(path: str) -> list[dict]:
     rows = []
+    #for each line in the file
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if line:
+            #append the line as a dictionary to the rows
             rows.append(json.loads(line))
+    #return the rows
     return rows
 
 #function to cluster similar tasks by intent-template similarity
@@ -75,30 +80,42 @@ def cluster_similar(rows: list, threshold: float = 0.85) -> dict:
             x = parent[x]
         return x
 
+    #for each a and b in the ids
     for a_i, a in enumerate(ids):
         for b in ids[a_i + 1:]:
             if SequenceMatcher(None, tmpl[a], tmpl[b]).ratio() >= threshold:
+                #find the root of a and b
                 ra, rb = find(a), find(b)
                 if ra != rb:
                     parent[rb] = ra
 
+    #clusters = the clusters of the ids
     clusters = defaultdict(list)
+    #for each i in the ids
     for i in ids:
         clusters[find(i)].append(i)
 
     label, out = {}, {}
+    #for each root and members in the clusters
     for n, (root, members) in enumerate(sorted(clusters.items()), 1):
         if len(members) < 2:
             continue
+        #label the root
         label[root] = f"G{len(label) + 1}"
+        #for each member in the members
         for m in members:
             out[m] = label[root]
+    #return the out
     return out
 
+#function to convert the gold set to a CSV
 def to_csv(gold_path: str, csv_path: str, threshold: float = 0.85) -> None:
+    #load the gold set
     rows = load_gold(gold_path)
+    #group the rows by similarity
     group_of = cluster_similar(rows, threshold)
 
+    #ordered = the rows ordered by the group and site and task id
     ordered = sorted(rows, key=lambda r: (
         group_of.get(r.get("task_id"), "ZZ"),
         r.get("site", ""),
@@ -131,9 +148,11 @@ def to_csv(gold_path: str, csv_path: str, threshold: float = 0.85) -> None:
     # n_groups = len(set(group_of.values()))
     print(f"Wrote {len(ordered)} rows to {out}")
 
-
+#function to convert the CSV to a JSONL
 def from_csv(gold_path: str, csv_path: str, out_path: str | None) -> None:
+    #load the gold set
     rows = load_gold(gold_path)
+    #by_id = the rows by task id
     by_id = {r.get("task_id"): r for r in rows}
 
     #utf-8-sig tolerates the BOM Excel writes
@@ -144,36 +163,49 @@ def from_csv(gold_path: str, csv_path: str, out_path: str | None) -> None:
     if missing:
         raise SystemExit(f"CSV is missing required columns: {missing}")
 
+    #filled = the number of rows filled
+    #blank = the rows that are blank
+    #bad = the rows that are bad
+    #unknown = the rows that are unknown
     filled, blank, bad, unknown = 0, [], [], []
     for cr in csv_rows:
+        #try to convert the task id to an integer
         try:
             tid = int(str(cr["task_id"]).strip())
         except (ValueError, KeyError):
             continue
+        #target = the row by task id
         target = by_id.get(tid)
+        #if the target is None, add the task id to the unknown list
         if target is None:
             unknown.append(tid)
             continue
-
+        #scores = the scores for the dimensions
         scores = {}
+        #for each dimension in the dimensions
         for d in DIMENSIONS:
+            #v = the value of the dimension
             v = (cr.get(d) or "").strip()
             if v == "":
+                #if the value is empty, add the task id to the blank list
                 scores = {}
                 blank.append(tid)
                 break
+            #try to convert the value to an integer
             try:
                 iv = int(float(v))
             except ValueError:
+                #if the value is not an integer, add the task id and dimension and value to the bad list
                 scores = {}
                 bad.append((tid, d, v))
                 break
             if iv not in (0, 1, 2):
+                #if the value is not 0, 1 or 2, add the task id and dimension and value to the bad list
                 scores = {}
                 bad.append((tid, d, v))
                 break
             scores[d] = iv
-
+        #if the scores are not empty, update the target with the scores and increment the filled count
         if scores:
             target.update(scores)
             filled += 1
@@ -189,13 +221,13 @@ def from_csv(gold_path: str, csv_path: str, out_path: str | None) -> None:
         for r in rows:
             f.write(json.dumps(r) + "\n")
 
-    print(f"Wrote {len(rows)} rows to {dest}  ({filled} scored)")
+    print(f"Wrote {len(rows)} rows to {dest} ({filled} scored)")
     if blank:
-        print(f"   {len(blank)} rows still blank: {blank}")
+        print(f"{len(blank)} rows still blank: {blank}")
     if bad:
-        print(f"   {len(bad)} rows with a value outside 0-2: {bad[:10]}")
+        print(f"{len(bad)} rows with a value outside 0-2: {bad[:10]}")
     if unknown:
-        print(f"   {len(unknown)} csv task_ids not in the gold set: {unknown[:10]}")
+        print(f"{len(unknown)} csv task_ids not in the gold set: {unknown[:10]}")
 
     check(str(dest))
 

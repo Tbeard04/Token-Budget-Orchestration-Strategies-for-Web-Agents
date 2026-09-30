@@ -62,9 +62,11 @@ if not hasattr(openai, "ChatCompletion"):
     _chat_client = _OpenAI()
 
     class _FakeChatCompletion:
+        #create a fake chat completion
+        #static method to create a chat completion
         @staticmethod
-        def create(model=None, messages=None, temperature=1.0,
-                   max_tokens=None, top_p=1.0, stop=None, **kwargs):
+        def create(model=None, messages=None, temperature=1.0,max_tokens=None, top_p=1.0, stop=None, **kwargs):
+            #create a response from the chat client
             resp = _chat_client.chat.completions.create(
                 model=EVAL_MODEL,
                 messages=messages,
@@ -79,8 +81,10 @@ if not hasattr(openai, "ChatCompletion"):
                 ]
             }
 
+        #async method to create a chat completion
         @staticmethod
         async def acreate(**kwargs):
+            #create a response from the chat client
             return _FakeChatCompletion.create(**kwargs)
 
     openai.ChatCompletion = _FakeChatCompletion
@@ -91,13 +95,17 @@ if not hasattr(openai, "ChatCompletion"):
 #WebArena's fuzzy-match evaluators call openai.ChatCompletion (removed in 1.0) and hardcode gpt-4-1106-preview (retired). Replace with a v1 client.
 #this changes the grader model relative to the original paper
 
+#function to patch the webarena openai
 def _patch_webarena_openai() -> None:
+    #try to import the openai utils
     try:
         from llms.providers import openai_utils as _ou  # type: ignore
+    #if the openai utils are not found, print a warning
     except Exception as _e:
         print(f"[wa_env] could not patch WebArena openai_utils: {_e}")
         return
 
+    #open the openai client
     from openai import OpenAI
     _client = OpenAI()
 
@@ -112,15 +120,17 @@ def _patch_webarena_openai() -> None:
             stop=[stop_token] if stop_token else None,
         )
         return resp.choices[0].message.content
-
+    #patch the openai utils to use the v1 chat completion
     _ou.generate_from_openai_chat_completion = _v1_chat
 
     #The evaluator may have imported the function directly, holding its own reference that the module-level patch above does not reach. So I patch it here too.
-    for _mod_name in ("evaluation_harness.evaluators",
-                      "webarena.evaluation_harness.evaluators"):
+    for _mod_name in ("evaluation_harness.evaluators", "webarena.evaluation_harness.evaluators"):
         try:
+            #import the importlib
             import importlib
+            #import the evaluation module
             _eval_mod = importlib.import_module(_mod_name)
+            #if the evaluation module has the generate_from_openai_chat completion
             if hasattr(_eval_mod, "generate_from_openai_chat_completion"):
                 _eval_mod.generate_from_openai_chat_completion = _v1_chat
                 print(f"[wa_env] also patched {_mod_name}")
@@ -158,9 +168,12 @@ ACTION_HISTORY_LEN = 8
 def config_dir() -> Path:
     import webarena
 
+    #candidates = the list of paths to the webarena modules
     candidates: list[Path] = []
+    #for each path in the webarena modules
     for p in list(getattr(webarena, "__path__", [])):
         candidates.append(Path(p))
+    #if the webarena module has a file
     if getattr(webarena, "__file__", None):
         candidates.append(Path(webarena.__file__).parent)
 
@@ -242,9 +255,13 @@ def build_prompt(obs: dict, history: list[str] | None = None, urls: list[str] | 
             err = ("previous action timed out waiting for the page to settle - "
                    "it may have succeeded. Check the current page before retrying.")
     hist = "none yet"
+    #if history is provided
     if history:
+        #rows = the list of rows
         rows = []
+        #for each history in the history
         for n in range(max(0, len(history) - ACTION_HISTORY_LEN), len(history)):
+            #u = the url
             u = urls[n] if urls and n < len(urls) else ""
             rows.append(f"  {n}. {history[n]}  -> {u[:70]}")
         hist = "\n".join(rows)
@@ -266,11 +283,11 @@ def goal_of(obs: dict) -> str:
 #Agent construction and invocation
 def make_agent(instructions: str, output_type, label: str = "agent") -> Agent:
     try:
-        from pydantic_ai.models.openai import (
-            OpenAIResponsesModel,
-            OpenAIResponsesModelSettings,
-        )
+        #import the openai responses model
+        from pydantic_ai.models.openai import (OpenAIResponsesModel, OpenAIResponsesModelSettings)
+        #model = the model to use
         model = OpenAIResponsesModel(MODEL.split(":", 1)[1])
+        #settings = the settings to use
         settings = OpenAIResponsesModelSettings(openai_reasoning_effort=REASONING_EFFORT)
         a = Agent(model, output_type=output_type, instructions=instructions, model_settings=settings)
         print(f"[wa_env] {label}: reasoning_effort='{REASONING_EFFORT}'")

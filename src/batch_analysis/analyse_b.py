@@ -186,10 +186,10 @@ def critic_revision_details(df: pd.DataFrame, limit: int | None = 20) -> None:
         err = "after error" if r["prev_step_had_error"] else "clean state"
         print(f"\n   [{i}] task {r['task_id']} @ {r['budget_level']} "
               f"step {r['step']}  ({r['site']}, {err})")
-        print(f" proposed: {str(r['proposed'])[:66]}")
-        print(f" revised: {str(r['revised_to'])[:66]}")
-        print(f" outcome: revision {worked}, episode {outcome}")
-        print(f" reason: {str(r['reasoning'])[:110]}")
+        print(f"proposed: {str(r['proposed'])[:66]}")
+        print(f"revised: {str(r['revised_to'])[:66]}")
+        print(f"outcome: revision {worked}, episode {outcome}")
+        print(f"reason: {str(r['reasoning'])[:110]}")
 #Rubber-Stamp Cost (Strategy C savings ceiling)
 def rubber_stamp_cost(df: pd.DataFrame) -> None:
     print_section("Rubber-Stamp Cost (Strategy C savings ceiling)")
@@ -390,7 +390,6 @@ def main() -> None:
     plot_role_cost_breakdown(df, out_dir)
 
     print(f"\nDone. {len(df)} episodes analysed.")
-
 
 if __name__ == "__main__":
     main()

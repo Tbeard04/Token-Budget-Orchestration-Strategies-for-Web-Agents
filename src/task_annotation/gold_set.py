@@ -99,6 +99,7 @@ def format_exemplars(ex: dict) -> str:
     if not ex:
         return ""
     rows = sorted(ex.values(), key=lambda r: (total_of(r), r["site"]))
+    #lines = the lines of the exemplars
     lines = [
         "",
         "CALIBRATION EXAMPLES",
@@ -108,8 +109,10 @@ def format_exemplars(ex: dict) -> str:
         "",
     ]
     for r in rows:
+        #t = the total score
         t = total_of(r)
         lines.append(f"[{r['site']}] {r['intent'][:150]}")
+        #append the pages to traverse, retrieval type, interaction, target locatability and the total score and tier
         lines.append(
             f" pages={r['pages_to_traverse']} retrieval={r['retrieval_type']} "
             f"interaction={r['interaction']} locatability={r['target_locatability']} "

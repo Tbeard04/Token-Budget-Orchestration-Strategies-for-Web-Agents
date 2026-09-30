@@ -15,10 +15,7 @@ from pydantic import BaseModel, Field
 
 import wa_env as W
 
-
 DEFAULT_BUDGET = 16_000
-
-
 
 #Structured output: the model is constrained to emit a valid shape, so no regex extraction of the action is needed
 class AgentAction(BaseModel):
@@ -166,9 +163,12 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
             reason = "safety_token_cap"
             break
 
+        #step the environment
         obs, reward, terminated, truncated, _ = env.step(decided.action)
         url_history.append(obs.get("url", ""))
+        #err = the last action error
         err = obs.get("last_action_error")
+        #consecutive_errors = the number of consecutive errors
         consecutive_errors = consecutive_errors + 1 if err else 0
 
         #attach the outcome to the step that produced it
@@ -258,11 +258,15 @@ def main() -> None:
     print(f"\n{'=' * 78}\nSummary\n{'=' * 78}")
     print(f"{'site':16s}{'task':>6s}{'ok':>7s}{'steps':>7s}{'tokens':>9s}"
           f"{'secs':>8s}  reason")
+    #for each result in the results
     for r in results:
+        #if the result has an error
         if "error" in r:
+            #print the site, task id, error and reason
             print(f"{r['site']:16s}{r['task_id']:>6}{'ERR':>7s}"
                   f"{'-':>7s}{'-':>9s}{'-':>8s}  {r['error'][:34]}")
         else:
+            #print the site, task id, success, steps, total tokens and wall clock seconds and reason
             print(f"{r['site']:16s}{r['task_id']:>6}{str(r['success']):>7s}"
                   f"{r['steps']:>7}{r['total_tokens']:>9}"
                   f"{r['wall_clock_seconds']:>8}  {r['termination_reason']}")

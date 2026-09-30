@@ -251,14 +251,18 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
             "cumulative_tokens": in_tok + out_tok,
             "usage_details": dict(usage.details) if getattr(usage, "details", None) else None,
         }
+        #if extra is provided, update the record with the extra
         if extra:
             rec.update(extra)
         steps.append(rec)
+        #print the role, input tokens, output tokens and cumulative tokens
         print(f"{role:8s}: +{usage.input_tokens} in / +{usage.output_tokens} out"
               f"(cumulative {in_tok + out_tok})")
 
     for i in range(W.MAX_STEPS):
+        #build the base prompt
         base = W.build_prompt(obs, action_history, url_history)
+        #the current url
         cur_url = obs.get("url", "")
 
         #Pre-step check. Committing to a step means committing to three calls, so estimate three prompts plus a margin for the appended plan/action text and the three outputs
@@ -417,15 +421,17 @@ def main() -> None:
     print(f"\n{'=' * 88}\nSummary\n{'=' * 88}")
     print(f"{'site':16s}{'task':>6s}{'ok':>7s}{'steps':>7s}{'calls':>7s}"
           f"{'revis':>7s}{'tokens':>9s}{'secs':>8s}  reason")
+    #for each result in the results
     for r in results:
         if "error" in r:
             print(f"{r['site']:16s}{r['task_id']:>6}{'ERR':>7s}"
                   f"{'-':>7s}{'-':>7s}{'-':>7s}{'-':>9s}{'-':>8s}  {r['error'][:30]}")
         else:
+            #print the site, task id, success, steps, agent calls, critic revisions, total tokens and wall clock seconds and reason
             print(f"{r['site']:16s}{r['task_id']:>6}{str(r['success']):>7s}"
                   f"{r['steps']:>7}{r['agent_calls']:>7}{r['critic_revisions']:>7}"
                   f"{r['total_tokens']:>9}{r['wall_clock_seconds']:>8}"
-                  f"  {r['termination_reason']}")
+                  f"{r['termination_reason']}")
 
     print(f"\nWrote {len(results)} episodes to {out_path}")
 

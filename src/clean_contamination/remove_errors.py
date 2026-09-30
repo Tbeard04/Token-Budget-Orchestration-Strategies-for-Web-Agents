@@ -67,8 +67,8 @@ def main() -> None:
                 malformed += 1
                 continue
 
-            # Episode-level "error" key = the episode never completed.
-            # An action_error inside step_log is NOT this.
+            #Episode-level "error" key = the episode never completed.
+            #An action_error inside step_log is NOT this.
             if "error" in rec:
                 error_rows.append(rec)
             else:

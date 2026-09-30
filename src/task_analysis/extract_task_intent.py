@@ -211,7 +211,7 @@ def main():
             print(f"\n  {cat} ({info['count']} tasks, "
                   f"{info['distinct_templates']} types):")
             for t in info["tasks"]:
-                print(f"    {t['task_id']:>4}  {t['intent'][:65]}")
+                print(f"{t['task_id']:>4}  {t['intent'][:65]}")
 
 if __name__ == "__main__":
     main()

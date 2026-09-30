@@ -49,11 +49,11 @@ def cost_floor_profile(df: pd.DataFrame) -> None:
     succ = valid[valid["success"] == True]
     #Print the median tokens per step for successes
     if len(succ):
-        print(f" median tokens per step (successes): {succ['tok_per_step'].median():.0f}")
+        print(f"median tokens per step (successes): {succ['tok_per_step'].median():.0f}")
         #Print the median total tokens to succeed
-        print(f" median total tokens to succeed : {succ['total_tokens'].median():.0f}")
+        print(f"median total tokens to succeed : {succ['total_tokens'].median():.0f}")
         #Print the median steps to succeed
-        print(f" median steps to succeed: {succ['steps'].median():.0f}")
+        print(f"median steps to succeed: {succ['steps'].median():.0f}")
 
     print("\n Per-step cost by budget level:")
     for budget, grp in valid.groupby("budget_level"):
@@ -70,10 +70,10 @@ def answer_failure_analysis(df: pd.DataFrame) -> None:
         print("No wrong-answer terminations.")
         return
 
-    print(f" Episodes ending in a wrong answer: {len(wrong)} "
+    print(f"Episodes ending in a wrong answer: {len(wrong)} "
           f"({len(wrong)/len(df):.0%} of all episodes)")
-    print(f" Median tokens spent before answering: {wrong['total_tokens'].median():.0f}")
-    print(f" Median steps before answering: {wrong['steps'].median():.0f}")
+    print(f"Median tokens spent before answering: {wrong['total_tokens'].median():.0f}")
+    print(f"Median steps before answering: {wrong['steps'].median():.0f}")
 
     print("\n By budget level:")
     for budget, grp in wrong.groupby("budget_level"):
@@ -137,7 +137,6 @@ def main() -> None:
     budget_utilisation(df)
 
     print(f"\nDone. {len(df)} episodes analysed.")
-
 
 if __name__ == "__main__":
     main()
