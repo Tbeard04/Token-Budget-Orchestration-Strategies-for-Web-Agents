@@ -325,7 +325,7 @@ def plot_cost_performance(df, out_dir):
     ax.set_title("Cost vs Success for each Spending Scheme (32k budget)")
     ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v / 1000:g}k"))
     _finish(fig, ax, out_dir, "cost_vs_success.png", legend=False)
- 
+
     #one labelled version per strategy: zoomed to its own token range (same y-scale), 
     #labels alternate above/below so neighbouring points stay readable
     for st in strategies_in(df):
@@ -443,12 +443,12 @@ def main() -> None:
     ap.add_argument("--reference", default=None)
     ap.add_argument("--out", default="../data/processed/diagrams/schemes_output")
     args = ap.parse_args()
- 
+
     df = load_grid(args)
     reference = args.reference or ("pay_as_you_go" if "pay_as_you_go" in schemes_in(df) else "even")
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
- 
+
     coverage(df)
     tbl = grid_table(df)
     paired_scheme_tests(df)
@@ -457,7 +457,7 @@ def main() -> None:
     scheme_ranking(tbl)
     outcome_mix_table(df)
     tier_table(df)
- 
+
     print_section("Plots")
     plot_success(df, out_dir)
     plot_tokens(df, out_dir)
@@ -467,7 +467,6 @@ def main() -> None:
     plot_outcome_mix(df, out_dir)
     tbl.to_csv(out_dir / "grid.csv")
     print(f"saved: {out_dir / 'grid.csv'}")
- 
- 
+
 if __name__ == "__main__":
     main()
