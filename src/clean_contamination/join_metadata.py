@@ -225,13 +225,12 @@ def write_rows(rows: list[dict], path: Path) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--episodes", default="../data/processed/""6_budgets_ALL_tasks_decontaminated_batch/episodes_flagged.jsonl")
+    ap.add_argument("--episodes", default="../data/processed/""router_c_training/episodes_flagged.jsonl")
     ap.add_argument("--metadata", default="../data/processed/""final_annotation_difficulty_tiers/task_metadata.jsonl")
     ap.add_argument("--risk", default="../data/processed/task_list/task_risk_levels.jsonl")
-    ap.add_argument("--out", default="../data/processed/""6_budgets_ALL_tasks_decontaminated_batch/final_episodes.jsonl")
+    ap.add_argument("--out", default="../data/processed/""router_c_training/final_episodes.jsonl")
     ap.add_argument("--split", action="store_true")
     ap.add_argument("--keep-steps", action="store_true")
-    # ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args()
 
     episodes = load_jsonl(args.episodes)
@@ -256,7 +255,7 @@ def main() -> None:
             view = out.with_name(f"{out.stem}_{str(s).lower()}{out.suffix}")
             sub = [r for r in rows if r["strategy"] == s]
             write_rows(sub, view)
-            print(f"[join] wrote {len(sub):>5} rows -> {view.name}  (view)")
+            print(f"[join] wrote {len(sub):>5} rows to {view.name}  (view)")
 
 if __name__ == "__main__":
     main()
