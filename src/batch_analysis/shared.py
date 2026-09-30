@@ -24,6 +24,19 @@ COLOURS = {
     "C": "#4CAF50" #green
 }
 
+#line style + marker per strategy, so identity never relies on colour alone
+MARKERS = {"A": "o-", "B": "s--", "C": "^-."}
+NAMES = {
+    "A": "Strategy A (single agent)",
+    "B": "Strategy B (fixed pipeline)",
+    "C": "Strategy C (RL router)"
+}
+
+#difficulty is ordered, so one hue light to dark rather than traffic-light colours (green, orange, red)
+TIER_COLOURS = {"Easy": "#86b6ef", "Medium": "#2a78d6", "Hard": "#104281"}
+TIER_ORDER = ["Easy", "Medium", "Hard"]
+
+
 # Terminations caused by running out of budget rather than by agent behaviour
 BUDGET_TERMINATIONS = {"safety_token_cap", "budget_would_exceed", "budget_exhausted_mid_step"}
 #terminations caused by the agent getting stuck -- these are Stop examples
@@ -192,9 +205,9 @@ def task_solvability(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
         else:
             # Summarise by minimum budget rather than listing every task
             by_min = solved.groupby("min_budget").size()
-            print(" Tasks first solved at each budget level:")
+            print("Tasks first solved at each budget level:")
             for budget, n in by_min.items():
-                print(f"     {budget:>6}: {n:>3} tasks")
+                print(f" {budget:>6}: {n:>3} tasks")
         print(f"\n Minimum budget needed (median of solved tasks): "
               f"{solved['min_budget'].median():.0f}")
     else:
@@ -208,12 +221,12 @@ def termination_reasons(df: pd.DataFrame) -> pd.Series:
     counts = df["termination_reason"].value_counts()
     total = len(df)
     for reason, n in counts.items():
-        print(f"   {reason:30s} {n:5d}  ({n/total:.0%})")
+        print(f" {reason:30s} {n:5d}  ({n/total:.0%})")
 
     budget_driven = df["termination_reason"].isin(BUDGET_TERMINATIONS).sum()
     stuck = df["termination_reason"].isin(STUCK_TERMINATIONS).sum()
-    print(f"\n budget-driven total: {budget_driven:5d}  ({budget_driven/total:.0%})")
-    print(f"stuck (guard-fired): {stuck:5d}  ({stuck/total:.0%})")
+    print(f"\n budget-driven total: {budget_driven:5d} ({budget_driven/total:.0%})")
+    print(f"stuck (guard-fired): {stuck:5d} ({stuck/total:.0%})")
     return counts
 
 #table for token distribution
@@ -314,14 +327,7 @@ def plot_termination_reasons(df: pd.DataFrame, out_dir: Path) -> None:
     fig, ax = plt.subplots()
     colours = []
     for reason in counts.index:
-        if reason == "success":
-            colours.append("#4CAF50")
-        elif reason in BUDGET_TERMINATIONS:
-            colours.append("#FF9800")
-        elif reason in STUCK_TERMINATIONS:
-            colours.append("#F44336")
-        else:
-            colours.append("#9E9E9E")
+        colours.append(OUTCOME_COLOURS[outcome_group(reason)])
     ax.barh(counts.index, counts.values, color=colours)
     ax.set_xlabel("Episode Count")
     ax.set_title(f"Strategy {strategy}: Termination Reasons")
@@ -351,7 +357,7 @@ def plot_tokens_by_budget(df: pd.DataFrame, out_dir: Path) -> None:
     fig.tight_layout()
     path = out_dir / f"token_boxplot_{strategy.lower()}.png"
     fig.savefig(path, dpi=150)
-    print(f" saved: {path}")
+    print(f"saved: {path}")
     plt.close()
 
 
@@ -377,17 +383,17 @@ def plot_difficulty_curve(df: pd.DataFrame, out_dir: Path) -> None:
     if "difficulty_tier" not in df.columns:
         return
     strategy = _strategy_of(df)
-    tier_colours = {"Easy": "#4CAF50", "Medium": "#FF9800", "Hard": "#F44336"}
-
+    tier_markers = {"Easy": "o-", "Medium": "s-", "Hard": "^-"}
+ 
     fig, ax = plt.subplots()
     plotted = False
-    for tier in ["Easy", "Medium", "Hard"]:
+    for tier in TIER_ORDER:
         sub = df[df["difficulty_tier"] == tier]
         if sub.empty:
             continue
         tbl = sub.groupby("budget_level")["success"].mean()
-        ax.plot(tbl.index, tbl.values, "o-", label=tier,
-                color=tier_colours[tier], linewidth=2, markersize=7)
+        ax.plot(tbl.index, tbl.values, tier_markers[tier], label=tier,
+                color=TIER_COLOURS[tier], linewidth=2, markersize=7)
         plotted = True
     if not plotted:
         plt.close()
@@ -413,7 +419,6 @@ def run_shared_analysis(df: pd.DataFrame, out_dir: Path, verbose_tasks: bool = F
     termination_reasons(df)
     token_distribution(df)
     per_step_cost(df)
-    #stop_signal_analysis(df)
     difficulty_breakdown(df)
 
     print_section("Plots")
