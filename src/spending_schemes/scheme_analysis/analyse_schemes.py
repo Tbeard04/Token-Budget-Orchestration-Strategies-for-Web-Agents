@@ -234,3 +234,70 @@ def tier_table(df: pd.DataFrame) -> None:
     with pd.option_context("display.float_format", lambda x: f"{x:.2f}"):
         print(piv.to_string())
 
+#Plots
+#helper function to save the plot
+def _finish(fig, ax, out_dir: Path, name: str, legend: bool = True) -> None:
+    if legend:
+        ax.legend()
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / name
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    print(f"saved: {path}")
+    plt.close(fig)
+
+#grouped bars: x = scheme, one bar per strategy (strategy keeps its colour everywhere)
+def _grouped_bars(df, out_dir, name, title, ylabel, value, err=None, fmt=None):
+    schemes, strats = schemes_in(df), strategies_in(df)
+    x = np.arange(len(schemes))
+    width = 0.8 / len(strats)
+    fig, ax = plt.subplots()
+    for i, st in enumerate(strats):
+        vals, lo_err, hi_err = [], [], []
+        for sc in schemes:
+            g = df[(df["strategy"] == st) & (df["scheme"] == sc)]
+            v = value(g) if len(g) else np.nan
+            vals.append(v)
+            if err:
+                lo, hi = err(g) if len(g) else (np.nan, np.nan)
+                lo_err.append(max(0, v - lo) if len(g) else 0)
+                hi_err.append(max(0, hi - v) if len(g) else 0)
+        kw = dict(yerr=[lo_err, hi_err], capsize=3, error_kw={"elinewidth": 1, "ecolor": "#52514e"}) if err else {}
+        bars = ax.bar(x + (i - (len(strats) - 1) / 2) * width, vals, width * 0.92, color=COLOURS[st], label=NAMES[st], **kw)
+        if fmt:
+            for b, v in zip(bars, vals):
+                if not np.isnan(v):
+                    ax.annotate(fmt(v), (b.get_x() + b.get_width() / 2, 0), textcoords="offset points", xytext=(0, 4), ha="center", fontsize=8, color="white")
+    ax.set_xticks(x)
+    ax.set_xticklabels([SCHEME_LABELS[s] for s in schemes])
+    ax.set_xlabel("Spending Scheme (32k budget)")
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    _finish(fig, ax, out_dir, name)
+
+
+def plot_success(df, out_dir):
+    _grouped_bars(df, out_dir, "success_by_scheme.png", "Success Rate by Spending Scheme and Strategy", "Success Rate (95% interval)",
+                  lambda g: g["success"].mean(), err=lambda g: wilson(int(g["success"].sum()), len(g)))
+
+def plot_tokens(df, out_dir):
+    _grouped_bars(df, out_dir, "rq3_tokens_by_scheme.png", "Mean Tokens Spent by Spending Scheme and Strategy",
+                  "Mean Tokens per Episode", lambda g: g["total_tokens"].mean())
+
+def plot_tokens_per_success(df, out_dir):
+    _grouped_bars(df, out_dir, "rq3_tokens_per_success.png", "Token Cost per Success by Spending Scheme and Strategy",
+                  "Tokens per Successful Episode (lower is better)", lambda g: g["total_tokens"].sum() / g["success"].sum() if g["success"].sum() else np.nan)
+
+
+#marker shape = scheme, colour = strategy (the colour a strategy has in every figure)
+SCHEME_MARKERS = {"pay_as_you_go": "o", "even": "s", "front_loaded": "^", "reactive": "D"}
+
+#helper function to get the points for a cell
+def _cell_points(df, st):
+    pts = []
+    for sc in schemes_in(df):
+        g = df[(df["strategy"] == st) & (df["scheme"] == sc)]
+        if not g.empty:
+            pts.append((sc, g["total_tokens"].mean(), g["success"].mean()))
+    return pts
+
