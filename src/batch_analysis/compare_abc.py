@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import statistics
+import itertools
 from pathlib import Path
 
 import matplotlib
@@ -129,56 +130,53 @@ def paired_tests(d: dict[str, pd.DataFrame]) -> None:
         print(pd.DataFrame(rows).set_index("budget").to_string())
         print()
 
-
-
-
-
-
-def task_level_comparison(a: pd.DataFrame, b: pd.DataFrame) -> None:
-    print_section("A vs B: Task-Level Comparison")
-
-    all_tasks = set(a["task_id"]) | set(b["task_id"])
-    a_solved = set(a.loc[a["success"] == True, "task_id"])
-    b_solved = set(b.loc[b["success"] == True, "task_id"])
-
-    both = a_solved & b_solved
-    a_only = a_solved - b_solved
-    b_only = b_solved - a_solved
-    neither = all_tasks - a_solved - b_solved
-
-    print(f"solved by both: {len(both)}")
-    print(f"solved by A only: {len(a_only)}")
-    print(f"solved by B only: {len(b_only)}")
-    print(f"solved by neither: {len(neither)}")
-
-    if b_only:
-        print(f"\nTasks B solved that A could not: ")
-        with_rev = 0
-        for tid in sorted(b_only):
-            eps = b[(b["task_id"] == tid) & (b["success"] == True)]
-            if eps.empty:
-                continue
-            ep = eps.loc[eps["budget_level"].idxmin()]
-            revs = int(ep.get("critic_revisions", 0))
-            if revs:
-                with_rev += 1
-            # What did A do on this task at its best budget
-            a_eps = a[a["task_id"] == tid]
-            a_reason = "not run"
-            if len(a_eps):
-                a_best = a_eps.loc[a_eps["budget_level"].idxmax()]
-                a_reason = a_best["termination_reason"]
-            print(f"task {tid:>4} @ {ep['budget_level']:>6}: "
-                  f"{ep['steps']} steps, {revs} revisions   "
-                  f"(A failed: {a_reason})")
-
-        print(f"\n {with_rev}/{len(b_only)} involved a Critic revision")
-        print(f" {len(b_only)-with_rev}/{len(b_only)} succeeded with the Planner alone")
-
-    if a_only:
-        shown = sorted(a_only)[:15]
-        print(f"\n Tasks A solved that B could not: {shown}"
-              f"{f' ... +{len(a_only)-15} more' if len(a_only) > 15 else ''}")
+#differences in task-level performance
+def task_level_comparison(d: dict[str, pd.DataFrame]) -> None:
+    print_section(f"{vs(d)}: Task-Level Comparison (solved at any budget)")
+ 
+    names = list(d)
+    solved = {s: set(df.loc[df["success"] == True, "task_id"]) for s, df in d.items()}
+    all_tasks = set().union(*[set(df["task_id"]) for df in d.values()])
+ 
+    #every solved / not-solved pattern across the loaded strategies
+    for pattern in itertools.product([True, False], repeat=len(names)):
+        tasks = {t for t in all_tasks
+                 if all((t in solved[s]) == want for s, want in zip(names, pattern))}
+        winners = [s for s, want in zip(names, pattern) if want]
+        label = ("neither" if len(names) == 2 else "none") if not winners else \
+            (" + ".join(winners) + (" only" if len(winners) < len(names) else " (all)"))
+        print(f"   solved by {label:14s} {len(tasks):>4}")
+ 
+    #B's wins over A: did the Critic contribute?
+    if "A" in d and "B" in d:
+        a, b = d["A"], d["B"]
+        b_only = solved["B"] - solved["A"]
+        if b_only:
+            print(f"\n Tasks B solved that A could not:")
+            with_rev = 0
+            for tid in sorted(b_only):
+                ep = b[(b["task_id"] == tid) & (b["success"] == True)]
+                ep = ep.loc[ep["budget_level"].idxmin()]
+                revs = int(ep.get("critic_revisions", 0) or 0)
+                with_rev += bool(revs)
+                a_eps = a[a["task_id"] == tid]
+                a_reason = a_eps.loc[a_eps["budget_level"].idxmax(), "termination_reason"] if len(a_eps) else "not run"
+                print(f"   task {tid:>4} @ {ep['budget_level']:>6}: {ep['steps']} steps, "
+                      f"{revs} revisions   (A failed: {a_reason})")
+            print(f"\n {with_rev}/{len(b_only)} involved a Critic revision")
+            print(f"{len(b_only) - with_rev}/{len(b_only)} succeeded with the Planner alone")
+ 
+    #did the Critic contribute to B's wins over A
+    if "A" in d and "C" in d:
+        c = d["C"]
+        lost = solved["A"] - solved["C"]
+        gained = solved["C"] - solved["A"]
+        print(f"\n Tasks A solved that C never did: {len(lost)}")
+        if lost:
+            why = c[c["task_id"].isin(lost)]["termination_reason"].map(outcome_group).value_counts()
+            print("C's episodes on those tasks ended as: " + ", ".join(f"{k} {v}" for k, v in why.items()))
+        print(f"Tasks C solved that A never did: {len(gained)}"
+              + (f"{sorted(gained)[:15]}" if gained else ""))
 
 
 def failure_mode_shift(a: pd.DataFrame, b: pd.DataFrame) -> None:
