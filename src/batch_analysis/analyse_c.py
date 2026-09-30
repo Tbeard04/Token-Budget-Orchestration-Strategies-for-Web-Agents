@@ -167,11 +167,37 @@ def plot_stop_step(df: pd.DataFrame, out_dir: Path) -> None:
     _finish(fig, ax, out_dir, "router_stop_step_c.png", legend=False)
 
 
+#plot the success by difficulty tier, all budgets pooled, with 95% intervals
+def plot_tier_all_vs_attempted(df: pd.DataFrame, out_dir: Path) -> None:
+    if "difficulty_tier" not in df.columns:
+        return
+    x = np.arange(len(TIER_ORDER))
+    width = 0.38
+    fig, ax = plt.subplots()
+    for i, (label, colour, sub_of) in enumerate([
+            ("All episodes (router stops count as failures)", COLOURS["C"], lambda g: g),
+            ("Attempted episodes only (router stops removed)", ROUTER_COLOUR, lambda g: g[~g["router_stop"]])]):
+        srs, err = [], [[], []]
+        for tier in TIER_ORDER:
+            g = sub_of(df[df["difficulty_tier"] == tier])
+            k, n = int(g["success"].sum()), len(g)
+            sr = k / n if n else 0
+            lo, hi = wilson(k, n)
+            srs.append(sr)
+            err[0].append(max(0, sr - lo) if n else 0)
+            err[1].append(max(0, hi - sr) if n else 0)
+        ax.bar(x + (i - 0.5) * width, srs, width * 0.92, color=colour, yerr=err, capsize=3, error_kw={"elinewidth": 1, "ecolor": "#52514e"}, label=label)
+    ax.set_xticks(x)
+    ax.set_xticklabels(TIER_ORDER)
+    ax.set_xlabel("Difficulty Tier")
+    ax.set_ylabel("Success Rate (all budgets)")
+    ax.set_title("Strategy C: Success by Tier, All vs Attempted Episodes")
+    _finish(fig, ax, out_dir, "tier_all_vs_attempted_c.png")
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--file", required=True)
     ap.add_argument("--tiers", default=None)
-    ap.add_argument("--all-rows", action="store_true")
     ap.add_argument("--verbose-tasks", action="store_true")
     ap.add_argument("--out", default="../data/processed/diagrams/6_budgets_ALL_tasks_decontaminted_batches/strategy_c_batch")
     args = ap.parse_args()
@@ -194,6 +220,7 @@ def main() -> None:
     plot_stop_rate_by_budget(df, out_dir)
     plot_stop_rate_by_tier(df, out_dir)
     plot_stop_step(df, out_dir)
+    plot_tier_all_vs_attempted(df, out_dir)
 
 
 if __name__ == "__main__":
