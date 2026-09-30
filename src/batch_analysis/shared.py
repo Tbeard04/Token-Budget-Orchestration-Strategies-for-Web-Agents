@@ -80,7 +80,7 @@ def print_section(title: str) -> None:
 
 
 # Loading
-def load(path: str) -> pd.DataFrame:
+def load(path: str, clean: bool = True) -> pd.DataFrame:
     rows = []
     with open(path) as f:
         for line in f:
@@ -94,6 +94,14 @@ def load(path: str) -> pd.DataFrame:
     df = pd.DataFrame(rows)
     if "error" in df.columns:
         df = df[df["error"].isna()].copy()
+    if "use_for_reward" in df.columns:
+        n = len(df)
+        if clean:
+            df = df[df["use_for_reward"] == True].copy()
+            print(f"[load] {Path(path).name}: {len(df)}/{n} episodes kept "
+                  f"(decontaminated: {n - len(df)} excluded by use_for_reward)")
+        else:
+            print(f"[load] {Path(path).name}: all {n} episodes (contaminated rows INCLUDED)")
     return df
 
 
