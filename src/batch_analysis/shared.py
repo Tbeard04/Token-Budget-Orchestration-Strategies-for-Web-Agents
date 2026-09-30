@@ -8,6 +8,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
+from scipy.stats import chi2_contingency
 
 
 #Styling
@@ -281,6 +282,35 @@ def difficulty_breakdown(df: pd.DataFrame) -> None:
         })
     tbl = pd.DataFrame(rows).set_index(["tier", "budget"])
     print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
+    failure_modes_by_tier(df)
+
+#chi-square test of independence on a table of counts; None if scipy is missing
+def chi_square(counts: pd.DataFrame) -> tuple[float, int, float] | None:
+    counts = counts.loc[counts.sum(axis=1) > 0, counts.sum(axis=0) > 0]
+    if counts.shape[0] < 2 or counts.shape[1] < 2:
+        return None
+    chi2, p, dof, _ = chi2_contingency(counts.values)
+    return chi2, dof, p
+
+
+#plot the failure modes by difficulty tier
+#how failures end, per difficulty tier, as a share of that tier's failures
+#the chi-square test asks whether the failure-mode mix changes with difficulty
+def failure_modes_by_tier(df: pd.DataFrame) -> pd.DataFrame | None:
+    if "difficulty_tier" not in df.columns:
+        return None
+    strategy = _strategy_of(df)
+    print_section(f"Strategy {strategy}: Failure Modes by Difficulty Tier (RQ2)")
+    fails = df[df["success"] == False].copy()
+    fails["outcome"] = fails["termination_reason"].map(outcome_group)
+    counts = (fails.groupby(["difficulty_tier", "outcome"], observed=True).size().unstack(fill_value=0).reindex(index=[t for t in TIER_ORDER if t in set(fails["difficulty_tier"])],
+                       columns=[g for g in OUTCOME_ORDER[1:] if g in set(fails["outcome"])], fill_value=0))
+    shares = counts.div(counts.sum(axis=1), axis=0)
+    shares.insert(0, "failures", counts.sum(axis=1))
+    shares.columns.name = None
+    shares.index.name = "tier"
+    print(shares.to_string(float_format=lambda x: f"{x:.0%}" if x <= 1 else f"{x:.0f}"))
+    return counts
 
 #Shared plots
 def _strategy_of(df: pd.DataFrame) -> str:
