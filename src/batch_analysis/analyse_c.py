@@ -198,6 +198,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--file", required=True)
     ap.add_argument("--tiers", default=None)
+    ap.add_argument("--all-rows", action="store_true")
     ap.add_argument("--verbose-tasks", action="store_true")
     ap.add_argument("--out", default="../data/processed/diagrams/6_budgets_ALL_tasks_decontaminted_batches/strategy_c_batch")
     args = ap.parse_args()
