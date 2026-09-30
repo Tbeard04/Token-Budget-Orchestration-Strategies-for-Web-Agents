@@ -100,6 +100,40 @@ def cost_ratio(d: dict[str, pd.DataFrame]) -> None:
         print(f"range: {min(ratios):.2f}x - {max(ratios):.2f}x")
 
 
+#same task, same budget, both strategies kept after decontamination ---> one pair
+#exact McNemar on the pairs where only one of the two succeeded
+def paired_tests(d: dict[str, pd.DataFrame]) -> None:
+    print_section(f"{vs(d)}: Paired Comparison (same task, same budget), exact McNemar")
+
+    key = ["task_id", "budget_level"]
+    for x, y in present_pairs(d):
+        m = d[x][key + ["success"]].merge(d[y][key + ["success"]], on=key, suffixes=(f"_{x}", f"_{y}"))
+        rows = []
+        groups = [(b, g) for b, g in m.groupby("budget_level")] + [("all", m)]
+        for budget, g in groups:
+            sx = g[f"success_{x}"].astype(bool)
+            sy = g[f"success_{y}"].astype(bool)
+            x_only = int((sx & ~sy).sum())
+            y_only = int((~sx & sy).sum())
+            rows.append({
+                "budget": budget if budget == "all" else f"{budget // 1000}k",
+                "pairs": len(g),
+                f"{x}_SR": round(sx.mean(), 3),
+                f"{y}_SR": round(sy.mean(), 3),
+                "both": int((sx & sy).sum()),
+                f"{x}_only": x_only,
+                f"{y}_only": y_only,
+                "p": round(mcnemar_exact(x_only, y_only), 4),
+            })
+        print(f" {x} vs {y}")
+        print(pd.DataFrame(rows).set_index("budget").to_string())
+        print()
+
+
+
+
+
+
 def task_level_comparison(a: pd.DataFrame, b: pd.DataFrame) -> None:
     print_section("A vs B: Task-Level Comparison")
 
