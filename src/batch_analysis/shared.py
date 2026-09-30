@@ -300,7 +300,7 @@ def failure_modes_by_tier(df: pd.DataFrame) -> pd.DataFrame | None:
     if "difficulty_tier" not in df.columns:
         return None
     strategy = _strategy_of(df)
-    print_section(f"Strategy {strategy}: Failure Modes by Difficulty Tier (RQ2)")
+    print_section(f"Strategy {strategy}: Failure Modes by Difficulty Tier")
     fails = df[df["success"] == False].copy()
     fails["outcome"] = fails["termination_reason"].map(outcome_group)
     counts = (fails.groupby(["difficulty_tier", "outcome"], observed=True).size().unstack(fill_value=0).reindex(index=[t for t in TIER_ORDER if t in set(fails["difficulty_tier"])],
@@ -430,7 +430,7 @@ def plot_difficulty_curve(df: pd.DataFrame, out_dir: Path) -> None:
         return
     ax.set_xlabel("Token Budget")
     ax.set_ylabel("Success Rate")
-    ax.set_title(f"Strategy {strategy}: Success by Difficulty Tier (RQ2)")
+    ax.set_title(f"Strategy {strategy}: Success by Difficulty Tier")
     ax.set_xticks(sorted(df["budget_level"].unique()))
     ax.set_xticklabels([f"{x//1000}k" for x in sorted(df["budget_level"].unique())])
     ax.legend(title="Tier")
