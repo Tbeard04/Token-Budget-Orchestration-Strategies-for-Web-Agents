@@ -394,8 +394,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", type=int)
     ap.add_argument("--alpha", type=float)
-    ap.add_argument("--pairs", default="../data/processed/strategy_c_models/mode_pairs.jsonl")
-    ap.add_argument("--transitions", default="../data/processed/strategy_c_models/transitions.jsonl")
+    ap.add_argument("--pairs", default="../data/processed/router_c_models/mode_pairs.jsonl")
+    ap.add_argument("--transitions", default="../data/processed/router_c_models/transitions.jsonl")
     args = ap.parse_args()
 
     #output directory
