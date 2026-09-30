@@ -412,6 +412,7 @@ def main() -> None:
     paired_tests(d)
     equivalent_budget(d)
     cost_ratio(d)
+    router_vs_fixed_policies(d)
     task_level_comparison(d)
     failure_mode_shift(d)
 
