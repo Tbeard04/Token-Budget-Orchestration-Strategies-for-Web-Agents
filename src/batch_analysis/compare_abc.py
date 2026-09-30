@@ -131,6 +131,43 @@ def paired_tests(d: dict[str, pd.DataFrame]) -> None:
         print(pd.DataFrame(rows).set_index("budget").to_string())
         print()
 
+#router vs fixed policies comparison
+def router_vs_fixed_policies(d: dict[str, pd.DataFrame]) -> None:
+    if not all(s in d for s in "ABC"):
+        return
+    print_section("Strategy C vs Fixed Policies (same task, same budget)")
+
+    key = ["task_id", "budget_level"]
+    cols = key + ["success", "total_tokens"]
+    m = (d["A"][cols].merge(d["B"][cols], on=key, suffixes=("_A", "_B")).merge(d["C"][cols].rename(columns={"success": "success_C", "total_tokens": "total_tokens_C"}), on=key))
+
+    sa, sb, sc = (m[f"success_{s}"].astype(bool) for s in "ABC")
+    ta, tb, tc = (m[f"total_tokens_{s}"] for s in "ABC")
+    #oracle: knows the outcomes.
+    #Takes the cheaper arm that succeeded, or stops at zero cost when neither did
+    oracle_success = sa | sb
+    oracle_tokens = np.where(sa & sb, np.minimum(ta, tb), np.where(sa, ta, np.where(sb, tb, 0)))
+
+    base_s, base_t = int(sa.sum()), int(ta.sum())
+    rows = []
+    for name, s, t in [("Always A", sa, ta), ("Always B", sb, tb), ("Strategy C (live)", sc, tc), ("Oracle", oracle_success, oracle_tokens)]:
+        s_n, t_n = int(s.sum()), int(np.sum(t))
+        rows.append({
+            "policy": name,
+            "successes": s_n,
+            "kept_vs_A": f"{s_n / base_s:.0%}" if base_s else "n/a",
+            "tokens": f"{t_n:,}",
+            "saved_vs_A": f"{1 - t_n / base_t:.0%}" if base_t else "n/a",
+        })
+    print(f" {len(m)} cells shared by A, B and C\n")
+    print(pd.DataFrame(rows).set_index("policy").to_string())
+
+    stopped = (d["C"]["termination_reason"] == "router_stop").sum()
+    print(f"\n C router stops: {stopped} of {len(d['C'])} episodes")
+    if "mode_chosen" in d["C"].columns:
+        modes = d["C"]["mode_chosen"].value_counts()
+        print(" C mode choices: " + ", ".join(f"{k} {v}" for k, v in modes.items()) + "   (execute = A's way, cycle = B's way)")
+
 #differences in task-level performance
 def task_level_comparison(d: dict[str, pd.DataFrame]) -> None:
     print_section(f"{vs(d)}: Task-Level Comparison (solved at any budget)")
