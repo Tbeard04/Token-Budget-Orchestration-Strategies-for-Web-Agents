@@ -5,6 +5,7 @@ import itertools
 import json
 from pathlib import Path
 from scipy.stats import wilcoxon
+from matplotlib.lines import Line2D
 
 import matplotlib
 matplotlib.use("Agg")
@@ -301,3 +302,50 @@ def _cell_points(df, st):
             pts.append((sc, g["total_tokens"].mean(), g["success"].mean()))
     return pts
 
+#plot the cost vs success for each strategy and scheme
+def plot_cost_performance(df, out_dir):
+    #get the mean tokens and success rates for each strategy and scheme
+    xs = df.groupby(["strategy", "scheme"], observed=True)["total_tokens"].mean()
+    ys = df.groupby(["strategy", "scheme"], observed=True)["success"].mean()
+    xlim = (xs.min() * 0.9, xs.max() * 1.05)
+    ylim = (0, ys.max() * 1.25)
+
+    fig, ax = plt.subplots()
+    for st in strategies_in(df):
+        for sc, xt, yv in _cell_points(df, st):
+            ax.plot(xt, yv, SCHEME_MARKERS[sc], color=COLOURS[st], markersize=10, markeredgecolor="white", markeredgewidth=1.5)
+    handles = ([Line2D([], [], marker="o", linestyle="none", color=COLOURS[st], markersize=9, label=NAMES[st])
+                for st in strategies_in(df)] +
+               [Line2D([], [], marker=SCHEME_MARKERS[sc], linestyle="none", color="#52514e", markersize=8, label=SCHEME_LABELS[sc]) for sc in schemes_in(df)])
+    ax.legend(handles=handles, ncol=2, fontsize=9, loc="lower left")
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
+    ax.set_xlabel("Mean Tokens Spent per Episode")
+    ax.set_ylabel("Success Rate")
+    ax.set_title("Cost vs Success for each Spending Scheme (32k budget)")
+    ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v / 1000:g}k"))
+    _finish(fig, ax, out_dir, "cost_vs_success.png", legend=False)
+ 
+    #one labelled version per strategy: zoomed to its own token range (same y-scale), 
+    #labels alternate above/below so neighbouring points stay readable
+    for st in strategies_in(df):
+        #get the points for the strategy
+        pts = sorted(_cell_points(df, st), key=lambda p: p[1])
+        #get the min and max tokens
+        lo_x, hi_x = min(p[1] for p in pts), max(p[1] for p in pts)
+        #get the padding
+        pad = max((hi_x - lo_x) * 0.25, 500)
+        #create the figure and plot the points
+        fig, ax = plt.subplots()
+        for i, (sc, xt, yv) in enumerate(pts):
+            ax.plot(xt, yv, SCHEME_MARKERS[sc], color=COLOURS[st], markersize=11, markeredgecolor="white", markeredgewidth=1.5)
+            ax.annotate(f"{SCHEME_LABELS[sc]}  ({yv:.0%}, {xt / 1000:.1f}k)", (xt, yv), textcoords="offset points", xytext=(0, 12 if i % 2 == 0 else -18), ha="center", fontsize=9, color="#52514e")
+        ax.set_xlim(lo_x - pad, hi_x + pad)
+        ax.set_ylim(*ylim)
+        ax.set_xlabel("Mean Tokens Spent per Episode")
+        ax.set_ylabel("Success Rate")
+        ax.set_title(f"Strategy {st}: Cost vs Success for each Spending Scheme (32k budget)")
+        #set the x-axis major formatter
+        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v / 1000:g}k"))
+        #save the figure
+        _finish(fig, ax, out_dir, f"cost_vs_success_{st.lower()}.png", legend=False)
