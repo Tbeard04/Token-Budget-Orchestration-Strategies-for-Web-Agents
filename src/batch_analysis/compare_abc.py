@@ -12,6 +12,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
 from batch_analysis.shared import (load, join_tiers, print_section, wilson, mcnemar_exact, outcome_group,COLOURS, MARKERS, NAMES, TIER_ORDER, OUTCOME_ORDER, OUTCOME_COLOURS)
 
@@ -207,117 +208,188 @@ def _finish(fig, ax, out_dir: Path, name: str, legend: bool = True) -> None:
     print(f"saved: {path}")
     plt.close(fig)
 
-
-def plot_cost_curves_overlay(a: pd.DataFrame, b: pd.DataFrame, out_dir: Path) -> None:
-    a_tbl = a.groupby("budget_level")["success"].mean()
-    b_tbl = b.groupby("budget_level")["success"].mean()
-
+#plot the cost vs success rate curve
+def plot_cost_curves_overlay(d: dict, out_dir: Path, tag: str) -> None:
     fig, ax = plt.subplots()
-    ax.plot(a_tbl.index, a_tbl.values, "o-", color=COLOURS["A"], linewidth=2, markersize=8, label="Strategy A (single agent)")
-    ax.plot(b_tbl.index, b_tbl.values, "s--", color=COLOURS["B"], linewidth=2, markersize=8, label="Strategy B (fixed pipeline)")
+    budgets = sorted(set().union(*[set(df["budget_level"]) for df in d.values()]))
+    for s, df in d.items():
+        g = df.groupby("budget_level")["success"].agg(["sum", "count"])
+        sr = g["sum"] / g["count"]
+        lo, hi = zip(*[wilson(int(k), int(n)) for k, n in zip(g["sum"], g["count"])])
+        ax.fill_between(g.index, lo, hi, color=COLOURS[s], alpha=0.12, linewidth=0)
+        ax.plot(g.index, sr, MARKERS[s], color=COLOURS[s], linewidth=2, markersize=8, label=NAMES[s])
     ax.set_xlabel("Token Budget")
-    ax.set_ylabel("Success Rate")
-    ax.set_title("Success Rate vs Token Budget: A vs B")
-    budgets = sorted(set(a_tbl.index) | set(b_tbl.index))
+    ax.set_ylabel("Success Rate (shaded: 95% interval)")
+    ax.set_title(f"Success Rate vs Token Budget: {vs(d)}")
+    ax.set_xscale("log", base=2)
     ax.set_xticks(budgets)
-    ax.set_xticklabels([f"{x//1000}k" for x in budgets])
-    ax.legend()
-    ax.grid(axis="y", alpha=0.3)
-    fig.tight_layout()
-    path = out_dir / "cost_curve_a_vs_b.png"
-    fig.savefig(path, dpi=150)
-    print(f"saved: {path}")
-    plt.close()
+    ax.set_xticklabels(budget_labels(budgets))
+    ax.minorticks_off()
+    ax.set_ylim(bottom=0)
+    _finish(fig, ax, out_dir, f"cost_curve_{tag}.png")
 
-def plot_per_step_cost_comparison(a: pd.DataFrame, b: pd.DataFrame, out_dir: Path) -> None:
-    av = a[a["steps"] > 0].copy()
-    bv = b[b["steps"] > 0].copy()
-    av["tps"] = av["total_tokens"] / av["steps"]
-    bv["tps"] = bv["total_tokens"] / bv["steps"]
+#plot the cost vs performance curve
+def plot_cost_performance(d: dict, out_dir: Path, tag: str) -> None:
+    fig, ax = plt.subplots()
+    notes = []
+    for s, df in d.items():
+        g = df.groupby("budget_level").agg(sr=("success", "mean"), tok=("total_tokens", "mean"))
+        zero = g[g["tok"] <= 0]
+        if len(zero):
+            notes.append(f"{s} at " + ", ".join(f"{b // 1000}k" for b in zero.index) + ": no tokens spent (cannot afford a single step), 0% success")
+        g = g[g["tok"] > 0]
+        ax.plot(g["tok"], g["sr"], MARKERS[s], color=COLOURS[s], linewidth=2, markersize=8, label=NAMES[s])
+        #label the budget beside each point, in muted text
+        for budget, row in g.iterrows():
+            ax.annotate(f"{budget // 1000}k", (row["tok"], row["sr"]), textcoords="offset points", xytext=(6, -12), fontsize=8, color="#52514e")
+    ax.set_xscale("log")
+    ticks = [t for t in [1000, 2000, 4000, 8000, 16000, 32000, 64000] if ax.get_xlim()[0] <= t <= ax.get_xlim()[1]]
+    ax.set_xticks(ticks)
+    ax.set_xticklabels([f"{t // 1000}k" for t in ticks])
+    ax.minorticks_off()
+    ax.set_xlabel("Mean Tokens Actually Spent per Episode (point labels: budget)")
+    ax.set_ylabel("Success Rate")
+    ax.set_title(f"Cost vs Performance: {vs(d)}")
+    ax.set_ylim(bottom=0)
+    if notes:
+        ax.text(0.99, 0.02, "\n".join(notes), transform=ax.transAxes, ha="right", va="bottom", fontsize=8, color="#52514e")
+    _finish(fig, ax, out_dir, f"cost_performance_{tag}.png")
+
+def plot_per_step_cost_comparison(d: dict, out_dir: Path, tag: str) -> None:
+    data, labels = [], []
+    for s, df in d.items():
+        v = df[df["steps"] > 0]
+        data.append((v["total_tokens"] / v["steps"]).values)
+        labels.append(f"Strategy {s}")
 
     fig, ax = plt.subplots()
-    bp = ax.boxplot([av["tps"].values, bv["tps"].values], tick_labels=["Strategy A", "Strategy B"], patch_artist=True, showfliers=False)
-    bp["boxes"][0].set_facecolor(COLOURS["A"]); bp["boxes"][0].set_alpha(0.5)
-    bp["boxes"][1].set_facecolor(COLOURS["B"]); bp["boxes"][1].set_alpha(0.5)
+    bp = ax.boxplot(data, tick_labels=labels, patch_artist=True, showfliers=False)
+    for patch, s in zip(bp["boxes"], d):
+        patch.set_facecolor(COLOURS[s])
+        patch.set_alpha(0.5)
     ax.set_ylabel("Tokens per Step")
-    ax.set_title("Per-Step Token Cost: A vs B")
-    ax.grid(axis="y", alpha=0.3)
-    fig.tight_layout()
-    path = out_dir / "per_step_cost_a_vs_b.png"
-    fig.savefig(path, dpi=150)
-    print(f"saved: {path}")
-    plt.close()
+    ax.set_title(f"Per-Step Token Cost: {vs(d)}")
+    _finish(fig, ax, out_dir, f"per_step_cost_{tag}.png", legend=False)
 
 
-def plot_token_efficiency(a: pd.DataFrame, b: pd.DataFrame, out_dir: Path) -> None:
-    rows = []
-    for label, df, colour in [("A", a, COLOURS["A"]), ("B", b, COLOURS["B"])]:
-        for budget, grp in df.groupby("budget_level"):
-            mean_tok = grp["total_tokens"].mean()
-            eff = grp["success"].mean() / mean_tok * 1000 if mean_tok else 0
-            rows.append({"strategy": label, "budget": budget, "eff": eff})
-    tbl = pd.DataFrame(rows)
-
+def plot_token_efficiency(d: dict, out_dir: Path, tag: str) -> None:
     fig, ax = plt.subplots()
-    for label, colour, marker in [("A", COLOURS["A"], "o-"), ("B", COLOURS["B"], "s--")]:
-        sub = tbl[tbl["strategy"] == label]
-        ax.plot(sub["budget"], sub["eff"], marker, color=colour, linewidth=2, markersize=8, label=f"Strategy {label}")
+    budgets = sorted(set().union(*[set(df["budget_level"]) for df in d.values()]))
+    for s, df in d.items():
+        g = df.groupby("budget_level").agg(sr=("success", "mean"), tok=("total_tokens", "mean"))
+        eff = (g["sr"] / g["tok"] * 1000).where(g["tok"] > 0, 0)
+        ax.plot(g.index, eff, MARKERS[s], color=COLOURS[s], linewidth=2, markersize=8, label=NAMES[s])
     ax.set_xlabel("Token Budget")
     ax.set_ylabel("Token Efficiency (SR per 1k tokens)")
-    ax.set_title("Token Efficiency by Budget Level")
-    budgets = sorted(tbl["budget"].unique())
+    ax.set_title(f"Token Efficiency by Budget Level: {vs(d)}")
+    ax.set_xscale("log", base=2)
     ax.set_xticks(budgets)
-    ax.set_xticklabels([f"{x//1000}k" for x in budgets])
-    ax.legend()
-    ax.grid(axis="y", alpha=0.3)
+    ax.set_xticklabels(budget_labels(budgets))
+    ax.minorticks_off()
+    _finish(fig, ax, out_dir, f"token_efficiency_{tag}.png")
+
+
+def plot_outcome_mix(d: dict, out_dir: Path, tag: str) -> None:
+    shares = {}
+    for s, df in d.items():
+        counts = df["termination_reason"].map(outcome_group).value_counts()
+        shares[s] = counts / counts.sum()
+    groups = [g for g in OUTCOME_ORDER if any(shares[s].get(g, 0) for s in d)]
+
+    fig, ax = plt.subplots(figsize=(10, 1.4 + 0.9 * len(d)))
+    y = np.arange(len(d))
+    left = np.zeros(len(d))
+    for g in groups:
+        vals = np.array([shares[s].get(g, 0) for s in d])
+        ax.barh(y, vals, left=left, color=OUTCOME_COLOURS[g], edgecolor="white", linewidth=2, label=g)
+        for yi, (v, l) in enumerate(zip(vals, left)):
+            if v >= 0.06:
+                ax.text(l + v / 2, yi, f"{v:.0%}", ha="center", va="center", fontsize=9, color="white")
+        left += vals
+    ax.set_yticks(y)
+    ax.set_yticklabels([f"Strategy {s}" for s in d])
+    ax.invert_yaxis()
+    ax.set_xlim(0, 1)
+    ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0))
+    ax.set_xlabel("Share of Episodes")
+    ax.set_title(f"How Episodes End: {vs(d)}")
+    ax.legend(ncol=len(groups), loc="upper center", bbox_to_anchor=(0.5, -0.35 if len(d) > 2 else -0.45), frameon=False, fontsize=9)
+    ax.grid(False)
     fig.tight_layout()
-    path = out_dir / "token_efficiency_a_vs_b.png"
-    fig.savefig(path, dpi=150)
+    path = out_dir / f"outcome_mix_{tag}.png"
+    fig.savefig(path, dpi=150, bbox_inches="tight")
     print(f"saved: {path}")
-    plt.close()
+    plt.close(fig)
 
-# Main
 
+#plot the success by difficulty tier, all budgets pooled, with 95% intervals
+def plot_difficulty_comparison(d: dict, out_dir: Path, tag: str) -> None:
+    if not all("difficulty_tier" in df.columns for df in d.values()):
+        return
+    fig, ax = plt.subplots()
+    width = 0.8 / len(d)
+    x = np.arange(len(TIER_ORDER))
+    for i, (s, df) in enumerate(d.items()):
+        srs, errs = [], [[], []]
+        for tier in TIER_ORDER:
+            g = df[df["difficulty_tier"] == tier]["success"]
+            k, n = int(g.sum()), len(g)
+            sr = k / n if n else 0
+            lo, hi = wilson(k, n)
+            srs.append(sr)
+            errs[0].append(max(0, sr - lo) if n else 0)
+            errs[1].append(max(0, hi - sr) if n else 0)
+        ax.bar(x + (i - (len(d) - 1) / 2) * width, srs, width * 0.92, color=COLOURS[s], yerr=errs, capsize=3, error_kw={"elinewidth": 1, "ecolor": "#52514e"}, label=NAMES[s])
+    ax.set_xticks(x)
+    ax.set_xticklabels(TIER_ORDER)
+    ax.set_xlabel("Difficulty Tier")
+    ax.set_ylabel("Success Rate (all budgets)")
+    ax.set_title(f"Success by Difficulty Tier: {vs(d)}")
+    _finish(fig, ax, out_dir, f"difficulty_{tag}.png")
+
+
+# Main function to run the comparison
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--a", required=True, help="Strategy A JSONL")
-    ap.add_argument("--b", required=True, help="Strategy B JSONL")
-    ap.add_argument("--tiers", default=None, help="task_metadata.jsonl")
+    ap.add_argument("--a", required=True)
+    ap.add_argument("--b", required=True)
+    ap.add_argument("--c", default=None)
+    ap.add_argument("--tiers", default=None)
     ap.add_argument("--out", default="../data/processed/6_budgets_ALL_tasks_decontaminted_batches/comparisons")
     args = ap.parse_args()
 
-    a = load(args.a)
-    b = load(args.b)
-    print(f"Loaded {len(a)} A episodes and {len(b)} B episodes")
+    paths = {"A": args.a, "B": args.b, "C": args.c}
+    d = {s: load(p, clean=not args.all_rows) for s, p in paths.items() if p}
+    print("Loaded " + ", ".join(f"{len(df)} {s}" for s, df in d.items()) + " episodes")
 
     if args.tiers:
-        a = join_tiers(a, args.tiers)
-        b = join_tiers(b, args.tiers)
+        d = {s: join_tiers(df, args.tiers) for s, df in d.items()}
 
-    # Restrict to tasks present in both, so the comparison is like for like
-    shared = set(a["task_id"]) & set(b["task_id"])
-    if len(shared) < max(a["task_id"].nunique(), b["task_id"].nunique()):
-        print(f"\n[compare] restricting to {len(shared)} tasks present in BOTH "
-              f"datasets (A has {a['task_id'].nunique()}, "
-              f"B has {b['task_id'].nunique()})")
-        a = a[a["task_id"].isin(shared)]
-        b = b[b["task_id"].isin(shared)]
+    #restrict to tasks present in every loaded strategy, so the comparison is like for like
+    shared = set.intersection(*[set(df["task_id"]) for df in d.values()])
+    if len(shared) < max(df["task_id"].nunique() for df in d.values()):
+        print(f"\n[compare] restricting to {len(shared)} tasks present in ALL datasets (" + ", ".join(f"{s} has {df['task_id'].nunique()}" for s, df in d.items()) + ")")
+        d = {s: df[df["task_id"].isin(shared)] for s, df in d.items()}
 
-    comparison_table(a, b)
-    equivalent_budget(a, b)
-    cost_ratio(a, b)
-    task_level_comparison(a, b)
-    failure_mode_shift(a, b)
+    comparison_table(d)
+    paired_tests(d)
+    equivalent_budget(d)
+    cost_ratio(d)
+    task_level_comparison(d)
+    failure_mode_shift(d)
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
+    tag = "_vs_".join(s.lower() for s in d)
 
     print_section("Comparison Plots")
-    plot_cost_curves_overlay(a, b, out_dir)
-    plot_per_step_cost_comparison(a, b, out_dir)
-    plot_token_efficiency(a, b, out_dir)
+    plot_cost_curves_overlay(d, out_dir, tag)
+    plot_cost_performance(d, out_dir, tag)
+    plot_per_step_cost_comparison(d, out_dir, tag)
+    plot_token_efficiency(d, out_dir, tag)
+    plot_outcome_mix(d, out_dir, tag)
+    plot_difficulty_comparison(d, out_dir, tag)
 
-    print("\nDone.")
 
 if __name__ == "__main__":
     main()
