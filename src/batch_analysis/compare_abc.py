@@ -195,7 +195,19 @@ def failure_mode_shift(d: dict[str, pd.DataFrame]) -> None:
         print()
 
 
-# Plots
+# Plots for the comparison
+#helper function to save the figures
+def _finish(fig, ax, out_dir: Path, name: str, legend: bool = True) -> None:
+    if legend:
+        ax.legend()
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path = out_dir / name
+    fig.savefig(path, dpi=150)
+    print(f"saved: {path}")
+    plt.close(fig)
+
+
 def plot_cost_curves_overlay(a: pd.DataFrame, b: pd.DataFrame, out_dir: Path) -> None:
     a_tbl = a.groupby("budget_level")["success"].mean()
     b_tbl = b.groupby("budget_level")["success"].mean()
