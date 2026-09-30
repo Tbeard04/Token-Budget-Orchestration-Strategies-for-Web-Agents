@@ -160,7 +160,7 @@ def main() -> None:
     ap.add_argument("--raw", nargs="*", default=[
         "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/strategy_a.jsonl",
         "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/strategy_b.jsonl",])
-    ap.add_argument("--out-dir", default="../data/processed/strategy_c_models")
+    ap.add_argument("--out-dir", default="../data/processed/router_c_models")
     args = ap.parse_args()
 
     #load the episodes
@@ -181,7 +181,7 @@ def main() -> None:
     write_jsonl(trans, out / "transitions.jsonl")
     #write the mode pairs to the output directory
     write_jsonl(pairs, out / "mode_pairs.jsonl")
-    
+
     #count the actions
     acts = Counter(r["action"] for r in trans)
     print(f"[build] transitions {len(trans):>6}  "
