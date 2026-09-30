@@ -195,39 +195,6 @@ def failure_mode_shift(d: dict[str, pd.DataFrame]) -> None:
         print()
 
 
-def strategy_c_ceiling(a: pd.DataFrame, b: pd.DataFrame) -> None:
-    print_section("Strategy C: Theoretical Ceiling")
-
-    a_solved = set(a.loc[a["success"] == True, "task_id"])
-    b_solved = set(b.loc[b["success"] == True, "task_id"])
-    union = a_solved | b_solved
-    all_tasks = set(a["task_id"]) | set(b["task_id"])
-
-    print(f"tasks solved by A: {len(a_solved)}")
-    print(f"tasks solved by B: {len(b_solved)}")
-    print(f"union (perfect routing): {len(union)}  "
-          f"({len(union)/len(all_tasks):.0%} of {len(all_tasks)} tasks)")
-    print(f"gain over A alone: +{len(union) - len(a_solved)} tasks")
-    print(f"gain over B alone: +{len(union) - len(b_solved)} tasks")
-
-    # Token savings from skipping rubber-stamp Critic calls
-    approval_tokens = 0
-    for _, row in b.iterrows():
-        steps = row.get("step_log")
-        if not isinstance(steps, list):
-            continue
-        for s in steps:
-            if s.get("agent_role") == "critic" and not s.get("revised"):
-                approval_tokens += (s.get("input_tokens", 0) + s.get("output_tokens", 0))
-
-    b_total = b["total_tokens"].sum()
-    if b_total:
-        print(f"\nB's total token spend: {b_total:,}")
-        print(f"spent on Critic approvals: {approval_tokens:,} "
-              f"({approval_tokens/b_total:.0%})")
-        print(f"--> recoverable by perfect Critic routing")
-
-
 # Plots
 def plot_cost_curves_overlay(a: pd.DataFrame, b: pd.DataFrame, out_dir: Path) -> None:
     a_tbl = a.groupby("budget_level")["success"].mean()
@@ -329,7 +296,6 @@ def main() -> None:
     cost_ratio(a, b)
     task_level_comparison(a, b)
     failure_mode_shift(a, b)
-    strategy_c_ceiling(a, b)
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
