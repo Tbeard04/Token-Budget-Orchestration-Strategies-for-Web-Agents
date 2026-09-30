@@ -349,3 +349,39 @@ def plot_cost_performance(df, out_dir):
         ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v / 1000:g}k"))
         #save the figure
         _finish(fig, ax, out_dir, f"cost_vs_success_{st.lower()}.png", legend=False)
+
+#plot the effects of each scheme relative to a reference scheme
+def plot_effects(eff: pd.DataFrame | None, reference: str, out_dir: Path):
+    if eff is None or eff.empty:
+        return
+    #plot the effects of each scheme relative to a reference scheme
+    #dSr = change in success rate in percentage points
+    #dTokens_% = change in tokens spent in percentage
+    #lo = lower bound of the 95% bootstrap interval
+    #hi = upper bound of the 95% bootstrap interval
+    #label = label for the x-axis
+    for col, lo, hi, label, name in [
+            ("dSR_pp", "dSR_lo", "dSR_hi", "Change in Success Rate (percentage points)", "effect_success.png"),
+            ("dTokens_%", "dTok_lo", "dTok_hi", "Change in Tokens Spent (%)", "effect_tokens.png")]:
+        fig, ax = plt.subplots(figsize=(10, 1.6 + 0.45 * len(eff)))
+        ys, labels = [], []
+        y = 0
+        for st in [s for s in STRATEGIES if s in set(eff["strategy"])]:
+            for _, r in eff[eff["strategy"] == st].iterrows():
+                ax.errorbar(r[col], y, xerr=[[max(0, r[col] - r[lo])], [max(0, r[hi] - r[col])]], fmt=MARKERS[st][0], color=COLOURS[st], markersize=8, capsize=3, elinewidth=1.5)
+                labels.append(f"{st}  {SCHEME_LABELS[r['scheme']]}")
+                ys.append(y)
+                y += 1
+            y += 0.6
+        ax.axvline(0, color="#9E9E9E", linewidth=1, linestyle=":")
+        ax.set_yticks(ys)
+        ax.set_yticklabels(labels)
+        ax.invert_yaxis()
+        ax.set_xlabel(f"{label} vs {SCHEME_LABELS[reference]}, 95% bootstrap interval")
+        ax.set_title(f"Effect of each Scheme relative to {SCHEME_LABELS[reference]}")
+        ax.grid(axis="x", alpha=0.3)
+        fig.tight_layout()
+        path = out_dir / name
+        fig.savefig(path, dpi=150)
+        print(f"saved: {path}")
+        plt.close(fig)
