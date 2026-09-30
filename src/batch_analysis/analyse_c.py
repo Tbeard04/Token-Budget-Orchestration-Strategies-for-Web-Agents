@@ -31,7 +31,7 @@ def expand_router(df: pd.DataFrame) -> pd.DataFrame:
 def per_tier_router(df: pd.DataFrame) -> None:
     if "difficulty_tier" not in df.columns:
         return
-    print_section("Router by Difficulty Tier (RQ2)")
+    print_section("Router by Difficulty Tier")
     rows = []
     for tier in TIER_ORDER:
         g = df[df["difficulty_tier"] == tier]
