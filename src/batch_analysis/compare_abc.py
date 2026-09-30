@@ -261,7 +261,7 @@ def main() -> None:
     ap.add_argument("--a", required=True, help="Strategy A JSONL")
     ap.add_argument("--b", required=True, help="Strategy B JSONL")
     ap.add_argument("--tiers", default=None, help="task_metadata.jsonl")
-    ap.add_argument("--out", default="../data/processed/comparison")
+    ap.add_argument("--out", default="../data/processed/6_budgets_ALL_tasks_decontaminted_batches/comparisons")
     args = ap.parse_args()
 
     a = load(args.a)
