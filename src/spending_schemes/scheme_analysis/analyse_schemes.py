@@ -385,3 +385,51 @@ def plot_effects(eff: pd.DataFrame | None, reference: str, out_dir: Path):
         fig.savefig(path, dpi=150)
         print(f"saved: {path}")
         plt.close(fig)
+
+#plot the outcome mix for each strategy and scheme
+def plot_outcome_mix(df, out_dir):
+    labels, shares = [], []
+    for st in strategies_in(df):
+        for sc in schemes_in(df):
+            g = df[(df["strategy"] == st) & (df["scheme"] == sc)]
+            if g.empty:
+                continue
+            #get the counts of the outcomes
+            c = g["outcome"].value_counts()
+            #add the labels and shares
+            labels.append(f"{st}  {SCHEME_LABELS[sc]}")
+            shares.append(c / c.sum())
+    #get the groups of outcomes
+    groups = [g for g in OUTCOME_ORDER if any(s.get(g, 0) for s in shares)]
+    #get the number of schemes
+    per = len(schemes_in(df))
+    #get the y positions for the bars
+    y = np.array([i + (i // per) * 0.6 for i in range(len(labels))])
+    fig, ax = plt.subplots(figsize=(10, 1.6 + 0.45 * len(labels)))
+    left = np.zeros(len(labels))
+    for g in groups:
+        #get the values for the group
+        vals = np.array([s.get(g, 0) for s in shares])
+        #plot the bars
+        ax.barh(y, vals, left=left, height=0.85, color=OUTCOME_COLOURS[g], edgecolor="white", linewidth=2, label=g)
+        #add the labels
+        for yi, v, l in zip(y, vals, left):
+            #only add the label if the value is greater than 7%
+            if v >= 0.07:
+                ax.text(l + v / 2, yi, f"{v:.0%}", ha="center", va="center", fontsize=8, color="white")
+        left += vals
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels)
+    ax.invert_yaxis()
+    ax.set_xlim(0, 1)
+    ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0))
+    ax.set_xlabel("Share of Episodes")
+    ax.set_title("How Episodes End under each Spending Scheme")
+    ax.legend(ncol=len(groups), loc="upper center", bbox_to_anchor=(0.5, -0.06 - 1.0 / len(labels)), frameon=False, fontsize=9)
+    ax.grid(False)
+    fig.tight_layout()
+    path = out_dir / "outcome_mix.png"
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    print(f"saved: {path}")
+    plt.close(fig)
+
