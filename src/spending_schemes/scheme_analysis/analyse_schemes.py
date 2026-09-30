@@ -433,3 +433,41 @@ def plot_outcome_mix(df, out_dir):
     print(f"saved: {path}")
     plt.close(fig)
 
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--schemes", default="../data/processed/schemes_output/schemes.jsonl")
+    ap.add_argument("--main-a", default=None)
+    ap.add_argument("--main-b", default=None)
+    ap.add_argument("--main-c", default=None)
+    ap.add_argument("--tasks", default="../data/processed/task_list/read_only_tasks.jsonl")
+    ap.add_argument("--reference", default=None)
+    ap.add_argument("--out", default="../data/processed/diagrams/schemes_output")
+    args = ap.parse_args()
+ 
+    df = load_grid(args)
+    reference = args.reference or ("pay_as_you_go" if "pay_as_you_go" in schemes_in(df) else "even")
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+ 
+    coverage(df)
+    tbl = grid_table(df)
+    paired_scheme_tests(df)
+    eff = scheme_effects(df, reference)
+    paired_strategy_tests(df)
+    scheme_ranking(tbl)
+    outcome_mix_table(df)
+    tier_table(df)
+ 
+    print_section("Plots")
+    plot_success(df, out_dir)
+    plot_tokens(df, out_dir)
+    plot_tokens_per_success(df, out_dir)
+    plot_cost_performance(df, out_dir)
+    plot_effects(eff, reference, out_dir)
+    plot_outcome_mix(df, out_dir)
+    tbl.to_csv(out_dir / "grid.csv")
+    print(f"saved: {out_dir / 'grid.csv'}")
+ 
+ 
+if __name__ == "__main__":
+    main()
