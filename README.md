@@ -225,7 +225,7 @@ python -m spending_schemes.run_schemes 2>&1 | tee -a ../data/processed/spending_
 ### Section 9. Resetting site states
 State-changing tasks (orders, posts, address updates) permanently modify the containers. Before each new collection, the sites were restored by re-running all of Section 6. 
 That recreates the containers from the original AMI images and reapplies the localhost setting. 
-Within a collection, repeated attempts at the same state-changing task are handled by the decontamination pipeline: remove_errors.py --> sort_batch.py --> classify_tasks.py --> flag_episodes.py
+Within a collection, repeated attempts at the same state-changing task are handled by the decontamination pipeline: remove_errors.py (after removing errors re-run batch script then retrieve results to local machine) --> sort_batch.py --> classify_tasks.py --> flag_episodes.py
 
 
 ### Section 10. Restrieving the results
