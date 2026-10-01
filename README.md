@@ -229,6 +229,24 @@ Within a collection, repeated attempts at the same state-changing task are handl
 
 
 ### Section 10. Restrieving the results
+From the local repo root (Token-Budget-Orchestration-Strategies-for-Web-Agents):
+```bash
+scp -i keys/webarena-key.pem "ubuntu@PUBLIC_IP:~/project/data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_C/strategy_c*.jsonl" "data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_C/" ||
+scp -i keys/webarena-key.pem "ubuntu@PUBLIC_IP:~/project/data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/strategy_b.jsonl" "data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/"  ||
+scp -i keys/webarena-key.pem "ubuntu@PUBLIC_IP:~/project/data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/strategy_a.jsonl" "data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/"  ||
+scp -i keys/webarena-key.pem "ubuntu@PUBLIC_IP:~/project/data/processed/schemes_output/schemes.jsonl" "data/processed/schemes_output/"
+```
+- Public IP is the AWS Instance IP. 
+- The first directory is pulling the data from the instance
+- The second directory is where the data goes locally (i.e. in the folder batch_Strategy)
+
+
+### Section 11. Restrieving the results
+
+
+
+
+
 
 
 ## Directory Tree:
