@@ -3268,11 +3268,171 @@ if __name__ == "__main__":
 
 
 
+
 =============================================================================================
 
 
 
+
 ### sort_batch.py
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+from collections import defaultdict
+from pathlib import Path
+from datetime import datetime
+
+#sort the episodes
+def sort_episodes(episodes: list[dict]) -> list[dict]:
+    #by_task is a dictionary that will be used to store the episodes by task
+    by_task: dict[int, list[dict]] = defaultdict(list)
+    #loop through the episodes and add them to the by_task dictionary
+    for ep in episodes:
+        by_task[ep.get("task_id")].append(ep)
+
+    #Chronological within each task
+    for eps in by_task.values():
+        eps.sort(key=lambda e: e.get("timestamp", ""))
+
+    #Blocks ordered by when the task first appeared
+    #sort the tasks by the timestamp of the first episode
+    ordered_tasks = sorted(by_task.keys(),key=lambda tid: by_task[tid][0].get("timestamp", ""))
+    #return the episodes in the ordered tasks
+    return [ep for tid in ordered_tasks for ep in by_task[tid]]
+
+#find the late arrivals
+def find_late_arrivals(episodes: list[dict], gap_minutes: int = 30) -> list[tuple]:
+
+    #by_task is a dictionary that will be used to store the episodes by task
+    by_task: dict[int, list[dict]] = defaultdict(list)
+    #loop through the episodes and add them to the by_task dictionary
+    for ep in episodes:
+        by_task[ep.get("task_id")].append(ep)
+
+    #late is a list that will be used to store the late arrivals
+    late = []
+    #loop through the tasks and episodes
+    for tid, eps in by_task.items():
+        #sort the episodes by the timestamp
+        eps = sorted(eps, key=lambda e: e.get("timestamp", ""))
+        #loop through the episodes and check for late arrivals
+        for prev, cur in zip(eps, eps[1:]):
+            try:
+                #convert the timestamps to datetime objects
+                t0 = datetime.fromisoformat(prev.get("timestamp", ""))
+                t1 = datetime.fromisoformat(cur.get("timestamp", ""))
+            except ValueError:
+                continue
+            #calculate the gap between the timestamps
+            gap = (t1 - t0).total_seconds() / 60
+            #check if the gap is greater than the gap minutes
+            if gap > gap_minutes:
+                #add the late arrival to the list
+                late.append((tid, cur.get("budget_level"),
+                             cur.get("timestamp"), gap))
+    #return the late arrivals sorted by the gap
+    return sorted(late, key=lambda x: -x[3])
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--file", required=True, help="collection JSONL")
+    ap.add_argument("--out", default=None, help="output path (default: sort the file in place, keeping a .bak)")
+    ap.add_argument("--gap-minutes", type=int, default=30, help="gap that marks an episode as a late arrival ""(default 30)")
+    args = ap.parse_args()
+
+    path = Path(args.file)
+
+    #Read the episodes from the file
+    episodes, malformed, error_rows = [], 0, 0
+    #loop through the file and add the episodes to the list
+    with path.open() as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                ep = json.loads(line)
+            except json.JSONDecodeError:
+                malformed += 1
+                continue
+            if "error" in ep:
+                error_rows += 1
+            episodes.append(ep)
+
+    print(f"File: {path}")
+    print(f"Episodes: {len(episodes)}")
+    print(f"Tasks: {len({e.get('task_id') for e in episodes})}")
+
+    # Report late arrivals 
+    late = find_late_arrivals(episodes, args.gap_minutes)
+    #check if there are any late arrivals
+    if late:
+        print(f"\n{'=' * 70}")
+        print(f"Late arrivals (>{args.gap_minutes} min after the task's "
+              f"previous episode)")
+        for tid, budget, ts, gap in late[:20]:
+            hrs = gap / 60
+            gap_str = f"{gap:.0f} min" if gap < 120 else f"{hrs:.1f} hrs"
+            print(f"task {tid:>4} @ {str(budget):>6}  {ts}  "
+                  f"(+{gap_str})")
+    else:
+        print(f"\nNo gaps over {args.gap_minutes} minutes - the collection appears to have run uninterrupted.")
+ 
+    # Sort
+    sorted_eps = sort_episodes(episodes)
+ 
+    #calculate the number of episodes that have changed position
+    moved = sum(1 for a, b in zip(episodes, sorted_eps)
+                if (a.get("task_id"), a.get("budget_level"))
+                != (b.get("task_id"), b.get("budget_level")))
+    #print the number of episodes that have changed position
+    print(f"\n{'=' * 70}")
+    print(f"Rows changing position: {moved}/{len(episodes)}")
+ 
+    #print the first few task blocks so the layout is visible
+    print(f"\nFirst 3 task blocks after sorting:")
+    shown_tasks, current = 0, None
+    #loop through the sorted episodes
+    for ep in sorted_eps:
+        #get the task id
+        tid = ep.get("task_id")
+        #check if the task id is different from the current task id
+        if tid != current:
+            #check if the number of shown tasks is greater than 3
+            if shown_tasks >= 3:
+                break
+            #set the current task id
+            current = tid
+            shown_tasks += 1
+            print()
+        print(f"task {tid:>4} @ {str(ep.get('budget_level')):>6}  "
+              f"{ep.get('timestamp')}")
+ 
+ 
+    # Write
+    if args.out:
+        out_path = Path(args.out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        out_path = path
+        backup = path.with_suffix(path.suffix + ".bak")
+        shutil.copy2(path, backup)
+        print(f"\nBackup written to {backup}")
+ 
+    with out_path.open("w") as f:
+        for ep in sorted_eps:
+            f.write(json.dumps(ep) + "\n")
+ 
+    print(f"Sorted {len(sorted_eps)} episodes into "
+          f"{len({e.get('task_id') for e in sorted_eps})} task blocks")
+    print(f"Written to {out_path}")
+ 
+ 
+if __name__ == "__main__":
+    main()
 
 
 
@@ -3285,6 +3445,234 @@ if __name__ == "__main__":
 ## Task Analysis Module
 
 ### extract_task_intent.py
+import argparse
+import json
+import re
+from collections import defaultdict
+
+TARGET_SITES = {"shopping", "shopping_admin", "reddit"}
+
+#Pattern Groups
+#if the task asks a question or requests information, it is read-only no matter what other nouns appear in the sentence.
+READ_ONLY_PATTERNS = [
+    r"show me", r"show all", r"show the", r"show my", r"show \d",
+    r"tell me", r"tel+l me",
+    r"what is", r"what are", r"what do", r"what'?s", r"what brands",
+    r"which \w+",
+    r"who has", r"who is",
+    r"how many", r"how much", r"how long",
+    r"provide me", r"give me",
+    r"list out", r"list the", r"list all", r"list top", r"list \d",
+    r"summari[sz]e",
+    r"compare",
+    r"count of", r"total number", r"grand total",
+    r"among the", r"among \w+",
+    r"is there any", r"are there any",
+    r"preview",
+    r"presents?\b",
+    r"get the \w+ of",
+]
+
+# navigation and browsing, reaching a page or filtering a view without changing anything.
+NAVIGATION_PATTERNS = [
+    r"\bbrowse\b",
+    r"\bsearch for\b",
+    r"\blook up\b", r"\blookup\b",
+    r"\bfind\b",
+    r"\bnavigate\b",
+    r"listings? by",
+    r"products? under",
+]
+
+#bulk actions on multiple items.
+BULK_ACTION_PATTERNS = [
+    r"like all", r"dislike all",
+    r"thumbs? (up|down)",
+    r"upvote", r"downvote",
+]
+
+
+#deletions. Word boundary prevents "remover" matching.
+DELETE_PATTERNS = [
+    r"\bdelete\b", r"\bdeleting\b",
+    r"\bremove\b", r"\bremoving\b",
+]
+
+
+#modifications to an existing value.
+MODIFY_PATTERNS = [
+    r"\breduce\b", r"\bincrease\b", r"\bdecrease\b",
+    r"\bchange\b", r"\bupdate\b", r"\bmodify\b", r"\bedit\b",
+    r"\bset the\b", r"\brename\b",
+    r"\bmark all\b", r"\bmake all\b",
+    r"\bdisable\b", r"\benable\b",
+    r"\bcancel order\b", r"\bapprove\b",
+    r"\bout of stock\b",
+]
+
+
+#creating new content or submitting forms.
+CREATE_PATTERNS = [
+    r"\bpost\b", r"\bposting\b", r"re-?post",
+    r"\bcreate\b", r"\bdraft\b", r"\bwrite\b", r"\bsubmit\b",
+    r"\breply\b", r"\bcomment\b",
+    r"\badd\b", r"\bsubscribe\b",
+    r"\brate\b", r"\brating\b",
+    r"fill the", r"fill in",
+    r"\bnotify\b",
+    r"ask for",
+]
+
+
+#purchase patterns
+PURCHASE_PATTERNS = [r"\bbuy\b", r"\bpurchase\b", r"\bcheckout\b", r"\bplace an order\b",]
+
+#helper function to check if the intent matches any of the patterns
+def _matches(intent: str, patterns: list[str]) -> bool:
+    return any(re.search(p, intent) for p in patterns)
+
+#categorise the intent into one of the categories
+def categorise(intent: str) -> str:
+    i = (intent or "").lower()
+
+    #check if the intent matches any of the read only patterns
+    if _matches(i, READ_ONLY_PATTERNS):
+        return "information_retrieval"
+
+    #check if the intent matches any of the navigation patterns
+    if _matches(i, NAVIGATION_PATTERNS):
+        return "navigation"
+
+    #check if the intent matches any of the bulk action patterns
+    if _matches(i, BULK_ACTION_PATTERNS):
+        return "bulk_action"
+
+    #check if the intent matches any of the delete patterns
+    if _matches(i, DELETE_PATTERNS):
+        return "delete"
+
+    #check if the intent matches any of the modify patterns
+    if _matches(i, MODIFY_PATTERNS):
+        return "modify_value"
+
+    #check if the intent matches any of the purchase patterns
+    if _matches(i, PURCHASE_PATTERNS):
+        return "purchase"
+
+    #check if the intent matches any of the create patterns
+    if _matches(i, CREATE_PATTERNS):
+        return "create"
+
+    #return other if the intent does not match any of the patterns
+    return "other"
+
+#main function
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--input", default="test_raw.json")
+    ap.add_argument("--output", default="task_intents.json")
+    args = ap.parse_args()
+
+    data = json.load(open(args.input))
+
+    #load the tasks
+    tasks = [t for t in data
+             if len(t.get("sites", [])) == 1
+             and t["sites"][0] in TARGET_SITES]
+
+    output = {
+        "summary": {
+            "total_tasks": len(tasks),
+            "by_site": {},
+            "by_category": {},
+        },
+        "task_categories": {},
+        "sites": {},
+    }
+
+    #by_site is a dictionary that will be used to store the tasks by site
+    by_site = defaultdict(list)
+    #by_cat is a dictionary that will be used to store the number of tasks by category
+    by_cat = defaultdict(int)
+
+    #loop through the tasks
+    for t in tasks:
+        site = t["sites"][0]
+        #categorise the intent
+        cat = categorise(t["intent"])
+        # JSON object keys are strings; readers must int() them back
+        output["task_categories"][str(t["task_id"])] = cat
+        by_site[site].append({
+            "task_id": t["task_id"],
+            "intent": t["intent"],
+            "category": cat,
+            "template": t.get("intent_template", ""),
+            "eval_type": t.get("eval", {}).get("eval_types", []),
+            "requires_state_change": t.get("require_reset", False),
+        })
+        by_cat[cat] += 1
+    #for each site in the sites
+    for site in ["shopping", "shopping_admin", "reddit"]:
+        site_tasks = by_site[site]
+        output["summary"]["by_site"][site] = len(site_tasks)
+        #create a dictionary to store the tasks by category
+        site_by_cat = defaultdict(list)
+        for t in site_tasks:
+            site_by_cat[t["category"]].append(t)
+        #create a dictionary to store the categories
+        output["sites"][site] = {"total": len(site_tasks), "categories": {}}
+        for cat in sorted(site_by_cat):
+            cat_tasks = site_by_cat[cat]
+            seen, unique = set(), []
+            for t in cat_tasks:
+                tmpl = t["template"] or t["intent"]
+                if tmpl not in seen:
+                    seen.add(tmpl)
+                    unique.append(t)
+
+            output["sites"][site]["categories"][cat] = {
+                "count": len(cat_tasks),
+                "distinct_templates": len(unique),
+                "tasks": [{
+                    "task_id": t["task_id"],
+                    "intent": t["intent"],
+                    "eval_type": t["eval_type"],
+                } for t in unique],
+            }
+
+    output["summary"]["by_category"] = dict(sorted(by_cat.items(), key=lambda x: -x[1]))
+
+    with open(args.output, "w") as f:
+        json.dump(output, f, indent=2)
+
+    #Report
+    print(f"Extracted {len(tasks)} tasks to {args.output}")
+    print(f"per-task category mapping: {len(output['task_categories'])} tasks")
+    n_repr = sum(len(c["tasks"])
+                 for s in output["sites"].values()
+                 for c in s["categories"].values())
+    print(f"template representatives listed under 'sites': {n_repr}\n")
+    assert len(output["task_categories"]) == len(tasks), \
+        "task_categories must cover every task"
+    print("By site:")
+    for site, n in output["summary"]["by_site"].items():
+        print(f"  {site:16s} {n:>3} tasks")
+    print("\nBy category:")
+    for cat, n in output["summary"]["by_category"].items():
+        print(f"  {cat:25s} {n:>3} tasks")
+
+    print("\n\nTask types the agent must handle:")
+    print("=" * 70)
+    for site in ["shopping", "shopping_admin", "reddit"]:
+        print(f"\n--- {site.upper()} ---")
+        for cat, info in output["sites"][site]["categories"].items():
+            print(f"\n  {cat} ({info['count']} tasks, "
+                  f"{info['distinct_templates']} types):")
+            for t in info["tasks"]:
+                print(f"{t['task_id']:>4}  {t['intent'][:65]}")
+
+if __name__ == "__main__":
+    main()
 
 
 
@@ -3295,9 +3683,420 @@ if __name__ == "__main__":
 
 
 ### task_category_plots.py
+from __future__ import annotations
 
+import argparse
+import json
+from pathlib import Path
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+#update the plot parameters
+plt.rcParams.update({
+    "figure.figsize": (10, 6),
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "font.size": 11
+})
+
+#category colours
+CATEGORY_COLOURS = {
+    "information_retrieval":"#2196F3",
+    "navigation":"#03A9F4",
+    "other":"#90A4AE",
+    "create":"#4CAF50",
+    "modify_value":"#FF9800",
+    "bulk_action":"#FF5722",
+    "delete":"#F44336",
+    "purchase":"#9C27B0"
+}
+
+#Which categories can be contaminated by an earlier successful run
+RISK_GROUPS = {"read-only (no contamination possible)": ["information_retrieval", "navigation", "other",], "state-change (contamination possible)": ["create", "modify_value", "bulk_action", "delete", "purchase",]}
+
+#function to plot the overall categories
+def plot_overall(by_category: dict, out_dir: Path) -> None:
+    #items = the categories sorted by the number of tasks
+    items = sorted(by_category.items(), key=lambda x: x[1])
+    #labels = the categories replaced with spaces
+    labels = [k.replace("_", " ") for k, _ in items]
+    #values = the number of tasks for each category
+    values = [v for _, v in items]
+    colours = [CATEGORY_COLOURS.get(k, "#90A4AE") for k, _ in items]
+    #total = the total number of tasks
+    total = sum(values)
+
+    fig, ax = plt.subplots()
+    bars = ax.barh(labels, values, color=colours, alpha=0.85)
+
+    #Count and percentage at the end of each bar
+    for bar, v in zip(bars, values):
+        ax.text(bar.get_width() + total * 0.008, bar.get_y() + bar.get_height() / 2,
+                f"{v}  ({v/total:.0%})", va="center", fontsize=10)
+
+    ax.set_xlabel("Number of Tasks")
+    ax.set_title(f"WebArena Task Categories ({total} single-site tasks)")
+    ax.set_xlim(0, max(values) * 1.18)
+    ax.grid(axis="x", alpha=0.3)
+    fig.tight_layout()
+
+    path = out_dir / "task_categories_overall.png"
+    fig.savefig(path, dpi=150)
+    print(f"saved: {path}")
+    plt.close()
+
+#function to plot the categories by site
+def plot_by_site(sites: dict, out_dir: Path) -> None:
+    site_names = ["shopping", "shopping_admin", "reddit"]
+    #all_cats = the categories sorted by the number of tasks
+    all_cats = sorted({c for s in site_names for c in sites.get(s, {}).get("categories", {})},
+        key=lambda c: -sum(sites.get(s, {}).get("categories", {}).get(c, {}).get("count", 0) for s in site_names))
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    #n_cats = the number of categories
+    n_cats = len(all_cats)
+    width = 0.8 / n_cats
+    #x = the range of the site names
+    x = range(len(site_names))
+
+    #for each category in the categories
+    for i, cat in enumerate(all_cats):
+        #get the counts for the category
+        counts = [sites.get(s, {}).get("categories", {}).get(cat, {}).get("count", 0) for s in site_names]
+        #calculate the offset
+        offset = (i - n_cats / 2 + 0.5) * width
+        #plot the bar
+        ax.bar([p + offset for p in x], counts, width, label=cat.replace("_", " "), color=CATEGORY_COLOURS.get(cat, "#90A4AE"), alpha=0.85)
+
+    ax.set_ylabel("Number of Tasks")
+    ax.set_title("Task Categories by Site")
+    ax.set_xticks(list(x))
+    ax.set_xticklabels([s.replace("_", " ") for s in site_names])
+    ax.legend(bbox_to_anchor=(1.01, 1), loc="upper left", fontsize=9)
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+
+    path = out_dir / "task_categories_by_site.png"
+    fig.savefig(path, dpi=150)
+    print(f"saved: {path}")
+    plt.close()
+
+#function to plot the risk groups
+def plot_risk_groups(by_category: dict, out_dir: Path) -> None:
+    fig, ax = plt.subplots(figsize=(9, 5))
+    #bottom = the bottom of the plot
+    bottom = 0
+    #total = the total number of tasks
+    total = sum(by_category.values())
+    #for each group in the risk groups
+    for group_label, cats in RISK_GROUPS.items():
+        group_total = 0
+        #for each category in the categories
+        for cat in cats:
+            #get the count for the category
+            n = by_category.get(cat, 0)
+            if not n:
+                continue
+            #Label inside the segment if there is room
+            if n >= total * 0.04:
+                ax.text(0, bottom + n / 2, f"{cat.replace('_',' ')}  {n}", ha="center", va="center", fontsize=9, color="white", fontweight="bold")
+            bottom += n
+            group_total += n
+
+        #Bracket and label the group to the right
+        group_start = bottom - group_total
+        ax.plot([0.30, 0.34, 0.34, 0.30], [group_start + 2, group_start + 2, bottom - 2, bottom - 2], color="#455A64", linewidth=1.2)
+        ax.text(0.37, group_start + group_total / 2,
+                f"{group_label}\n{group_total} tasks "
+                f"({group_total/total:.0%})",
+                va="center", fontsize=10)
+
+    ax.set_ylabel("Number of Tasks")
+    ax.set_title("Task Categories by Contamination Risk")
+    ax.set_xlim(-0.4, 1.3)
+    ax.set_xticks([])
+    ax.spines["bottom"].set_visible(False)
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+
+    path = out_dir / "task_categories_risk.png"
+    fig.savefig(path, dpi=150)
+    print(f"saved: {path}")
+    plt.close()
+
+#function to main
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--input", required=True)
+    ap.add_argument("--out", default="../../data/processed/diagrams/task_list")
+    args = ap.parse_args()
+
+    with open(args.input) as f:
+        data = json.load(f)
+
+    by_category = data["summary"]["by_category"]
+    sites = data.get("sites", {})
+
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"\n{'=' * 60}\nPlots\n{'=' * 60}")
+    plot_overall(by_category, out_dir)
+    plot_by_site(sites, out_dir)
+    plot_risk_groups(by_category, out_dir)
+
+    print(f"\nDone.")
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+=============================================================================================
 
 
 
 
 ## Task Annotation Module
+
+### agreement.py
+from __future__ import annotations
+
+#function to create the confusion matrix
+def confusion(a: list, b: list, labels: list) -> list[list[int]]:
+    #Rows = rater a (human), cols = rater b (model)
+    idx = {v: i for i, v in enumerate(labels)}
+
+    #m = the confusion matrix
+    m = [[0] * len(labels) for _ in labels]
+    #for each x and y in the zip of a and b
+    for x, y in zip(a, b):
+        #increment the value at the index of x and y in the confusion matrix
+        m[idx[x]][idx[y]] += 1
+    #return the confusion matrix
+    return m
+
+#function to calculate the Cohen's kappa
+def kappa(a: list, b: list, labels: list, weights: str = "none") -> float | None:
+    #Cohen's kappa. weights: 'none', 'linear' or 'quadratic'
+    n = len(a)
+    if n == 0:
+        return None
+    k = len(labels)
+    m = confusion(a, b, labels)
+    rows = [sum(r) for r in m]
+    cols = [sum(m[i][j] for i in range(k)) for j in range(k)]
+
+    #function to calculate the weight
+    def w(i: int, j: int) -> float:
+        #if the weights are none
+        if weights == "none":
+            return 0.0 if i == j else 1.0
+        #calculate the difference
+        d = abs(i - j) / (k - 1) if k > 1 else 0.0
+        return d if weights == "linear" else d * d
+
+    #calculate the observed agreement
+    obs = sum(w(i, j) * m[i][j] for i in range(k) for j in range(k)) / n
+    #calculate the expected agreement
+    exp = sum(w(i, j) * rows[i] * cols[j] / n for i in range(k) for j in range(k)) / n
+
+    #if the expected agreement is 0
+    if exp == 0:
+        #if the observed agreement is 0
+        # constant and identical --> perfect; constant and different --> undefined
+        return 1.0 if obs == 0 else None
+    return 1.0 - obs / exp
+
+#function to calculate the Landis & Koch interpretation bands
+def landis_koch(k: float | None) -> str:
+    #if the kappa is none
+    if k is None:
+        return "undefined"
+    if k < 0.00:
+        return "poor (worse than chance)"
+    if k < 0.20:
+        return "slight"
+    if k < 0.40:
+        return "fair"
+    if k < 0.60:
+        return "moderate"
+    if k < 0.80:
+        return "substantial"
+    return "almost perfect"
+
+#function to calculate the Pearson correlation coefficient
+def pearson(xs: list, ys: list) -> float | None:
+    #calculate the number of items
+    n = len(xs)
+    #if the number of items is less than 3
+    if n < 3:
+        return None
+    #calculate the mean of the xs and ys
+    mx, my = sum(xs) / n, sum(ys) / n
+    #calculate the sum of the products of the differences
+    sxy = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    #calculate the sum of the squares of the differences
+    sxx = sum((x - mx) ** 2 for x in xs)
+    #calculate the sum of the squares of the differences
+    syy = sum((y - my) ** 2 for y in ys)
+    #if the sum of the squares of the differences is 0
+    if sxx == 0 or syy == 0:
+        return None
+    #calculate the Pearson correlation coefficient
+    return sxy / (sxx * syy) ** 0.5
+
+#function to calculate the average ranks
+def _ranks(vs: list) -> list[float]:
+    #calculate the order of the vs
+    order = sorted(range(len(vs)), key=lambda i: vs[i])
+    #create a list to store the ranks
+    ranks = [0.0] * len(vs)
+    #initialize the index
+    i = 0
+    #while the index is less than the length of the order
+    while i < len(order):
+        #initialize the index j
+        j = i
+        #while the index j + 1 is less than the length of the order and the value at the index j + 1 is equal to the value at the index i
+        while j + 1 < len(order) and vs[order[j + 1]] == vs[order[i]]:
+            j += 1
+        #calculate the average rank
+        avg = (i + j) / 2 + 1
+        #for each index in the range i to j + 1
+        for t in range(i, j + 1):
+            #set the rank at the index t to the average rank
+            ranks[order[t]] = avg
+        #increment the index i
+        i = j + 1
+    return ranks
+
+#function to calculate the Spearman correlation coefficient
+def spearman(xs: list, ys: list) -> float | None:
+    #if the number of items is less than 3
+    if len(xs) < 3:
+        return None
+    #calculate the Pearson correlation coefficient
+    return pearson(_ranks(xs), _ranks(ys)) if len(xs) >= 3 else None
+
+
+
+=============================================================================================
+
+
+
+
+### annotate_tasks.py
+
+
+
+
+=============================================================================================
+
+
+
+
+### annotator.py
+
+
+
+
+=============================================================================================
+
+
+
+
+### cohen_kappa.py
+
+
+
+
+=============================================================================================
+
+
+
+
+### gold_set.py
+
+
+
+
+=============================================================================================
+
+
+
+
+### label_tool.py
+
+
+
+
+=============================================================================================
+
+
+
+
+### observed_cost.py
+
+
+
+
+=============================================================================================
+
+
+
+
+### postprocess.py
+
+
+
+
+=============================================================================================
+
+
+
+
+### reporting.py
+
+
+
+
+=============================================================================================
+
+
+
+
+### rubric.py
+
+
+
+
+=============================================================================================
+
+
+
+
+### tasks.py
+
+
+
+
+=============================================================================================
+
+
+
+
+### tier_diagrams.py
+
+
+
+
+=============================================================================================
+
+
+
+
+## Router C Module
