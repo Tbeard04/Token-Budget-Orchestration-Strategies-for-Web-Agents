@@ -271,7 +271,7 @@ Refer to `Dir_info.md` in each module folder:
 4. `router_c/Dir_info.md`
 5. `spending_schemes/Dir_info.md`
 6. `task_analysis/Dir_info.md`
-7.`task_annotation/Dir_info.md`
+7. `task_annotation/Dir_info.md`
 
 ## Directory Tree:
 ```text
