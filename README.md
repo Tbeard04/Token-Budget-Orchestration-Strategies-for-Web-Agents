@@ -77,6 +77,45 @@ chmod 400 webarena-key.pem
 ssh -i webarena-key.pem ubuntu@PUBLIC_IPv4
 ```
 
+### Section 2. Python Environment
+Miniconda comes with the AMI, so only the project environment needs creating. On the same terminal once connected to the instance:
+```bash
+conda create -n tokenbudget python=3.11 -y
+conda activate tokenbudget
+
+pip install pydantic-ai browsergym browsergym-webarena openai python-dotenv
+pip install scikit-learn 
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+playwright install --with-deps chromium
+```
+
+During the Playwright install, Ubuntu shows a "Daemons using outdated libraries" dialog. Accept the pre-ticked defaults (Tab → OK → Enter). 
+Leave networkd-dispatcher & unattened-upgrades.service unticked.
+
+
+### Section 3. Install WebArena’s top level modules
+browsergym-webarena installs WebArena's task configs but not its top-level modules (browser_env, llms), which BrowserGym's evaluators import. 
+Without this step every task fails with ModuleNotFoundError: No module named 'browser_env', then llms.providers.
+
+Inside conda tokenbudget:
+```bash
+pip install --force-reinstall --no-deps "webarena @ git+https://github.com/web-arena-x/webarena.git"
+
+cd ~
+git clone https://github.com/web-arena-x/webarena.git webarena-src
+cd webarena-src && pip install -e . --no-deps && cd ~
+```
+
+--no-deps is deliberate. WebArena's own requirements pin 2023 versions (including openai < 1.0) that would break BrowserGym and Pydantic AI.
+
+The remaining import-time failure (import openai.error) is handled in code: src/wa_env.py installs a stub openai.error module before importing browsergym.webarena. 
+No manual step is needed. 
+
+
+
+
+
+
 ## Directory Tree:
 ```text
 token-budget-orchestration-strategies-for-web-agents/
