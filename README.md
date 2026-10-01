@@ -241,13 +241,29 @@ scp -i keys/webarena-key.pem "ubuntu@PUBLIC_IP:~/project/data/processed/schemes_
 - The second directory is where the data goes locally (i.e. in the folder batch_Strategy)
 
 
-### Section 11. Restrieving the results
+### Section 11. Running the analysis/decontamination/training locally (no AWS required)
 
+#### 11.1 Cloning the repo
+```bash
+git clone https://github.com/Tbeard04/Token-Budget-Orchestration-Strategies-for-Web-Agents.git
+cd Token-Budget-Orchestration-Strategies-for-Web-Agents
+```
+The data has already been collected/modified by the various modules, but if you decide to run a seperate collection, add an output argument to run_batch.py. (Refer to `Dir_info.md` for more information)
 
+#### 11.2 Create an isolated Python environment (Windows Only)
+```bash
+py -3.10 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+The VScode or windows terminal should now start with a (.venv).
 
+#### 11.3 Install the local requirements
+```bash
+python -m pip install -r requirements_local.txt
+```
 
-
-
+#### 11.4 Run the scripts
+Refer to `Dir_info.md` in each module.
 
 ## Directory Tree:
 ```text
