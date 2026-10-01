@@ -1,23 +1,3 @@
-## Requirements
-```text
-pydantic-ai>=1.0
-browsergym
-browsergym-webarena
-playwright
-openai
-sentence-transformers
-pandas
-numpy
-scipy
-statsmodels
-scikit-learn
-xgboost 
-matplotlib
-seaborn
-d3rlpy
-python-dotenv
-```
-
 ## Reproducing the Experiment & Environment
 This guide rebuilds the AWS environment used to collect every episode in this project (Strategies A, B and C, and the spending-scheme runs). 
 It is reconstructed from the project journal. Stock WebArena will not run this project unmodified. 
