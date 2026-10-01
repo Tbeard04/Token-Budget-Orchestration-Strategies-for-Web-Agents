@@ -208,6 +208,7 @@ python run_batch.py --strategy C --n 999 --out ../data/raw/6_budgets_ALL_tasks_b
 ```
 
 To detatch from the tmux session do: Ctrl-B then D
+
 To re-attach to the tmux session:
 ```bash
 tmux attach -t collect
