@@ -145,6 +145,11 @@ clean(x) for x in (required_contents if isinstance(required_contents, str)
     else " |OR| ".join(map(str, required_contents.get("must_include", [required_contents.get("exact_match", "")])))).split(" |OR| ")
 ```
 
+#### 5.3 BrowserGym action timeout
+In `site-packages/browsergym/core/action/functions.py`: `timeout=500)` to `timeout=10000)`
+
+#### 5.4 Clear stale bytecode
+The script deletes __pycache__ directories under the patched packages so the edits take effect.
 
 
 ## Directory Tree:
