@@ -16,37 +16,26 @@ matplotlib
 seaborn
 d3rlpy
 python-dotenv
-
-AWS EC2 WebArena Instance (Can connect to my version of the instance if requested)
 ```
 
-## How to connect to AWS Instance
+## Reproducing the Experiment & Environment
 ```text
-AWS Instance is configured to accept all incoming IP addresses, so all you'll need is both the pem key (located in the keys directory) & the .env file.
-1. Open a terminal inside the root folder (token-budget-orchestration-strategies-for-web-agents)
-2. 
+This guide rebuilds the AWS environment used to collect every episode in this project (Strategies A, B and C, and the spending-scheme runs). It is reconstructed from the project journal. Stock WebArena will not run this project unmodified. The WebArena codebase (2023) is incompatible with the current OpenAI SDK and API, and BrowserGym's default action timeout is too short for this deployment. The required fixes are listed in Section 0 and applied in Sections 3–5.
 ```
 
-## How to run tasks once on AWS Instance terminal
-```text
-Please be careful not to run small batches as this is costly on both the instance & the API usage.
+### Section 0. Summary of deviations from stock WebArena/BrowserGym
+---
 
-On the AWS Instance terminal, run this command to test strategy A on a single task: 
-    [INSERT COMMAND HERE] 
-    [TASK INTENT]
-
-..., run this command to test strategy B on a single task:
-    [INSERT COMMAND HERE] 
-    [TASK INTENT]
-
-..., run this command to test strategy C on a single task:
-    [INSERT COMMAND HERE] 
-    [TASK INTENT]
-
-You can replace the task ID on the command line with these tasks: xx, xx, xx, xxx, xxx to examine the different end states each strategy finishes with.
-[INSERT 5 DIFFERENT TASK WITH RANGING DIFFICULTY]
-```
-
+| # | Component | Stock behaviour | This project | Why | Effect on results |
+|---|---|---|---|---|---|
+| 1 | WebArena LLM evaluators (`llm_fuzzy_match`, `llm_ua_match`) | Call `gpt-4-1106-preview` | Call `gpt-4o-mini` | `gpt-4-1106-preview` retired from the OpenAI API (HTTP 404 `model_not_found`) | Fuzzy-match grading differs from the original paper. Applied identically to A, B and C, so the internal comparison holds; absolute success rates are not directly comparable with published WebArena results. Evaluator tokens are **not** counted against the agent's budget. |
+| 2 | WebArena `llms` module | Imports `openai.error` (openai < 1.0) | `openai.error` stubbed at import time in `src/wa_env.py` | Module removed in openai ≥ 1.0; Pydantic AI requires openai 1.x, so downgrading was not an option | None — WebArena's own LLM harness is not used (Pydantic AI replaces it). |
+| 3 | WebArena `generate_from_openai_chat_completion` | `openai.ChatCompletion.create` | openai ≥ 1.0 client, same signature, patched at runtime in `src/wa_env.py` | `APIRemovedInV1` | Compatibility only. |
+| 4 | `HTMLContentEvaluator` in `~/webarena/evaluation_harness/evaluators.py` | Assumes `required_contents` is a string | Accepts string or dict | Crashed on task 574 during calibration (`AttributeError: 'dict' object has no attribute 'split'`) | See Section 5.2. |
+| 5 | BrowserGym action timeout (`browsergym/core/action/functions.py`) | 500 ms per action | 5000 ms (17 occurrences) | JS-heavy Magento pages (e.g. `/customer/address`) never became actionable within 500 ms, making a whole task category unrunnable | Removes environment-caused failures; a documented deviation from BrowserGym defaults. |
+| 6 | Magento base URL | Set to the server hostname | `http://localhost:7770` / `:7780` | Agent runs on the instance; no Elastic IP, so the public IP changes on every restart. A public-IP base URL caused every page load to redirect out and back in | None on scoring; removes redirects and URL mismatches in evaluation. |
+| 7 | Sites hosted | 5 sites (+ map, wiki) | 3: Shopping (7770), Shopping Admin/CMS (7780), Forum/Postmill (9999) | Scope of study; single-site tasks only | 475 tasks in scope. |
+---
 
 ## Directory Tree:
 ```text
