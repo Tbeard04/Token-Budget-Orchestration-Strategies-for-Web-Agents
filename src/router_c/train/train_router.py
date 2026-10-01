@@ -419,6 +419,5 @@ def main() -> None:
     #run the router
     run(pairs, trans, cfg, out_dir)
 
-
 if __name__ == "__main__":
     main()
