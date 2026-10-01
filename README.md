@@ -112,8 +112,19 @@ The remaining import-time failure (import openai.error) is handled in code: src/
 No manual step is needed. 
 
 
+### Section 4. Environment variables
+The code readsits settings from src/.env. That file is git-ignored because it holds the API key, so create it from the template in the same folder (replace your key at "your-openai-key"):
+```bash
+cd ~/project/src
+cp .env.example .env
+sed -i 's/sk-REPLACE_ME/your-openai-key/' .env
+```
+Localhost and the ports are correct as they are, because the agent runs on the same instance that hosts the sites.
 
+Once you've completed the step above, src/wa_env.py loads this file and maps all the WebArena (WA_*) names onto the bare names WebArena expects (Shopping, Shopping_Admin & Reddit)
+before importing browsergym.webarena. The import order matters, because importing first leaves the environment unconfigured.
 
+5. Apply the WebArena / BrowserGym patches
 
 
 ## Directory Tree:
