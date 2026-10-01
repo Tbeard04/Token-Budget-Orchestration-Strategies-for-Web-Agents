@@ -129,10 +129,23 @@ before importing browsergym.webarena. The import order matters, because importin
 conda activate tokenbudget
 bash ~/project/setup/patch_webarena.sh
 ```
+
 #### 5.1 Evaluator Model
 `gpt-4-1106-preview` to `gpt-4o-mini` in the installed WebArena package:
 - `site-packages/webarena/llms/providers/openai_utils.py`
 - `site-packages/webarena/evaluation_harness/helper_functions.py`
+
+#### 5.2 HTMLContentEvaluator dict support
+Applied to `~/webarena/evaluation_harness/evaluators.py` during calibration:
+```python
+#before
+clean(x) for x in required_contents.split(" |OR| ")
+#after
+clean(x) for x in (required_contents if isinstance(required_contents, str)
+    else " |OR| ".join(map(str, required_contents.get("must_include", [required_contents.get("exact_match", "")])))).split(" |OR| ")
+```
+
+
 
 ## Directory Tree:
 ```text
