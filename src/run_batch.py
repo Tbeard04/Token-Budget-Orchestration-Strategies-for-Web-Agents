@@ -65,7 +65,7 @@ def main() -> None:
     ap.add_argument("--strategy", choices=["A", "B", "C"], required=True)
     ap.add_argument("--router-dir", default=None)
     ap.add_argument("--stop-answer", choices=["none", "na"], default=None)
-    ap.add_argument("--n", type=int, default=67, help="tasks per site")
+    ap.add_argument("--n", type=int, default=67)
     ap.add_argument("--sites", nargs="+", default=W.SITES)
     ap.add_argument("--budgets", nargs="+", type=int, default=W.BUDGETS)
     ap.add_argument("--seed", type=int, default=42)

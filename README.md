@@ -233,7 +233,7 @@ From the local repo root (Token-Budget-Orchestration-Strategies-for-Web-Agents):
 ```bash
 scp -i keys/webarena-key.pem "ubuntu@PUBLIC_IP:~/project/data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_C/strategy_c*.jsonl" "data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_C/" ||
 scp -i keys/webarena-key.pem "ubuntu@PUBLIC_IP:~/project/data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/strategy_b.jsonl" "data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/"  ||
-scp -i keys/webarena-key.pem "ubuntu@PUBLIC_IP:~/project/data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/strategy_a.jsonl" "data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/"  ||
+scp -i keys/webarena-key.pem "ubuntu@PUBLIC_IP:~/project/data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/strategy_a.jsonl" "data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/"  ||
 scp -i keys/webarena-key.pem "ubuntu@PUBLIC_IP:~/project/data/processed/schemes_output/schemes.jsonl" "data/processed/schemes_output/"
 ```
 - Public IP is the AWS Instance IP. 
