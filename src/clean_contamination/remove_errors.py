@@ -80,9 +80,11 @@ def main() -> None:
     print(f"Episodes: {total}")
     print(f"valid: {len(keep_lines)}")
     print(f"errors: {len(error_rows)}")
+    #print the number of malformed lines skipped
     if malformed:
         print(f"malformed lines skipped: {malformed}")
 
+    #check if there are no error rows
     if not error_rows:
         print("\nNo environment errors found. Nothing to do.")
         return
@@ -129,12 +131,14 @@ def main() -> None:
     #Back up, then write
     backup = Path(args.backup) if args.backup else path.with_suffix(
         path.suffix + ".bak")
+    #copy the path to the backup
     shutil.copy2(path, backup)
     print(f"\nBackup written to {backup}")
 
     with path.open("w") as f:
         f.writelines(keep_lines)
 
+    #print the number of error episodes removed and the number of episodes now containing
     print(f"Removed {len(error_rows)} error episodes")
     print(f"{path} now contains {len(keep_lines)} episodes")
 

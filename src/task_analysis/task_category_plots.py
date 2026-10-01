@@ -13,7 +13,7 @@ plt.rcParams.update({
     "figure.figsize": (10, 6),
     "axes.spines.top": False,
     "axes.spines.right": False,
-    "font.size": 11,
+    "font.size": 11
 })
 
 #category colours
@@ -25,14 +25,11 @@ CATEGORY_COLOURS = {
     "modify_value":"#FF9800",
     "bulk_action":"#FF5722",
     "delete":"#F44336",
-    "purchase":"#9C27B0",
+    "purchase":"#9C27B0"
 }
 
 #Which categories can be contaminated by an earlier successful run
-RISK_GROUPS = {
-    "read-only (no contamination possible)": ["information_retrieval", "navigation", "other",],
-    "state-change (contamination possible)": ["create", "modify_value", "bulk_action", "delete", "purchase",],
-}
+RISK_GROUPS = {"read-only (no contamination possible)": ["information_retrieval", "navigation", "other",], "state-change (contamination possible)": ["create", "modify_value", "bulk_action", "delete", "purchase",]}
 
 #function to plot the overall categories
 def plot_overall(by_category: dict, out_dir: Path) -> None:
@@ -69,8 +66,7 @@ def plot_overall(by_category: dict, out_dir: Path) -> None:
 def plot_by_site(sites: dict, out_dir: Path) -> None:
     site_names = ["shopping", "shopping_admin", "reddit"]
     #all_cats = the categories sorted by the number of tasks
-    all_cats = sorted(
-        {c for s in site_names for c in sites.get(s, {}).get("categories", {})},
+    all_cats = sorted({c for s in site_names for c in sites.get(s, {}).get("categories", {})},
         key=lambda c: -sum(sites.get(s, {}).get("categories", {}).get(c, {}).get("count", 0) for s in site_names))
 
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -126,9 +122,7 @@ def plot_risk_groups(by_category: dict, out_dir: Path) -> None:
 
         #Bracket and label the group to the right
         group_start = bottom - group_total
-        ax.plot([0.30, 0.34, 0.34, 0.30],
-                [group_start + 2, group_start + 2, bottom - 2, bottom - 2],
-                color="#455A64", linewidth=1.2)
+        ax.plot([0.30, 0.34, 0.34, 0.30], [group_start + 2, group_start + 2, bottom - 2, bottom - 2], color="#455A64", linewidth=1.2)
         ax.text(0.37, group_start + group_total / 2,
                 f"{group_label}\n{group_total} tasks "
                 f"({group_total/total:.0%})",

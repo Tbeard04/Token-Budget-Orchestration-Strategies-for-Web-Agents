@@ -89,8 +89,7 @@ def load_impossible(configs_path: str | None) -> set:
     #get the task ids
     ids = {c["task_id"] for c in data if "task_id" in c and is_impossible(c)}
     #print the number of impossible tasks
-    print(f"[classify] impossible tasks (evaluator expects N/A): {len(ids)}"
-          + (f"  {sorted(ids)[:15]}" if ids else ""))
+    print(f"[classify] impossible tasks (evaluator expects N/A): {len(ids)}" + (f"{sorted(ids)[:15]}" if ids else ""))
     return ids
 
 #Function to classify the intent
@@ -236,7 +235,7 @@ def main() -> None:
         by_site[r["site"]][r["risk_level"]] += 1
     for site in sorted(by_site):
         c = by_site[site]
-        print(f"   {site:16s} read_only:{c['read_only']:>4}  "
+        print(f"{site:16s} read_only:{c['read_only']:>4}  "
               f"idempotent:{c['idempotent']:>4}  "
               f"non_idempotent:{c['non_idempotent']:>4}")
 
@@ -270,16 +269,11 @@ def self_test() -> None:
     #list of cases to test
     cases = [
         # (intent, category, expected)
-        ("What is the top-1 best-selling brand in Quarter 1 2022",
-         "information_retrieval", "read_only"),
-        ("I want to browse the products in the Headphones category",
-         "navigation", "read_only"),
-        ("List products from PS4 accessories category by ascending price",
-         "other", "read_only"),
-        ("Get the order number of my most recent complete order",
-         "other", "read_only"),
-        ("Show me products under $25 in \"women shoes\" category",
-         "navigation", "read_only"),
+        ("What is the top-1 best-selling brand in Quarter 1 2022", "information_retrieval", "read_only"),
+        ("I want to browse the products in the Headphones category", "navigation", "read_only"),
+        ("List products from PS4 accessories category by ascending price", "other", "read_only"),
+        ("Get the order number of my most recent complete order", "other", "read_only"),
+        ("Show me products under $25 in \"women shoes\" category", "navigation", "read_only"),
 
         ("Add this product to my wishlist", "create", "idempotent"),
         ("Add Tide PODS to my wish list", "create", "idempotent"),
@@ -288,33 +282,25 @@ def self_test() -> None:
         ("Thumbs down the top 1 post ever in gadgets.", "bulk_action", "idempotent"),
 
         # the two keyword changes
-        ("Like all submissions created by Hrekires in subreddit news",
-         "bulk_action", "non_idempotent"),
-        ("DisLike all submissions created by RickyDontLoseThat in subreddit massachusetts",
-         "bulk_action", "non_idempotent"),
-        ("Rate my recent purchase of Jiffy Corn Muffin Cornbread Mix with 4 stars",
-         "purchase", "non_idempotent"),
+        ("Like all submissions created by Hrekires in subreddit news", "bulk_action", "non_idempotent"),
+        ("DisLike all submissions created by RickyDontLoseThat in subreddit massachusetts", "bulk_action", "non_idempotent"),
+        ("Rate my recent purchase of Jiffy Corn Muffin Cornbread Mix with 4 stars", "purchase", "non_idempotent"),
 
         ("Reduce the price of this product by 15%", "modify_value", "non_idempotent"),
         ("Delete all pending negative reviews for Circe fleece", "delete", "non_idempotent"),
         ("Change my reddit bio to \"I am a robot\"", "modify_value", "non_idempotent"),
-        ("Post my question, \"is car necessary in NYC\", in a subreddit",
-         "create", "non_idempotent"),
-        ("Add a simple product named Lelelumon Yoga Mat with 42 in stock",
-         "create", "non_idempotent"),
-        ("Buy the highest rated product from the meat substitute category",
-         "purchase", "non_idempotent"),
+        ("Post my question, \"is car necessary in NYC\", in a subreddit", "create", "non_idempotent"),
+        ("Add a simple product named Lelelumon Yoga Mat with 42 in stock", "create", "non_idempotent"),
+        ("Buy the highest rated product from the meat substitute category", "purchase", "non_idempotent"),
         ("Cancel order 302", "modify_value", "non_idempotent"),
         ("Disable Ryker Tee Crew Neck from the site", "modify_value", "non_idempotent"),
 
         # write verb hiding in the "other" fallback bucket
-        ("I previously ordered some a mattress foundation around Feb or March "
-         "2023 and later cancelled. Can you reorder it for me?",
+        ("I previously ordered some a mattress foundation around Feb or March 2023 and later cancelled. Can you reorder it for me?",
          "other", "non_idempotent"),
 
         # word boundary: "remover" must not match "remove"
-        ("Show me products under $46.99 in makeup remover",
-         "information_retrieval", "read_only"),
+        ("Show me products under $46.99 in makeup remover", "information_retrieval", "read_only"),
 
         # noun/verb homographs: these only READ, despite containing post /
         # purchase / downvote (tasks 66, 117, 27)
@@ -339,12 +325,9 @@ def self_test() -> None:
 
 
         #homograph at the CATEGORY level
-        ("Get the purchase date and order id of the most recent pending order",
-         "purchase", "read_only"),
-        ("Draft a new marketing price rule for fall discount that offers $10 "
-         "discount on checkout for all customers", "purchase", "non_idempotent"),
-        ("Add the product with the lowest per unit price from my open tabs "
-         "to the shopping cart", "create", "idempotent"),
+        ("Get the purchase date and order id of the most recent pending order", "purchase", "read_only"),
+        ("Draft a new marketing price rule for fall discount that offers $10 discount on checkout for all customers", "purchase", "non_idempotent"),
+        ("Add the product with the lowest per unit price from my open tabs to the shopping cart", "create", "idempotent"),
     ]
 #AI-Generated
 
@@ -386,16 +369,20 @@ def self_test() -> None:
     ]
 
     #test the detector cases
+    #loop through each detector case
     for cfg, expected in detector_cases:
+        #if the is_impossible function returns a different value than the expected value
         if is_impossible(cfg) != expected:
+            #append the failure to the failures list
             failures.append((str(cfg)[:55], "is_impossible", expected, is_impossible(cfg), ""))
+    #add the imp_cases and detector_cases to the cases list
     cases = cases + imp_cases + detector_cases
 
 
     #print the failures
     for f in failures:
         #print the failure
-        print(f"FAIL  {f[0]!r} [{f[1]}]\n      expected {f[2]}, got {f[3]}  ({f[4]})")
+        print(f"FAIL  {f[0]!r} [{f[1]}]\n expected {f[2]}, got {f[3]}  ({f[4]})")
 
     #print the number of cases passed
     print(f"\nself-test: {len(cases) - len(failures)}/{len(cases)} passed")

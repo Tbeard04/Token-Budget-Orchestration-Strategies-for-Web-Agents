@@ -2071,18 +2071,1214 @@ def run_shared_analysis(df: pd.DataFrame, out_dir: Path, verbose_tasks: bool = F
 ## Clean Contamination Module
 
 ### classify_tasks.py
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from collections import Counter, defaultdict
+from pathlib import Path
+
+#List of risk levels
+RISK_LEVELS = ["read_only", "idempotent", "non_idempotent"]
+
+#List of categories that write to the site
+STATE_CHANGE_CATEGORIES = {"create", "modify_value", "delete", "bulk_action", "purchase","crud_operation", "form_fill",}
+
+#List of keywords that indicate an idempotent write
+IDEMPOTENT_KEYWORDS = ["add to wishlist", "wish list", "wishlist", "add to cart", "add to my cart", "to the shopping cart", "to my cart", "subscribe", "upvote", "up vote", "downvote", "down vote", "thumbs up", "thumbs down",]
+
+#Intent phrases indicating the task only reads
+ACTUALLY_READ_ONLY_KEYWORDS = ["show me", "tell me", "what is", "what are", "what do", "among the", "find the", "list out", "list the", "how many", "how much", "is there any", "compare", "count of", "which customer", "who has", "get the", "give me", "provide me", "summarize", "summarise",]
+
+#List of patterns that indicate a strong write
+STRONG_WRITE_PATTERNS = [
+    r"\breorder\b", r"\bre-order\b",
+    r"\bbuy\b", r"\bcheckout\b", r"\bplace an order\b",
+    r"\bdelete\b", r"\bremove\b", r"\bcancel\b",
+    r"\bchange\b", r"\bupdate\b", r"\bmodify\b", r"\bedit\b", r"\brename\b",
+    r"\bset the\b", r"\bincrease\b", r"\breduce\b", r"\bdecrease\b",
+    r"\bdisable\b", r"\benable\b", r"\bapprove\b",
+    r"\bcreate\b", r"\bdraft\b", r"\bsubmit\b", r"\breply\b",
+    r"\bsubscribe\b", r"\bnotify\b",
+]
+
+#List of patterns that indicate an ambiguous write
+AMBIGUOUS_WRITE_PATTERNS = [
+    r"\bpost\b", r"\bposting\b", r"\bpurchase\b",
+    r"\bupvote\b", r"\bdownvote\b", r"\brate\b",
+]
+
+
+#Function to strip quoted spans before looking for instruction words
+def _strip_quoted(intent: str) -> str:
+    return re.sub(r"'[^']*'", " ", re.sub(r'"[^"]*"', " ", intent))
+
+
+#Function to check if the intent contains any of the phrases
+def _has_phrase(intent: str, phrases: list[str]) -> bool:
+    return any(p in intent for p in phrases)
+
+
+#Function to check if the intent contains any of the patterns
+def _has_pattern(intent: str, patterns: list[str]) -> bool:
+    return any(re.search(p, intent) for p in patterns)
+
+#function to check if the task is impossible
+def is_impossible(cfg: dict) -> bool:
+    #get the reference answers
+    ans = (cfg.get("eval") or {}).get("reference_answers")
+    #if the reference answers is not a dictionary
+    if not isinstance(ans, dict):
+        #return False
+        return False
+    values: list[str] = []
+    for key in ("exact_match", "must_include", "fuzzy_match"):
+        v = ans.get(key)
+        if isinstance(v, str):
+            values.append(v)
+        elif isinstance(v, list):
+            values.extend(str(x) for x in v)
+    #every accepted answer must be N/A - a task that merely allows N/A among other answers is a real task
+    return bool(values) and all(v.strip().upper() == "N/A" for v in values)
+
+#function to load the impossible tasks
+def load_impossible(configs_path: str | None) -> set:
+    #if the configs path is not provided
+    if not configs_path:
+        return set()
+    #get the path
+    p = Path(configs_path)
+    #if the path does not exist
+    if not p.exists():
+        #print the error
+        print(f"[classify] configs not found, impossible-task check skipped: {p}")
+        return set()
+    #load the data
+    data = json.loads(p.read_text())
+    #get the task ids
+    ids = {c["task_id"] for c in data if "task_id" in c and is_impossible(c)}
+    #print the number of impossible tasks
+    print(f"[classify] impossible tasks (evaluator expects N/A): {len(ids)}" + (f"{sorted(ids)[:15]}" if ids else ""))
+    return ids
+
+#Function to classify the intent
+def classify(intent: str, category: str, impossible: bool = False) -> tuple[str, str]:
+    #convert the intent to lowercase
+    i = (intent or "").lower()
+    #strip the quoted spans
+    bare = _strip_quoted(i)
+    #if the category is a state change category
+
+
+    #an impossible task writes nothing whatever its category says
+    if impossible:
+        return "read_only", f"{category}: impossible task, evaluator expects N/A"
+
+    #if the category is a state change category
+    if category in STATE_CHANGE_CATEGORIES:
+        if (not _has_pattern(bare, STRONG_WRITE_PATTERNS)
+                and _has_phrase(bare, ACTUALLY_READ_ONLY_KEYWORDS)
+                and not _has_phrase(i, IDEMPOTENT_KEYWORDS)):
+            return "read_only", f"{category}: read-only phrasing, no write verb"
+        #if the intent contains any of the idempotent keywords
+        if _has_phrase(i, IDEMPOTENT_KEYWORDS):
+            return "idempotent", f"{category}: idempotent action"
+        return "non_idempotent", f"{category}: writes to the site"
+
+    #if the intent contains any of the strong write patterns
+    if _has_pattern(bare, STRONG_WRITE_PATTERNS):
+        #if the intent contains any of the idempotent keywords
+        if _has_phrase(i, IDEMPOTENT_KEYWORDS):
+            return "idempotent", f"{category}: write verb, idempotent action"
+        return "non_idempotent", f"{category}: write verb in the intent"
+
+    #if the intent contains any of the actually read only keywords
+    if _has_phrase(bare, ACTUALLY_READ_ONLY_KEYWORDS):
+        return "read_only", f"{category}: read-only phrasing"
+
+    #if the intent contains any of the ambiguous write patterns
+    if _has_pattern(bare, AMBIGUOUS_WRITE_PATTERNS):
+        if _has_phrase(i, IDEMPOTENT_KEYWORDS):
+            return "idempotent", f"{category}: write verb, idempotent action"
+        return "non_idempotent", f"{category}: write verb in the intent"
+
+    return "read_only", f"{category}: no write detected"
+
+
+#main
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--annotations", default="../data/processed/final_annotation_difficulty_tiers/task_metadata.jsonl")
+    ap.add_argument("--output", default="../data/processed/task_list/task_risk_levels.jsonl")
+    ap.add_argument("--configs", default="task_analysis/test.raw.json")
+    ap.add_argument("--show", type=int, default=5)
+    ap.add_argument("--self-test", action="store_true")
+    args = ap.parse_args()
+
+    #self test
+    if args.self_test:
+        self_test()
+        return
+
+    #load the tasks
+    src = Path(args.annotations)
+    if not src.exists():
+        raise SystemExit(f"not found: {src}\n"
+                         f"Run annotate_tasks.py --apply-gold first.")
+
+    #load the impossible tasks
+    impossible = load_impossible(args.configs)
+
+    #list to store the tasks
+    rows = []
+    #list to store the tasks with unknown category
+    unknown = []
+    #iterate over the tasks
+    for line in src.read_text().splitlines():
+        #strip the line
+        line = line.strip()
+        #if the line is empty
+        if not line:
+            continue
+        #load the task
+        t = json.loads(line)
+        #get the category
+        cat = t.get("task_category", "unknown")
+        #if the category is unknown
+        if cat == "unknown":
+            #add the task id to the list
+            unknown.append(t["task_id"])
+        level, reason = classify(t.get("intent", ""), cat, t["task_id"] in impossible)
+        #add the task to the list
+        rows.append({
+            "task_id": t["task_id"],
+            "site": t.get("site", ""),
+            "intent": t.get("intent", ""),
+            "task_category": cat,
+            "risk_level": level,
+            "risk_reason": reason,
+        })
+
+    #save the tasks
+    out = Path(args.output)
+    #create the parent directory if it doesn't exist
+    out.parent.mkdir(parents=True, exist_ok=True)
+    #write the tasks to the file
+    with out.open("w") as f:
+        #write each task to the file
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+    #count the number of tasks
+    n = len(rows)
+    #print the number of tasks read and written
+    print(f"[classify] read  {n} tasks from {src}")
+    print(f"[classify] wrote {n} tasks to  {out}")
+
+    #if there are tasks with unknown category
+    if unknown:
+        #print the number of tasks with unknown category
+        print(f"\n[classify] WARNING: {len(unknown)} tasks have "
+              f"task_category 'unknown' and were classified on intent text "
+              f"alone: {unknown[:15]}")
+
+    #count the number of tasks by risk level
+    counts = Counter(r["risk_level"] for r in rows)
+    #print the risk levels
+    print(f"\n{'=' * 70}\nRisk levels\n{'=' * 70}")
+    for lv in RISK_LEVELS:
+        c = counts.get(lv, 0)
+        print(f"   {lv:16s} {c:>4}  ({c / n:>4.0%})  {'#' * int(40 * c / n)}")
+
+    #count the number of clean tasks
+    clean = counts.get("read_only", 0)
+    #print the number of clean tasks
+    print(f"\n {clean} tasks ({clean / n:.0%}) cannot be contaminated at all.")
+    #print the number of tasks that need the first-success rule
+    print(f"{n - clean} tasks ({1 - clean / n:.0%}) need the first-success rule.")
+
+    #print the risk level by site
+    print(f"\n{'=' * 70}\nRisk level by site\n{'=' * 70}")
+    by_site = defaultdict(Counter)
+    for r in rows:
+        by_site[r["site"]][r["risk_level"]] += 1
+    for site in sorted(by_site):
+        c = by_site[site]
+        print(f"{site:16s} read_only:{c['read_only']:>4}  "
+              f"idempotent:{c['idempotent']:>4}  "
+              f"non_idempotent:{c['non_idempotent']:>4}")
+
+    #print the category -> risk level
+    print(f"\n{'=' * 70}\nCategory -> risk level\n{'=' * 70}")
+    #by_cat is a dictionary of the risk levels by category
+    by_cat = defaultdict(Counter)
+    #for each row in the rows list
+    for r in rows:
+        by_cat[r["task_category"]][r["risk_level"]] += 1
+    #for each category in the by_cat dictionary
+    for cat in sorted(by_cat, key=lambda c: -sum(by_cat[c].values())):
+        c = by_cat[cat]
+        parts = "  ".join(f"{lv}:{c[lv]}" for lv in RISK_LEVELS if c[lv])
+        print(f" {cat:22s} {parts}")
+
+    #print the examples
+    if args.show:
+        print(f"\n{'=' * 70}\nExamples\n{'=' * 70}")
+        for lv in RISK_LEVELS:
+            sub = [r for r in rows if r["risk_level"] == lv][:args.show]
+            print(f"\n   --- {lv} ---")
+            for r in sub:
+                print(f" {r['task_id']:>4}  {r['intent'][:62]}")
+                print(f" {r['risk_reason']}")
+
+
+#AI-Generated
+# Self-test
+def self_test() -> None:
+    #list of cases to test
+    cases = [
+        # (intent, category, expected)
+        ("What is the top-1 best-selling brand in Quarter 1 2022", "information_retrieval", "read_only"),
+        ("I want to browse the products in the Headphones category", "navigation", "read_only"),
+        ("List products from PS4 accessories category by ascending price", "other", "read_only"),
+        ("Get the order number of my most recent complete order", "other", "read_only"),
+        ("Show me products under $25 in \"women shoes\" category", "navigation", "read_only"),
+
+        ("Add this product to my wishlist", "create", "idempotent"),
+        ("Add Tide PODS to my wish list", "create", "idempotent"),
+        ("Subscribe to the newsletter of OneStopMarket", "create", "idempotent"),
+        ("Upvote the newest post in books subreddit", "bulk_action", "idempotent"),
+        ("Thumbs down the top 1 post ever in gadgets.", "bulk_action", "idempotent"),
+
+        # the two keyword changes
+        ("Like all submissions created by Hrekires in subreddit news", "bulk_action", "non_idempotent"),
+        ("DisLike all submissions created by RickyDontLoseThat in subreddit massachusetts", "bulk_action", "non_idempotent"),
+        ("Rate my recent purchase of Jiffy Corn Muffin Cornbread Mix with 4 stars", "purchase", "non_idempotent"),
+
+        ("Reduce the price of this product by 15%", "modify_value", "non_idempotent"),
+        ("Delete all pending negative reviews for Circe fleece", "delete", "non_idempotent"),
+        ("Change my reddit bio to \"I am a robot\"", "modify_value", "non_idempotent"),
+        ("Post my question, \"is car necessary in NYC\", in a subreddit", "create", "non_idempotent"),
+        ("Add a simple product named Lelelumon Yoga Mat with 42 in stock", "create", "non_idempotent"),
+        ("Buy the highest rated product from the meat substitute category", "purchase", "non_idempotent"),
+        ("Cancel order 302", "modify_value", "non_idempotent"),
+        ("Disable Ryker Tee Crew Neck from the site", "modify_value", "non_idempotent"),
+
+        # write verb hiding in the "other" fallback bucket
+        ("I previously ordered some a mattress foundation around Feb or March 2023 and later cancelled. Can you reorder it for me?",
+         "other", "non_idempotent"),
+
+        # word boundary: "remover" must not match "remove"
+        ("Show me products under $46.99 in makeup remover", "information_retrieval", "read_only"),
+
+        # noun/verb homographs: these only READ, despite containing post /
+        # purchase / downvote (tasks 66, 117, 27)
+        ("Among the top 10 post in \"books\" forum, show me the post URLs "
+         "that recommand a single book", "information_retrieval", "read_only"),
+        ("What is the date when I made my first purchase on this site?",
+         "information_retrieval", "read_only"),
+        ("Tell me the count of comments that have received more downvotes "
+         "than upvotes for the user who made the latest post on the space "
+         "forum.", "information_retrieval", "read_only"),
+
+        # the mirror case: quoted text is payload, so 'what is' inside the
+        # question being posted must NOT make this read-only (tasks 600, 609)
+        ("Post my question, \"what is the recommended console to buy these "
+         "days\", in a subreddit where I'm likely to get an answer",
+         "information_retrieval", "non_idempotent"),
+        ("Find a subreddit focused on topics related to ML, DL, NLP, and post "
+         "my question, \"what is the SOTA web navigation agent repo\" there",
+         "information_retrieval", "non_idempotent"),
+        ("Find a subreddit focused on topics related to NYC, and post my "
+         "question, \"is car necessary\" there", "navigation", "non_idempotent"),
+
+
+        #homograph at the CATEGORY level
+        ("Get the purchase date and order id of the most recent pending order", "purchase", "read_only"),
+        ("Draft a new marketing price rule for fall discount that offers $10 discount on checkout for all customers", "purchase", "non_idempotent"),
+        ("Add the product with the lowest per unit price from my open tabs to the shopping cart", "create", "idempotent"),
+    ]
+#AI-Generated
+
+    #list of failures
+    failures = []
+    #test each case
+    for intent, cat, expected in cases:
+        got, reason = classify(intent, cat)
+        if got != expected:
+            failures.append((intent[:55], cat, expected, got, reason))
+
+
+     #impossible tasks override the category (tasks 794-798)
+    imp_cases = [
+        ("Change the delivery address for my most recent order to 4000 Forbes "
+         "Ave, Pittsburgh, PA.", "modify_value", "read_only"),
+        ("Delete all pending negative reviews for Circe fleece", "delete",
+         "non_idempotent"),   # not impossible: still non_idempotent
+    ]
+    for intent, cat, expected in imp_cases[:1]:
+        got, _ = classify(intent, cat, impossible=True)
+        if got != expected:
+            failures.append((intent[:55], cat, expected, got, "impossible=True"))
+    for intent, cat, expected in imp_cases[1:]:
+        got, _ = classify(intent, cat, impossible=False)
+        if got != expected:
+            failures.append((intent[:55], cat, expected, got, "impossible=False"))
+ 
+    #the N/A detector itself
+    detector_cases = [
+        ({"eval": {"reference_answers": {"fuzzy_match": "N/A"}}}, True),
+        ({"eval": {"reference_answers": {"fuzzy_match": ["N/A"]}}}, True),
+        ({"eval": {"reference_answers": {"exact_match": "n/a"}}}, True),
+        ({"eval": {"reference_answers": {"must_include": ["N/A", "Sprite"]}}}, False),
+        ({"eval": {"reference_answers": {"exact_match": "Sprite"}}}, False),
+        ({"eval": {"reference_answers": None}}, False),
+        ({"eval": {"eval_types": ["program_html"], "program_html": [{}]}}, False),
+        ({}, False),
+    ]
+
+    #test the detector cases
+    #loop through each detector case
+    for cfg, expected in detector_cases:
+        #if the is_impossible function returns a different value than the expected value
+        if is_impossible(cfg) != expected:
+            #append the failure to the failures list
+            failures.append((str(cfg)[:55], "is_impossible", expected, is_impossible(cfg), ""))
+    #add the imp_cases and detector_cases to the cases list
+    cases = cases + imp_cases + detector_cases
+
+
+    #print the failures
+    for f in failures:
+        #print the failure
+        print(f"FAIL  {f[0]!r} [{f[1]}]\n expected {f[2]}, got {f[3]}  ({f[4]})")
+
+    #print the number of cases passed
+    print(f"\nself-test: {len(cases) - len(failures)}/{len(cases)} passed")
+    #if there are failures
+    if failures:
+        raise SystemExit(1)
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+=============================================================================================
+
+
+
 
 
 ### flag_episodes.py
+from __future__ import annotations
+
+import argparse
+import json
+from collections import Counter, defaultdict
+from pathlib import Path
+
+#risk levels
+RISK_LEVELS = ["read_only", "idempotent", "non_idempotent"]
+
+
+#function to load the jsonl file
+def load_jsonl(path: str | Path) -> list[dict]:
+    #rows is a list of dictionaries
+    rows = []
+    #for each line in the file
+    for line in Path(path).read_text().splitlines():
+        #strip the line
+        line = line.strip()
+        if line:
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass
+    return rows
+
+#function to check if the task is demanding
+def demanding(meta: dict | None) -> bool:
+    #if the metadata is not provided
+    if not meta:
+        #no metadata then fall back to flagging everything
+        return True
+    #if the interaction is 2 or the difficulty tier is Medium or Hard
+    return (meta.get("interaction") == 2
+            or meta.get("difficulty_tier") in ("Medium", "Hard"))
+
+#function to flag the episodes
+def flag(episodes: list[dict], risk: dict, lenient_idempotent: bool = False, pre_steps: int = 1, metadata: dict | None = None) -> list[dict]:
+
+    #if the metadata is not provided, use an empty dictionary
+    metadata = metadata or {}
+    #iterate over the episodes and remember the input order
+    for i, e in enumerate(episodes):
+        e["_i"] = i
+
+    #create a dictionary to store the episodes by strategy and task_id
+    groups: dict[tuple, list[dict]] = defaultdict(list)
+    #iterate over the episodes and add them to the dictionary
+    for e in episodes:
+        groups[(e.get("strategy"), e.get("task_id"))].append(e)
+
+    #iterate over the episodes and add them to the dictionary
+    for (strategy, task_id), eps in groups.items():
+        #get the level
+        level = risk.get(task_id, "unknown")
+        #sort the episodes by timestamp and input order
+        eps.sort(key=lambda e: (e.get("timestamp", ""), e["_i"]))
+        #get the first success
+
+        first = next((i for i, e in enumerate(eps) if e.get("success")), None)
+        fs_budget = eps[first].get("budget_level") if first is not None else None
+        fs_steps = eps[first].get("steps") if first is not None else None
+
+        #if the level is idempotent or non_idempotent and the first success is not None and the steps are less than or equal to the pre_steps and the metadata is demanding
+        suspect = (level in ("idempotent", "non_idempotent")
+                   and first is not None
+                   and (fs_steps or 0) <= pre_steps
+                   and demanding(metadata.get(task_id)))
+
+        exempt = level == "read_only" or (lenient_idempotent and level == "idempotent")
+        #iterate over the episodes and add the metadata
+        for idx, e in enumerate(eps):
+            after = first is not None and idx > first
+            excluded = after and not exempt
+
+            #add the metadata to the episode
+            e["risk_level"] = level
+            e["episode_index"] = idx
+            e["first_success_index"] = first
+            e["first_success_budget"] = fs_budget
+            e["suspect_pre_existing"] = suspect
+            e["use_for_routing"] = True
+            e["use_for_reward"] = not excluded
+            if not excluded:
+                e["contamination_reason"] = None
+            elif level == "idempotent":
+                e["contamination_reason"] = "idempotent_post_first_success"
+            else:
+                e["contamination_reason"] = "post_first_success"
+
+    for e in episodes:
+        del e["_i"]
+    return episodes
+
+
+# reporting
+#print the title
+def _rule(title: str) -> None:
+    print(f"\n{'=' * 72}\n{title}\n{'=' * 72}")
+
+#print the report
+def report(episodes: list[dict], pre_steps: int) -> None:
+    n = len(episodes)
+    by_strategy = defaultdict(list)
+    for e in episodes:
+        by_strategy[e.get("strategy")].append(e)
+
+    #print the reward eligibility
+    _rule("Reward eligibility")
+    print(f"{'strategy':10s}{'episodes':>10}{'usable':>10}{'excluded':>10}"
+          f"{'excluded %':>12}")
+    for s in sorted(by_strategy):
+        eps = by_strategy[s]
+        bad = sum(1 for e in eps if not e["use_for_reward"])
+        print(f"{str(s):10s}{len(eps):>10}{len(eps) - bad:>10}{bad:>10}"
+              f"{bad / len(eps):>11.1%}")
+    bad = sum(1 for e in episodes if not e["use_for_reward"])
+    print(f"{'ALL':10s}{n:>10}{n - bad:>10}{bad:>10}{bad / n:>11.1%}")
+    print(f"\nuse_for_routing: {sum(1 for e in episodes if e['use_for_routing'])}"
+          f" of {n} (all episodes, by design)")
+
+    #print the exclusions by reason
+    _rule("Exclusions by reason")
+    reasons = Counter(e["contamination_reason"] for e in episodes if e["contamination_reason"])
+    if not reasons:
+        print("none")
+    for reason, c in reasons.most_common():
+        print(f"{reason:32s} {c:>5}")
+
+    #print the episodes by risk level
+    _rule("Episodes by risk level")
+    print(f"{'risk level':18s}{'episodes':>10}{'usable':>10}{'excluded':>10}")
+    for lv in RISK_LEVELS + ["unknown"]:
+        eps = [e for e in episodes if e["risk_level"] == lv]
+        if not eps:
+            continue
+        bad = sum(1 for e in eps if not e["use_for_reward"])
+        print(f"{lv:18s}{len(eps):>10}{len(eps) - bad:>10}{bad:>10}")
+
+    #print the successes
+    _rule("Successes (what the reward signal is actually made of)")
+    print(f"{'strategy':10s}{'successes':>11}{'usable':>9}{'discarded':>11}")
+    for s in sorted(by_strategy):
+        su = [e for e in by_strategy[s] if e.get("success")]
+        bad = sum(1 for e in su if not e["use_for_reward"])
+        print(f"{str(s):10s}{len(su):>11}{len(su) - bad:>9}{bad:>11}")
+
+    suspects = sorted({(e["task_id"], e["risk_level"]) for e in episodes if e["suspect_pre_existing"]})
+    #print the suspect pre-existing state
+    _rule(f"Suspect pre-existing state (first success took <= {pre_steps} step)")
+    for tid, lv in suspects[:20]:
+        print(f"task {tid:>4}  {lv}")
+    if len(suspects) > 20:
+        print(f"and {len(suspects) - 20} more")
+
+
+#main 
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    #add the episodes
+    ap.add_argument("--episodes", nargs="+", default=[
+        "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/strategy_a.jsonl",
+        "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/strategy_b.jsonl",])
+    ap.add_argument("--risk", default="../data/processed/task_list/task_risk_levels.jsonl")
+    ap.add_argument("--metadata", default="../data/processed/" "final_annotation_difficulty_tiers/task_metadata.jsonl")
+    ap.add_argument("--out", default="../data/processed/" "6_budgets_ALL_tasks_decontaminated_batch/episodes_flagged.jsonl")
+    ap.add_argument("--lenient-idempotent", action="store_true")
+    ap.add_argument("--pre-steps", type=int, default=1)
+    ap.add_argument("--example", type=int, default=None)
+    ap.add_argument("--self-test", action="store_true")
+    args = ap.parse_args()
+
+    if args.self_test:
+        self_test()
+        return
+
+    #load the risk levels
+    risk_rows = load_jsonl(args.risk)
+    risk = {r["task_id"]: r["risk_level"] for r in risk_rows}
+    print(f"[flag] risk levels : {len(risk)} tasks from {args.risk}")
+
+    #load the episodes
+    episodes, skipped = [], 0
+    #for each path in the episodes
+    for path in args.episodes:
+        rows = load_jsonl(path)
+        errs = [r for r in rows if "error" in r]
+        clean = [r for r in rows if "error" not in r]
+        skipped += len(errs)
+        strat = Counter(r.get("strategy") for r in clean)
+        print(f"[flag] {Path(path).name:22s} {len(clean):>5} episodes"
+              f"  strategies={dict(strat)}"
+              + (f"  ({len(errs)} error rows skipped)" if errs else ""))
+        episodes.extend(clean)
+
+    #get the missing task ids
+    missing = sorted({e["task_id"] for e in episodes} - set(risk))
+    #if there are missing task ids
+    if missing:
+        print(f"[flag] WARNING: {len(missing)} task ids have no risk level and "
+              f"are treated as unknown (never exempt): {missing[:15]}")
+
+    #load the metadata
+    meta = {}
+    #if the metadata file exists
+    if Path(args.metadata).exists():
+        #load the metadata
+        meta = {m["task_id"]: m for m in load_jsonl(args.metadata)}
+        print(f"[flag] metadata   : {len(meta)} tasks from {args.metadata}")
+    else:
+        print(f"[flag] WARNING: no metadata at {args.metadata} - every "
+              f"one-step first success will be marked suspect, including "
+              f"genuinely one-step tasks")
+
+    #print the lenient idempotent flag
+    if args.lenient_idempotent:
+        print("[flag] --lenient-idempotent: idempotent tasks treated as clean")
+
+    #flag the episodes
+    flag(episodes, risk, args.lenient_idempotent, args.pre_steps, meta)
+
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.open("w") as f:
+        for e in episodes:
+            f.write(json.dumps(e) + "\n")
+
+    #report the episodes
+    report(episodes, args.pre_steps)
+    #print the number of episodes written
+    print(f"\n[flag] wrote {len(episodes)} episodes to {out}")
+    #if there are skipped error rows
+    if skipped:
+        #print the number of error rows skipped
+        print(f"[flag] {skipped} error rows were skipped and are NOT in the output")
+
+
+def self_test() -> None:
+    def ep(strategy, task_id, ts, budget, success, steps=3):
+        return {"strategy": strategy, "task_id": task_id, "timestamp": ts, "budget_level": budget, "success": success, "steps": steps, "total_tokens": steps * 1000, "goal": "g"}
+
+    #add the risk levels for self test
+    risk = {1: "non_idempotent", 2: "read_only", 3: "idempotent", 4: "non_idempotent", 5: "non_idempotent"}
+
+    eps = [
+        #add the episodes for self test
+        ep("A", 1, "T3", 8000, True), ep("A", 1, "T1", 4000, False),
+        ep("A", 1, "T2", 16000, True), ep("A", 1, "T4", 2000, True),
+        # task 2: read_only, two successes, nothing dropped
+        ep("A", 2, "T1", 4000, True), ep("A", 2, "T2", 8000, True),
+        # task 3: idempotent -> post-first-success dropped, own reason
+        ep("A", 3, "T1", 4000, True), ep("A", 3, "T2", 8000, True),
+        # task 4: A succeeds early, B succeeds late. B must not be punished
+        # for A's success -> proves grouping includes strategy.
+        ep("A", 4, "T1", 4000, True), ep("A", 4, "T2", 8000, True),
+        ep("B", 4, "T1", 4000, False), ep("B", 4, "T2", 8000, True),
+        # task 5: no success at all -> nothing dropped
+        ep("A", 5, "T1", 4000, False), ep("A", 5, "T2", 8000, False),
+    ]
+    flag(eps, risk)
+
+    #function to get the episode by strategy, task_id and budget_level
+    def get(s, t, b):
+        #return the next episode that matches the strategy, task_id and budget_level
+        return next(e for e in eps if e["strategy"] == s and e["task_id"] == t and e["budget_level"] == b)
+
+    #get the episode by strategy, task_id and budget_level
+    #assert the episode index is correct
+    assert get("A", 1, 4000)["episode_index"] == 0
+    assert get("A", 1, 16000)["episode_index"] == 1
+    assert get("A", 1, 8000)["episode_index"] == 2 
+    assert get("A", 1, 2000)["episode_index"] == 3
+    #assert the use for reward is correct
+    assert get("A", 1, 4000)["use_for_reward"] is True
+    assert get("A", 1, 16000)["use_for_reward"] is True
+    assert get("A", 1, 8000)["use_for_reward"] is False
+    assert get("A", 1, 2000)["use_for_reward"] is False
+    #assert the contamination reason is correct
+    assert get("A", 1, 8000)["contamination_reason"] == "post_first_success"
+    #assert the first success budget is correct
+    assert get("A", 1, 16000)["first_success_budget"] == 16000
+
+    #read_only is exempt
+    assert all(e["use_for_reward"] for e in eps if e["task_id"] == 2)
+
+    #idempotent is NOT exempt, and carries its own reason
+    assert get("A", 3, 8000)["use_for_reward"] is False
+    assert get("A", 3, 8000)["contamination_reason"] == "idempotent_post_first_success"
+
+    #per-strategy grouping: B's episodes survive A's success
+    assert get("A", 4, 8000)["use_for_reward"] is False
+    assert get("B", 4, 4000)["use_for_reward"] is True
+    assert get("B", 4, 8000)["use_for_reward"] is True
+    assert get("B", 4, 8000)["first_success_index"] == 1
+
+    #no success --> nothing dropped
+    assert all(e["use_for_reward"] for e in eps if e["task_id"] == 5)
+    assert all(e["first_success_index"] is None for e in eps if e["task_id"] == 5)
+
+    #routing always survives
+    assert all(e["use_for_routing"] for e in eps)
+
+    #lenient mode spares idempotent only
+    #add the episodes for self test
+    eps2 = [ep("A", 3, "T1", 4000, True), ep("A", 3, "T2", 8000, True), ep("A", 1, "T1", 4000, True), ep("A", 1, "T2", 8000, True)]
+    #flag the episodes
+    flag(eps2, risk, lenient_idempotent=True)
+    assert all(e["use_for_reward"] for e in eps2 if e["task_id"] == 3)
+    #assert the use for reward is correct
+    assert eps2[3]["use_for_reward"] is False
+
+    #suspect_pre_existing fires on a one-step first success on a writing task
+    eps3 = [ep("A", 1, "T1", 4000, False, steps=2), ep("A", 1, "T2", 8000, True, steps=1)]
+    flag(eps3, risk)
+    assert all(e["suspect_pre_existing"] for e in eps3)
+    eps4 = [ep("A", 2, "T1", 4000, True, steps=1)]   # read_only never suspect
+    flag(eps4, risk)
+    assert not eps4[0]["suspect_pre_existing"]
+
+    #add the metadata for self test
+    cheap = {1: {"task_id": 1, "interaction": 1, "difficulty_tier": "Easy"}}
+    eps6 = [ep("A", 1, "T1", 4000, True, steps=1)]
+    flag(eps6, risk, metadata=cheap)
+    assert not eps6[0]["suspect_pre_existing"]
+
+    #add the metadata for self test
+    hard = {1: {"task_id": 1, "interaction": 2, "difficulty_tier": "Easy"}}
+    eps7 = [ep("A", 1, "T1", 4000, True, steps=1)]
+    flag(eps7, risk, metadata=hard)
+    assert eps7[0]["suspect_pre_existing"]
+
+    #a Medium/Hard tier alone is enough, even at interaction 1
+    med = {1: {"task_id": 1, "interaction": 1, "difficulty_tier": "Medium"}}
+    eps8 = [ep("A", 1, "T1", 4000, True, steps=1)]
+    flag(eps8, risk, metadata=med)
+    assert eps8[0]["suspect_pre_existing"]
+
+    #add the metadata for self test
+    eps9 = [ep("A", 1, "T1", 4000, True, steps=1)]
+    flag(eps9, risk, metadata={})
+    assert eps9[0]["suspect_pre_existing"]
+
+
+    #assert the demanding function is correct
+    assert demanding(None) is True
+    assert demanding({"interaction": 0, "difficulty_tier": "Easy"}) is False
+
+    # unknown risk level is never exempt
+    eps5 = [ep("A", 99, "T1", 4000, True), ep("A", 99, "T2", 8000, True)]
+    flag(eps5, risk)
+    assert eps5[0]["risk_level"] == "unknown"
+    assert eps5[1]["use_for_reward"] is False
+
+    print("self-test: all assertions passed")
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+=============================================================================================
+
+
 
 
 ### join_metadata.py
+from __future__ import annotations
+
+import argparse
+import json
+from collections import Counter, defaultdict
+from pathlib import Path
+
+#Removed from every episode. Everything else is passed through
+DROP_FIELDS = {"step_log"}
+
+#attached from task_metadata.jsonl
+#task_id is the join key
+META_FIELDS = [
+    "task_category",
+    "pages_to_traverse",
+    "retrieval_type",
+    "interaction",
+    "target_locatability",
+    "rubric_total",
+    "difficulty_tier",
+    "label_source",
+]
+
+#Attached from task_risk_levels.jsonl
+#risk_level is already on the episode
+RISK_FIELDS = ["risk_reason"]
+
+#Task-level fields that also exist on the episode
+CROSS_CHECK = {"site": "site", "goal": "intent"}
+
+#Budgets for the tasks
+BUDGETS = [2000, 4000, 8000, 16000, 32000, 64000]
+
+#load the jsonl file
+def load_jsonl(path: str) -> list[dict]:
+    #rows is a list that will be used to store the rows of the jsonl file
+    rows = []
+    #read the text of the jsonl file and split it into lines
+    for line in Path(path).read_text().splitlines():
+        line = line.strip()
+        if line:
+            rows.append(json.loads(line))
+    return rows
+
+#the join function
+def join(episodes: list[dict],
+         meta: dict[int, dict],
+         risk: dict[int, dict],
+         keep_steps: bool = False) -> tuple[list[dict], dict]:
+    #if keep_steps is True, the steps will be kept, otherwise they will be dropped
+    drop = set() if keep_steps else DROP_FIELDS
+    #report is a dictionary that will be used to store the missing metadata and risk, as well as the conflicts
+    report = {
+        "missing_meta": set(),
+        "missing_risk": set(),
+        "conflicts": defaultdict(list),
+        "dropped_fields": sorted(drop),
+    }
+
+    out = [] #output list to store the joined episodes
+    for e in episodes:
+        tid = e["task_id"]
+        m = meta.get(tid)
+        r = risk.get(tid)
+        if m is None:
+            report["missing_meta"].add(tid)
+        if r is None:
+            report["missing_risk"].add(tid)
+
+        row = {k: v for k, v in e.items() if k not in drop}
+
+        #integrity: the episode and the metadata must agree about the task
+        #check if the metadata is not None
+        if m is not None:
+            #loop through the cross check fields
+            for ep_key, meta_key in CROSS_CHECK.items():
+                #get the episode key and the metadata key
+                a, b = e.get(ep_key), m.get(meta_key)
+                #check if the episode key and the metadata key are not None and are not equal
+                if a is not None and b is not None and a != b:
+                    report["conflicts"][ep_key].append(tid)
+        #if the metadata is not None, loop through the meta fields and add the values to the row
+        if m is not None:
+            for f in META_FIELDS:
+                row[f] = m.get(f)
+        else:
+            for f in META_FIELDS:
+                row[f] = None
+
+        if r is not None:
+            for f in RISK_FIELDS:
+                row[f] = r.get(f)
+        else:
+            for f in RISK_FIELDS:
+                row[f] = None
+
+        out.append(row)
+    #sort the missing metadata and risk, and the conflicts
+    report["missing_meta"] = sorted(report["missing_meta"])
+    report["missing_risk"] = sorted(report["missing_risk"])
+    report["conflicts"] = {k: sorted(set(v)) for k, v in report["conflicts"].items()}
+    return out, report
+
+
+#print the title
+def _rule(title: str) -> None:
+    #print the title and the separator
+    print("\n" + "=" * 72)
+    print(title)
+    print("=" * 72)
+
+
+#summarise the join
+def summarise(rows: list[dict], report: dict) -> None:
+    #get the strategies
+    strategies = sorted({r["strategy"] for r in rows})
+
+    #print the title and the separator
+    _rule("Join integrity")
+    #check if the missing metadata is present
+    if report["missing_meta"]:
+        print(f"WARNING {len(report['missing_meta'])} task ids have no "
+              f"difficulty label: {report['missing_meta'][:15]}")
+    else:
+        print("every task id has a metadata row")
+    #check if the difficulty tier is present
+    no_tier = {r["task_id"] for r in rows if r.get("difficulty_tier") is None}
+    if no_tier:
+        print(f"WARNING {len(no_tier)} task ids have a metadata row but no "
+              f"difficulty_tier: {sorted(no_tier)[:15]}")
+    else:
+        print("every task id has a difficulty tier")
+    if report["missing_risk"]:
+        print(f"WARNING {len(report['missing_risk'])} task ids have no "
+              f"risk reason: {report['missing_risk'][:15]}")
+    else:
+        print("every task id has a risk classification")
+    #check if the conflicts are present
+    if report["conflicts"]:
+        #loop through the conflicts
+        for field, ids in report["conflicts"].items():
+            #print the warning for the field and the ids
+            print(f"WARNING {field} disagrees between episode and metadata "
+                  f"for {len(ids)} tasks: {ids[:10]}")
+    else:
+        #print the message that the episode and metadata agree on site and intent
+        print("episode and metadata agree on site and intent")
+    #check if the dropped fields are present
+    if report["dropped_fields"]:
+        #print the dropped fields
+        print(f"dropped per episode: {', '.join(report['dropped_fields'])}")
+
+    #print the final table
+    _rule("Final table")
+    print(f"{'strategy':10s}{'episodes':>10}{'tasks':>8}{'successes':>11}"
+          f"{'reward-eligible':>17}")
+    #loop through the strategies
+    for s in strategies:
+        #get the episodes for the current strategy
+        eps = [r for r in rows if r["strategy"] == s]
+        #get the clean episodes for the current strategy
+        clean = [r for r in eps if r["use_for_reward"]]
+        #print the strategy, the number of episodes, the number of tasks, the number of successes, and the number of reward-eligible episodes
+        print(f"{s:10s}{len(eps):>10}{len({r['task_id'] for r in eps}):>8}"
+              f"{sum(1 for r in eps if r['success']):>11}"
+              f"{len(clean):>17}")
+    print(f"{'ALL':10s}{len(rows):>10}{len({r['task_id'] for r in rows}):>8}"
+          f"{sum(1 for r in rows if r['success']):>11}"
+          f"{sum(1 for r in rows if r['use_for_reward']):>17}")
+
+    #exclusions by budget
+    _rule("Exclusions by budget  (flat = decontaminated set is safe to headline)")
+    print(f"{'budget':>8}{'episodes':>10}{'excluded':>10}{'excl %':>9}"
+          f"{'successes':>11}{'of which excluded':>19}")
+    #rates = the rates of exclusions by budget
+    rates = []
+    for b in BUDGETS:
+        eps = [r for r in rows if r["budget_level"] == b]
+        if not eps:
+            continue
+        #exc = the episodes that are not used for reward
+        exc = [r for r in eps if not r["use_for_reward"]]
+        #suc = the episodes that are successful
+        suc = [r for r in eps if r["success"]]
+        #sx = the episodes that are successful and not used for reward
+        sx = [r for r in suc if not r["use_for_reward"]]
+        #rate = the rate of exclusions by budget
+        rate = 100 * len(exc) / len(eps)
+        rates.append(rate)
+        print(f"{b:>8}{len(eps):>10}{len(exc):>10}{rate:>8.1f}%"
+              f"{len(suc):>11}{len(sx):>19}")
+ 
+    _rule("Difficulty tier x reward eligibility")
+    tiers = ["Easy", "Medium", "Hard", None]
+    print(f"{'tier':10s}" + "".join(f"{s:>12}" for s in strategies)
+          + f"{'total':>10}")
+    for t in tiers:
+        eps = [r for r in rows if r["difficulty_tier"] == t and r["use_for_reward"]]
+        if not eps and t is None:
+            continue
+        cells = "".join(
+            f"{sum(1 for r in eps if r['strategy'] == s):>12}" for s in strategies)
+        print(f"{str(t):10s}{cells}{len(eps):>10}")
+
+    # Successes per tier is the cell count that actually limits the analysis:
+    # a tier with a handful of successes cannot support a per-tier comparison
+    _rule("Reward-eligible SUCCESSES per tier  (small cells limit the analysis)")
+    print(f"{'tier':10s}" + "".join(f"{s:>12}" for s in strategies))
+    for t in ["Easy", "Medium", "Hard"]:
+        cells = ""
+        for s in strategies:
+            n = sum(1 for r in rows if r["difficulty_tier"] == t
+                    and r["strategy"] == s and r["success"] and r["use_for_reward"])
+            cells += f"{n:>12}"
+        print(f"{t:10s}{cells}")
+
+    _rule("Columns")
+    keys = sorted({k for r in rows for k in r})
+    shared = sorted(k for k in keys if all(k in r for r in rows))
+    partial = sorted(set(keys) - set(shared))
+    print(f" {len(shared)} columns on every row:")
+    print(" " + ", ".join(shared))
+    if partial:
+        print(f"{len(partial)} strategy-specific columns (passed through):")
+        for k in partial:
+            owners = sorted({r["strategy"] for r in rows if k in r})
+            print(f"{k}  ({', '.join(owners)})")
+
+
+def write_rows(rows: list[dict], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+#main function
+def main() -> None:
+    #add the arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--episodes", default="../data/processed/""router_c_training/episodes_flagged.jsonl")
+    ap.add_argument("--metadata", default="../data/processed/""final_annotation_difficulty_tiers/task_metadata.jsonl")
+    ap.add_argument("--risk", default="../data/processed/task_list/task_risk_levels.jsonl")
+    ap.add_argument("--out", default="../data/processed/""router_c_training/final_episodes.jsonl")
+    ap.add_argument("--split", action="store_true")
+    ap.add_argument("--keep-steps", action="store_true")
+    args = ap.parse_args()
+
+    #load the episodes
+    episodes = load_jsonl(args.episodes)
+    #load the metadata
+    meta = {r["task_id"]: r for r in load_jsonl(args.metadata)}
+    #load the risk
+    risk = {r["task_id"]: r for r in load_jsonl(args.risk)}
+
+    #join the episodes, metadata, and risk
+    rows, report = join(episodes, meta, risk, keep_steps=args.keep_steps)
+    summarise(rows, report)
+
+    out = Path(args.out)
+    write_rows(rows, out)
+    print(f"\n[join] wrote {len(rows)} rows to {out}")
+
+    #if the split argument is present, split the episodes by strategy
+    if args.split:
+        #loop through the strategies
+        for s in sorted({r["strategy"] for r in rows}):
+            view = out.with_name(f"{out.stem}_{str(s).lower()}{out.suffix}")
+            sub = [r for r in rows if r["strategy"] == s]
+            write_rows(sub, view)
+            print(f"[join] wrote {len(sub):>5} rows to {view.name}  (view)")
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+=============================================================================================
+
+
 
 
 ### remove_errors.py
+from __future__ import annotations
+ 
+import argparse
+import json
+import shutil
+from collections import Counter
+from pathlib import Path
+
+#Group an error message into a readable category
+#function to classify the error
+def classify_error(msg: str) -> str:
+    m = (msg or "").lower()
+    #if the message contains timeout and goto
+    if "timeout" in m and "goto" in m:
+        #return the page load timeout
+        return "page load timeout"
+    #if the message contains target crashed
+    if "target crashed" in m:
+        #return the Chromium crash
+        return "Chromium crash"
+    if "connection_refused" in m or "connection refused" in m:
+        #return the container not running
+        return "container not running"
+    #if the message contains does not exist or notfounderror
+    if "does not exist" in m or "notfounderror" in m:
+        #return the model/API not found
+        return "model/API not found"
+    #if the message contains timeout
+    if "timeout" in m:
+        return "timeout (other)"
+    #if the message contains keyboardinterrupt
+    if "keyboardinterrupt" in m:
+        #return the interrupted
+        return "interrupted"
+    #return other
+    return "other"
+
+#function to main
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--file", required=True)
+    ap.add_argument("--backup", default=None, help="backup path (default: <file>.bak)")
+    ap.add_argument("--yes", action="store_true", help="skip the confirmation prompt")
+    args = ap.parse_args()
+
+    path = Path(args.file)
+    if not path.exists():
+        raise SystemExit(f"File not found: {path}")
+
+    #Read and separate
+    keep_lines: list[str] = []
+    error_rows: list[dict] = []
+    malformed = 0
+
+    with path.open() as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                rec = json.loads(stripped)
+            except json.JSONDecodeError:
+                malformed += 1
+                continue
+
+            #Episode-level "error" key = the episode never completed.
+            #An action_error inside step_log is NOT this.
+            if "error" in rec:
+                error_rows.append(rec)
+            else:
+                keep_lines.append(line if line.endswith("\n") else line + "\n")
+
+    total = len(keep_lines) + len(error_rows)
+
+    print(f"File: {path}")
+    print(f"Episodes: {total}")
+    print(f"valid: {len(keep_lines)}")
+    print(f"errors: {len(error_rows)}")
+    #print the number of malformed lines skipped
+    if malformed:
+        print(f"malformed lines skipped: {malformed}")
+
+    #check if there are no error rows
+    if not error_rows:
+        print("\nNo environment errors found. Nothing to do.")
+        return
+
+    # Show exactly what will be removed
+    print(f"\n{'=' * 70}\nEpisodes that will be removed\n{'=' * 70}")
+
+    #function to show the exactly what will be removed
+    categories = Counter(classify_error(r.get("error", "")) for r in error_rows)
+    #print the by cause
+    print("\nBy cause:")
+    for cat, n in categories.most_common():
+        print(f" {cat:26s} {n:>4}")
+
+    #function to show the by strategy
+    by_strategy = Counter(r.get("strategy", "?") for r in error_rows)
+    #function to show the by budget
+    by_budget = Counter(r.get("budget_level", "?") for r in error_rows)
+    print("\nBy strategy: " + "  ".join(f"{k}:{v}" for k, v in sorted(by_strategy.items())))
+    print("By budget: " + "  ".join(f"{k}:{v}" for k, v in sorted(by_budget.items(), key=lambda x: str(x[0]))))
+
+    print(f"\nFull list:")
+    for r in error_rows:
+        msg = str(r.get("error", "")).replace("\n", " ")[:64]
+        print(f" task {str(r.get('task_id','?')):>5} @ "
+              f"{str(r.get('budget_level','?')):>6}  "
+              f"[{r.get('strategy','?')}] {r.get('site','?'):16s} {msg}")
+
+    #Safety check: these rows must not contain real episode data
+    suspicious = [r for r in error_rows if r.get("step_log") or r.get("total_tokens")]
+    if suspicious:
+        print(f"\n!! WARNING: {len(suspicious)} rows have an 'error' key but " f"also contain step_log or token data.")
+        print("Inspection:")
+        for r in suspicious[:5]:
+            print(f"task {r.get('task_id')} @ {r.get('budget_level')}")
+
+    #Confirm
+    if not args.yes:
+        reply = input("\nProceed? [y/N] ").strip().lower()
+        if reply not in ("y", "yes"):
+            print("Aborted. No changes made.")
+            return
+
+    #Back up, then write
+    backup = Path(args.backup) if args.backup else path.with_suffix(
+        path.suffix + ".bak")
+    #copy the path to the backup
+    shutil.copy2(path, backup)
+    print(f"\nBackup written to {backup}")
+
+    with path.open("w") as f:
+        f.writelines(keep_lines)
+
+    #print the number of error episodes removed and the number of episodes now containing
+    print(f"Removed {len(error_rows)} error episodes")
+    print(f"{path} now contains {len(keep_lines)} episodes")
+
+if __name__ == "__main__":
+    main()
+
+
+
+=============================================================================================
+
 
 
 ### sort_batch.py
+
+
+
+
+=============================================================================================
+
 
 
 
@@ -2091,8 +3287,17 @@ def run_shared_analysis(df: pd.DataFrame, out_dir: Path, verbose_tasks: bool = F
 ### extract_task_intent.py
 
 
+
+
+=============================================================================================
+
+
+
+
 ### task_category_plots.py
 
 
-### test.raw.json
-Taken from WebArena Github Repository: <https://github.com/web-arena-x/webarena/blob/main/config_files/test.raw.json>
+
+
+
+## Task Annotation Module

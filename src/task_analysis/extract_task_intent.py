@@ -88,27 +88,35 @@ def _matches(intent: str, patterns: list[str]) -> bool:
 def categorise(intent: str) -> str:
     i = (intent or "").lower()
 
+    #check if the intent matches any of the read only patterns
     if _matches(i, READ_ONLY_PATTERNS):
         return "information_retrieval"
 
+    #check if the intent matches any of the navigation patterns
     if _matches(i, NAVIGATION_PATTERNS):
         return "navigation"
 
+    #check if the intent matches any of the bulk action patterns
     if _matches(i, BULK_ACTION_PATTERNS):
         return "bulk_action"
 
+    #check if the intent matches any of the delete patterns
     if _matches(i, DELETE_PATTERNS):
         return "delete"
 
+    #check if the intent matches any of the modify patterns
     if _matches(i, MODIFY_PATTERNS):
         return "modify_value"
 
+    #check if the intent matches any of the purchase patterns
     if _matches(i, PURCHASE_PATTERNS):
         return "purchase"
 
+    #check if the intent matches any of the create patterns
     if _matches(i, CREATE_PATTERNS):
         return "create"
 
+    #return other if the intent does not match any of the patterns
     return "other"
 
 #main function
@@ -135,12 +143,15 @@ def main():
         "sites": {},
     }
 
+    #by_site is a dictionary that will be used to store the tasks by site
     by_site = defaultdict(list)
+    #by_cat is a dictionary that will be used to store the number of tasks by category
     by_cat = defaultdict(int)
 
-    #for each task in the tasks
+    #loop through the tasks
     for t in tasks:
         site = t["sites"][0]
+        #categorise the intent
         cat = categorise(t["intent"])
         # JSON object keys are strings; readers must int() them back
         output["task_categories"][str(t["task_id"])] = cat

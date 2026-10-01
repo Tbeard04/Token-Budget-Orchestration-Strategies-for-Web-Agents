@@ -35,9 +35,11 @@ CROSS_CHECK = {"site": "site", "goal": "intent"}
 #Budgets for the tasks
 BUDGETS = [2000, 4000, 8000, 16000, 32000, 64000]
 
-
+#load the jsonl file
 def load_jsonl(path: str) -> list[dict]:
+    #rows is a list that will be used to store the rows of the jsonl file
     rows = []
+    #read the text of the jsonl file and split it into lines
     for line in Path(path).read_text().splitlines():
         line = line.strip()
         if line:
@@ -72,12 +74,16 @@ def join(episodes: list[dict],
         row = {k: v for k, v in e.items() if k not in drop}
 
         #integrity: the episode and the metadata must agree about the task
+        #check if the metadata is not None
         if m is not None:
+            #loop through the cross check fields
             for ep_key, meta_key in CROSS_CHECK.items():
+                #get the episode key and the metadata key
                 a, b = e.get(ep_key), m.get(meta_key)
+                #check if the episode key and the metadata key are not None and are not equal
                 if a is not None and b is not None and a != b:
                     report["conflicts"][ep_key].append(tid)
-
+        #if the metadata is not None, loop through the meta fields and add the values to the row
         if m is not None:
             for f in META_FIELDS:
                 row[f] = m.get(f)
@@ -100,16 +106,22 @@ def join(episodes: list[dict],
     return out, report
 
 
+#print the title
 def _rule(title: str) -> None:
+    #print the title and the separator
     print("\n" + "=" * 72)
     print(title)
     print("=" * 72)
 
 
+#summarise the join
 def summarise(rows: list[dict], report: dict) -> None:
+    #get the strategies
     strategies = sorted({r["strategy"] for r in rows})
 
+    #print the title and the separator
     _rule("Join integrity")
+    #check if the missing metadata is present
     if report["missing_meta"]:
         print(f"WARNING {len(report['missing_meta'])} task ids have no "
               f"difficulty label: {report['missing_meta'][:15]}")
@@ -126,23 +138,33 @@ def summarise(rows: list[dict], report: dict) -> None:
         print(f"WARNING {len(report['missing_risk'])} task ids have no "
               f"risk reason: {report['missing_risk'][:15]}")
     else:
-        print("   every task id has a risk classification")
+        print("every task id has a risk classification")
+    #check if the conflicts are present
     if report["conflicts"]:
+        #loop through the conflicts
         for field, ids in report["conflicts"].items():
-            print(f"   WARNING {field} disagrees between episode and metadata "
+            #print the warning for the field and the ids
+            print(f"WARNING {field} disagrees between episode and metadata "
                   f"for {len(ids)} tasks: {ids[:10]}")
     else:
+        #print the message that the episode and metadata agree on site and intent
         print("episode and metadata agree on site and intent")
+    #check if the dropped fields are present
     if report["dropped_fields"]:
+        #print the dropped fields
         print(f"dropped per episode: {', '.join(report['dropped_fields'])}")
 
     #print the final table
     _rule("Final table")
     print(f"{'strategy':10s}{'episodes':>10}{'tasks':>8}{'successes':>11}"
           f"{'reward-eligible':>17}")
+    #loop through the strategies
     for s in strategies:
+        #get the episodes for the current strategy
         eps = [r for r in rows if r["strategy"] == s]
+        #get the clean episodes for the current strategy
         clean = [r for r in eps if r["use_for_reward"]]
+        #print the strategy, the number of episodes, the number of tasks, the number of successes, and the number of reward-eligible episodes
         print(f"{s:10s}{len(eps):>10}{len({r['task_id'] for r in eps}):>8}"
               f"{sum(1 for r in eps if r['success']):>11}"
               f"{len(clean):>17}")
@@ -215,8 +237,9 @@ def write_rows(rows: list[dict], path: Path) -> None:
         for r in rows:
             f.write(json.dumps(r) + "\n")
 
-
+#main function
 def main() -> None:
+    #add the arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("--episodes", default="../data/processed/""router_c_training/episodes_flagged.jsonl")
     ap.add_argument("--metadata", default="../data/processed/""final_annotation_difficulty_tiers/task_metadata.jsonl")
@@ -226,10 +249,14 @@ def main() -> None:
     ap.add_argument("--keep-steps", action="store_true")
     args = ap.parse_args()
 
+    #load the episodes
     episodes = load_jsonl(args.episodes)
+    #load the metadata
     meta = {r["task_id"]: r for r in load_jsonl(args.metadata)}
+    #load the risk
     risk = {r["task_id"]: r for r in load_jsonl(args.risk)}
 
+    #join the episodes, metadata, and risk
     rows, report = join(episodes, meta, risk, keep_steps=args.keep_steps)
     summarise(rows, report)
 
@@ -237,7 +264,9 @@ def main() -> None:
     write_rows(rows, out)
     print(f"\n[join] wrote {len(rows)} rows to {out}")
 
+    #if the split argument is present, split the episodes by strategy
     if args.split:
+        #loop through the strategies
         for s in sorted({r["strategy"] for r in rows}):
             view = out.with_name(f"{out.stem}_{str(s).lower()}{out.suffix}")
             sub = [r for r in rows if r["strategy"] == s]
