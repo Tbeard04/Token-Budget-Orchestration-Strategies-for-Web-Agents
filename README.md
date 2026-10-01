@@ -42,9 +42,8 @@ The required fixes are listed in Section 0 and applied in Sections 3–5.
 ---
 
 ### Section 1. Launch the EC2 Instance on AWS
-```text
-This follows the WebArena environment README which is located at: https://github.com/web-arena-x/webarena/blob/main/environment_docker/README.md
-```
+This follows the WebArena environment README which is located at: <https://github.com/web-arena-x/webarena/blob/main/environment_docker/README.md>
+
 ---
 
 | Setting | Value |
