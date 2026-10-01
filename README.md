@@ -27,7 +27,7 @@ This guide rebuilds the AWS environment used to collect every episode in this pr
 ---
 
 | # | Component | Stock behaviour | This project |
-|---|---|---|---|---|---|
+|---|---|---|---|
 | 1 | WebArena LLM evaluators (`llm_fuzzy_match`, `llm_ua_match`) | Call `gpt-4-1106-preview` | Call `gpt-4o-mini` |
 | 2 | WebArena `llms` module | Imports `openai.error` (openai < 1.0) | `openai.error` stubbed at import time in `src/wa_env.py` | Module removed in openai ≥ 1.0; Pydantic AI requires openai 1.x, so downgrading was not an option |
 | 3 | WebArena `generate_from_openai_chat_completion` | `openai.ChatCompletion.create` | openai ≥ 1.0 client, same signature, patched at runtime in `src/wa_env.py` |
