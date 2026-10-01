@@ -13,8 +13,11 @@ from spending_schemes import spending_scheme_config as C
 from spending_schemes.allowance import allowance, prompt_char_limit, trim_prompt
 from spending_schemes.agents import AGENTS, INSTRUCTION_TOKENS
 
+#path to the tasks file
 TASKS_FILE = Path("../data/processed/task_list/read_only_tasks.jsonl")
+#list of schemes to run
 RUN_SCHEMES = ["even", "front_loaded", "reactive"]
+#list of strategies to run
 STRATEGIES = ["A", "B", "C"]
 
 #run an episode for a given strategy and scheme
@@ -111,11 +114,10 @@ def run_episode(strategy: str, scheme: str, task_id: int, budget: int) -> dict:
             reason = "budget_would_exceed"
             break
         #step_meta is a dictionary of metadata for the step
-        step_meta = {"scheme": scheme, "allowance": step_tokens, "effort": effort,
-                     "prompt_chars_full": len(full), "prompt_chars": len(base), "trimmed": trimmed}
+        step_meta = {"scheme": scheme, "allowance": step_tokens, "effort": effort, "prompt_chars_full": len(full), "prompt_chars": len(base), "trimmed": trimmed}
         #print the step metadata
         print(f" step {i}  allowance {step_tokens:>6}  {effort:4s}  prompt {len(full)}->{len(base)}"
-              f"{'  TRIMMED' if trimmed else ''}")
+              f"{'TRIMMED' if trimmed else ''}")
         #if the mode is execute, call the single agent
         if mode == "execute":
             result = W.call_agent(agents["single"], base)
@@ -128,11 +130,12 @@ def run_episode(strategy: str, scheme: str, task_id: int, budget: int) -> dict:
                           "cumulative_tokens": in_tok + out_tok,
                           "usage_details": dict(u.details) if getattr(u, "details", None) else None,
                           **step_meta})
-            print(f"   action: {final_action}   (+{u.input_tokens}/{u.output_tokens}, cum {in_tok + out_tok})")
+            print(f"action: {final_action} (+{u.input_tokens}/{u.output_tokens}, cum {in_tok + out_tok})")
             if in_tok + out_tok >= cap:
                 reason = "safety_token_cap"
                 break
         else:
+            #function to record the usage of the agents
             def record(role, usage, action, extra=None):
                 nonlocal in_tok, out_tok
                 in_tok += usage.input_tokens
@@ -176,7 +179,7 @@ def run_episode(strategy: str, scheme: str, task_id: int, budget: int) -> dict:
             final_action = verdict.revised_action if revised else proposed
             critic_revisions += int(revised)
             record("critic", r_crit.usage(), final_action, {"approved": verdict.approve, "revised": revised, "proposed_action": proposed, "effort": "low"})
-            print(f"   action: {final_action}   (cum {in_tok + out_tok})")
+            print(f"action: {final_action}   (cum {in_tok + out_tok})")
             if in_tok + out_tok >= cap:
                 reason = "safety_token_cap"
                 break
@@ -210,7 +213,7 @@ def run_episode(strategy: str, scheme: str, task_id: int, budget: int) -> dict:
                 s["step_reward"] = reward
                 #set the next_url to the new URL
                 s["next_url"] = new_url
- 
+
         #if the reward is 1.0, set the success to True and break
         if reward >= 1.0:
             success, reason = True, "success"
@@ -231,6 +234,7 @@ def run_episode(strategy: str, scheme: str, task_id: int, budget: int) -> dict:
     for s in steps:
         by_role[s["agent_role"]] += s["input_tokens"] + s["output_tokens"]
 
+    #rec is a dictionary to store the results
     rec = {
         "strategy": strategy, "scheme": scheme, "site": site, "task_id": task_id,
         "budget_level": cap, "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -307,7 +311,6 @@ def main() -> None:
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
     print(f"\n[schemes] finished in {(time.time() - t_start) / 60:.0f} minutes -> {out_path}")
-
 
 if __name__ == "__main__":
     main()

@@ -56,6 +56,6 @@ def trim_prompt(prompt: str, max_chars: int) -> tuple[str, bool]:
     if len(prompt) <= max_chars:
         return prompt, False
     #marker to indicate the page was truncated
-    marker = "\n[... page truncated to fit this step's allowance ...]"
+    marker = "\n[...page truncated to fit this step's allowance...]"
     #return the prompt truncated to max_chars, and True if the page was truncated
     return prompt[: max(0, max_chars - len(marker))] + marker, True

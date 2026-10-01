@@ -15,9 +15,13 @@ import pandas as pd
 
 from batch_analysis.shared import (load, print_section, wilson, mcnemar_exact, outcome_group, COLOURS, MARKERS, NAMES, TIER_ORDER, OUTCOME_ORDER, OUTCOME_COLOURS)
 
+#global budget
 BUDGET = 32_000
+#list of strategies
 STRATEGIES = ["A", "B", "C"]
+#list of schemes
 SCHEMES = ["pay_as_you_go", "even", "front_loaded", "reactive"]
+#dictionary to store the labels for the schemes
 SCHEME_LABELS = {"pay_as_you_go": "Pay as you go", "even": "Even", "front_loaded": "Front-loaded", "reactive": "Reactive"}
 
 #Loading
@@ -231,7 +235,7 @@ def scheme_ranking(tbl: pd.DataFrame) -> None:
         print(f" Strategy {st}: highest success = {SCHEME_LABELS[best_sr]} ({t.loc[best_sr, 'SR']:.1%}), "
               f"cheapest per success = {SCHEME_LABELS[best_eff]} ({t.loc[best_eff, 'tokens_per_success']:,.0f} tokens)")
 
-
+#table to show the outcome mix for each strategy and scheme
 def outcome_mix_table(df: pd.DataFrame) -> None:
     print_section("How Episodes End, per Strategy and Scheme")
     tbl = pd.crosstab([df["strategy"], df["scheme"]], df["outcome"], normalize="index")
@@ -239,7 +243,7 @@ def outcome_mix_table(df: pd.DataFrame) -> None:
     with pd.option_context("display.float_format", lambda x: f"{x:.0%}", "display.width", 200):
         print(tbl.to_string())
 
-
+#table to show the success rate by difficulty tier for each strategy and scheme
 #secondary: ~33 tasks per tier, so descriptive only
 def tier_table(df: pd.DataFrame) -> None:
     if "difficulty_tier" not in df.columns or df["difficulty_tier"].isna().all():
@@ -292,15 +296,17 @@ def _grouped_bars(df, out_dir, name, title, ylabel, value, err=None, fmt=None):
     ax.set_title(title)
     _finish(fig, ax, out_dir, name)
 
-
+#plot to show the success rate by spending scheme and strategy
 def plot_success(df, out_dir):
     _grouped_bars(df, out_dir, "success_by_scheme.png", "Success Rate by Spending Scheme and Strategy", "Success Rate (95% interval)",
                   lambda g: g["success"].mean(), err=lambda g: wilson(int(g["success"].sum()), len(g)))
 
+#plot to show the mean tokens spent by spending scheme and strategy
 def plot_tokens(df, out_dir):
     _grouped_bars(df, out_dir, "tokens_by_scheme.png", "Mean Tokens Spent by Spending Scheme and Strategy",
                   "Mean Tokens per Episode", lambda g: g["total_tokens"].mean())
 
+#plot to show the token cost per success by spending scheme and strategy
 def plot_tokens_per_success(df, out_dir):
     _grouped_bars(df, out_dir, "tokens_per_success.png", "Token Cost per Success by Spending Scheme and Strategy",
                   "Tokens per Successful Episode (lower is better)", lambda g: g["total_tokens"].sum() / g["success"].sum() if g["success"].sum() else np.nan)
@@ -312,10 +318,13 @@ SCHEME_MARKERS = {"pay_as_you_go": "o", "even": "s", "front_loaded": "^", "react
 #helper function to get the points for a cell
 def _cell_points(df, st):
     pts = []
+    #get the points for each scheme
     for sc in schemes_in(df):
         g = df[(df["strategy"] == st) & (df["scheme"] == sc)]
+        #if the group is not empty, add the points
         if not g.empty:
             pts.append((sc, g["total_tokens"].mean(), g["success"].mean()))
+    #return the points
     return pts
 
 #plot the cost vs success for each strategy and scheme
