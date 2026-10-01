@@ -35,6 +35,7 @@ This guide rebuilds the AWS environment used to collect every episode in this pr
 | 5 | BrowserGym action timeout (`browsergym/core/action/functions.py`) | 500 ms per action | 10000 ms |
 | 6 | Magento base URL | Set to the server hostname | `http://localhost:7770` / `:7780` as AWS Instance initialised with no Elastic IP |
 | 7 | Sites hosted | 5 sites (+ map, wiki) | Scope on 3 sites: Shopping (7770), Shopping Admin/CMS (7780), Forum/Postmill (9999) |
+
 ---
 
 ## Directory Tree:
