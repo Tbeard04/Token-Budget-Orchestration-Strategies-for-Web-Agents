@@ -124,8 +124,15 @@ Localhost and the ports are correct as they are, because the agent runs on the s
 Once you've completed the step above, src/wa_env.py loads this file and maps all the WebArena (WA_*) names onto the bare names WebArena expects (Shopping, Shopping_Admin & Reddit)
 before importing browsergym.webarena. The import order matters, because importing first leaves the environment unconfigured.
 
-5. Apply the WebArena / BrowserGym patches
-
+### 5. Apply the WebArena / BrowserGym patches
+```bash
+conda activate tokenbudget
+bash ~/project/setup/patch_webarena.sh
+```
+## 5.1 Evaluator Model
+`gpt-4-1106-preview` to `gpt-4o-mini` in the installed WebArena package:
+- `site-packages/webarena/llms/providers/openai_utils.py`
+- `site-packages/webarena/evaluation_harness/helper_functions.py`
 
 ## Directory Tree:
 ```text
