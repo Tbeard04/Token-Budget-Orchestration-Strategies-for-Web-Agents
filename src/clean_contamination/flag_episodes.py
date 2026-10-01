@@ -268,44 +268,51 @@ def self_test() -> None:
         return next(e for e in eps if e["strategy"] == s and e["task_id"] == t and e["budget_level"] == b)
 
     #get the episode by strategy, task_id and budget_level
-    assert get("A", 1, 4000)["episode_index"] == 0     # T1
-    assert get("A", 1, 16000)["episode_index"] == 1    # T2, first success
-    assert get("A", 1, 8000)["episode_index"] == 2     # T3
-    assert get("A", 1, 2000)["episode_index"] == 3     # T4
+    #assert the episode index is correct
+    assert get("A", 1, 4000)["episode_index"] == 0
+    assert get("A", 1, 16000)["episode_index"] == 1
+    assert get("A", 1, 8000)["episode_index"] == 2 
+    assert get("A", 1, 2000)["episode_index"] == 3
+    #assert the use for reward is correct
     assert get("A", 1, 4000)["use_for_reward"] is True
-    assert get("A", 1, 16000)["use_for_reward"] is True   # inclusive
+    assert get("A", 1, 16000)["use_for_reward"] is True
     assert get("A", 1, 8000)["use_for_reward"] is False
     assert get("A", 1, 2000)["use_for_reward"] is False
+    #assert the contamination reason is correct
     assert get("A", 1, 8000)["contamination_reason"] == "post_first_success"
+    #assert the first success budget is correct
     assert get("A", 1, 16000)["first_success_budget"] == 16000
 
-    # read_only is exempt
+    #read_only is exempt
     assert all(e["use_for_reward"] for e in eps if e["task_id"] == 2)
 
-    # idempotent is NOT exempt, and carries its own reason
+    #idempotent is NOT exempt, and carries its own reason
     assert get("A", 3, 8000)["use_for_reward"] is False
     assert get("A", 3, 8000)["contamination_reason"] == "idempotent_post_first_success"
 
-    # per-strategy grouping: B's episodes survive A's success
+    #per-strategy grouping: B's episodes survive A's success
     assert get("A", 4, 8000)["use_for_reward"] is False
     assert get("B", 4, 4000)["use_for_reward"] is True
     assert get("B", 4, 8000)["use_for_reward"] is True
     assert get("B", 4, 8000)["first_success_index"] == 1
 
-    # no success -> nothing dropped
+    #no success --> nothing dropped
     assert all(e["use_for_reward"] for e in eps if e["task_id"] == 5)
     assert all(e["first_success_index"] is None for e in eps if e["task_id"] == 5)
 
-    # routing always survives
+    #routing always survives
     assert all(e["use_for_routing"] for e in eps)
 
-    # lenient mode spares idempotent only
+    #lenient mode spares idempotent only
+    #add the episodes for self test
     eps2 = [ep("A", 3, "T1", 4000, True), ep("A", 3, "T2", 8000, True), ep("A", 1, "T1", 4000, True), ep("A", 1, "T2", 8000, True)]
+    #flag the episodes
     flag(eps2, risk, lenient_idempotent=True)
     assert all(e["use_for_reward"] for e in eps2 if e["task_id"] == 3)
+    #assert the use for reward is correct
     assert eps2[3]["use_for_reward"] is False
 
-    # suspect_pre_existing fires on a one-step first success on a writing task
+    #suspect_pre_existing fires on a one-step first success on a writing task
     eps3 = [ep("A", 1, "T1", 4000, False, steps=2), ep("A", 1, "T2", 8000, True, steps=1)]
     flag(eps3, risk)
     assert all(e["suspect_pre_existing"] for e in eps3)
@@ -337,6 +344,7 @@ def self_test() -> None:
     assert eps9[0]["suspect_pre_existing"]
 
 
+    #assert the demanding function is correct
     assert demanding(None) is True
     assert demanding({"interaction": 0, "difficulty_tier": "Easy"}) is False
 
