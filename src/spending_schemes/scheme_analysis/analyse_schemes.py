@@ -198,6 +198,12 @@ def scheme_effects(df: pd.DataFrame, reference: str, reps: int = 2000, seed: int
             #get the change in tokens
             d_tok = (t1[idx].sum(1) / np.maximum(t0[idx].sum(1), 1) - 1) * 100
             #add the rows to the dataframe
+            #dSR_pp = change in success rate in percentage points
+            #dSR_lo = lower bound of the 95% bootstrap interval for the change in success rate
+            #dSR_hi = upper bound of the 95% bootstrap interval for the change in success rate
+            #dTokens_% = change in tokens spent in percentage
+            #dTok_lo = lower bound of the 95% bootstrap interval for the change in tokens
+            #dTok_hi = upper bound of the 95% bootstrap interval for the change in tokens
             rows.append({
                 "strategy": st, "scheme": sc, "tasks": len(common),
                 "dSR_pp": (s1.mean() - s0.mean()) * 100,
