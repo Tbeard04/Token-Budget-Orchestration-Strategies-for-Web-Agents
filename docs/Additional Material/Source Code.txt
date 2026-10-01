@@ -5895,4 +5895,899 @@ if __name__ == "__main__":
 
 ## Router C Module
 
-### 
+### build_transitions.py
+from __future__ import annotations
+
+import argparse
+import json
+from collections import Counter, defaultdict
+from pathlib import Path
+
+#ACTION_OF is a dictionary to store the action of the strategy
+ACTION_OF = {"A": "execute", "B": "cycle"}
+#TIER_ORD is a dictionary to store the order of the tiers
+TIER_ORD = {"Easy": 0, "Medium": 1, "Hard": 2}
+#TASK_FIELDS is a list of fields to store the task information
+TASK_FIELDS = ["site", "task_category", "risk_level", "difficulty_tier", "pages_to_traverse", "retrieval_type", "interaction", "target_locatability", "rubric_total"]
+
+#load the jsonl file
+def load_jsonl(path: str | Path) -> list[dict]:
+    out = []
+    for line in Path(path).read_text().splitlines():
+        line = line.strip()
+        if line:
+            out.append(json.loads(line))
+    return out
+
+#check if the action_error is not None, "None", or empty
+def _has_error(entry: dict) -> bool:
+    return entry.get("action_error") not in (None, "None", "")
+
+#function to group the log entries by website step, in step order
+def _by_step(step_log: list[dict]) -> list[list[dict]]:
+    #group the log entries by website step, in step order
+    groups: dict[int, list[dict]] = defaultdict(list)
+    #loop through the step log
+    for e in step_log:
+        groups[e["step"]].append(e)
+    #return the groups
+    return [groups[k] for k in sorted(groups)]
+
+
+#transitions
+#one row per site step + a terminal stop row
+def episode_rows(ep: dict) -> list[dict]:
+    budget = ep["budget_level"]
+    mode = ep.get("mode_chosen") or ACTION_OF.get(ep["strategy"], ep["strategy"])
+    base = {
+        "task_id": ep["task_id"],
+        "strategy": ep["strategy"],
+        "mode": mode,
+        "budget_level": budget,
+        "episode_success": bool(ep["success"]),
+        "episode_tokens": ep["total_tokens"],
+        "use_for_reward": ep.get("use_for_reward", True),
+        **{f: ep.get(f) for f in TASK_FIELDS},
+    }
+    base["tier_ord"] = TIER_ORD.get(ep.get("difficulty_tier"))
+    #rows is a list to store the rows
+    rows = []
+    #cum_before is the cumulative tokens before the step
+    cum_before = 0
+    #last_error is a boolean to store if the last error
+    last_error = False
+    #url_changed is a boolean to store if the url changed
+    url_changed = False
+    #consecutive_errors is the number of consecutive errors
+    consecutive_errors = 0
+
+    #loop through the steps
+    for k, calls in enumerate(_by_step(ep.get("step_log") or [])):
+        #get the maximum cumulative tokens
+        cum_after = max(c.get("cumulative_tokens", cum_before) for c in calls)
+        #add the row to the list
+        rows.append({
+            **base,
+            "step_index": k,
+            "action": mode,
+            "budget_remaining_frac": round(1 - cum_before / budget, 4),
+            "last_error": int(last_error),
+            "url_changed_last": int(url_changed),
+            "consecutive_errors": consecutive_errors,
+            "step_cost": cum_after - cum_before,
+            "is_terminal": False,
+            "termination_reason": None,
+        })
+        #check if there was an error
+        last_error = any(_has_error(c) for c in calls)
+        #check if the url changed
+        url_changed = any(c.get("url") != c.get("next_url") for c in calls)
+        #check if there were consecutive errors
+        consecutive_errors = consecutive_errors + 1 if last_error else 0
+        #update the cumulative tokens
+        cum_before = cum_after
+
+    #add the terminal stop row
+    rows.append({
+        **base,
+        "step_index": len(rows),
+        "action": "stop",
+        "budget_remaining_frac": round(1 - cum_before / budget, 4),
+        "last_error": int(last_error),
+        "url_changed_last": int(url_changed),
+        "consecutive_errors": consecutive_errors,
+        "step_cost": 0,
+        "is_terminal": True,
+        "termination_reason": ep.get("termination_reason"),
+    })
+    return rows
+
+# mode pairs
+def mode_pairs(episodes: list[dict]) -> list[dict]:
+    #one row per (task, budget) with A's and B's outcome side by side
+    cells: dict[tuple, dict] = defaultdict(dict)
+    #group the episodes by task and budget
+    for ep in episodes:
+        #if the strategy is in ACTION_OF
+        if ep["strategy"] in ACTION_OF:
+            #add the episode to the cells
+            cells[(ep["task_id"], ep["budget_level"])][ep["strategy"]] = ep
+
+    #loop through the cells
+    out = []
+    for (tid, budget), arms in sorted(cells.items()):
+        if "A" not in arms or "B" not in arms:
+            continue
+        a, b = arms["A"], arms["B"]
+        row = {"task_id": tid, "budget_level": budget,
+               **{f: a.get(f) for f in TASK_FIELDS},
+               "tier_ord": TIER_ORD.get(a.get("difficulty_tier"))}
+        for s, ep in (("a", a), ("b", b)):
+            row[f"{s}_success"] = bool(ep["success"])
+            row[f"{s}_tokens"] = ep["total_tokens"]
+            row[f"{s}_eligible"] = ep.get("use_for_reward", True)
+        row["both_eligible"] = row["a_eligible"] and row["b_eligible"]
+        out.append(row)
+    return out
+
+#if the joined file dropped step_log, pull it back from the raw files (in this case I haven't dropped it)
+def attach_step_logs(episodes: list[dict], raw_paths: list[str]) -> int:
+    #if the episodes have step_log, return 0
+    if episodes and "step_log" in episodes[0]:
+        #return 0
+        return 0
+    #create a dictionary to store the step logs
+    raw = {}
+    #loop through the raw paths
+    for p in raw_paths:
+        for r in load_jsonl(p):
+            if "error" not in r:
+                raw[(r["strategy"], r["task_id"], r["budget_level"])] = r.get("step_log", [])
+    n = 0
+    for ep in episodes:
+        ep["step_log"] = raw.get((ep["strategy"], ep["task_id"], ep["budget_level"]), [])
+        n += 1
+    return n
+
+def write_jsonl(rows: list[dict], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+#main function
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--episodes", default="../data/processed/6_budgets_ALL_tasks_decontaminated_batch/final_episodes.jsonl")
+    ap.add_argument("--raw", nargs="*", default=[
+        "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_A/strategy_a.jsonl",
+        "../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_B/strategy_b.jsonl",])
+    ap.add_argument("--out-dir", default="../data/processed/router_c_models")
+    args = ap.parse_args()
+
+    #load the episodes
+    episodes = load_jsonl(args.episodes)
+    #attach the step logs
+    restored = attach_step_logs(episodes, args.raw)
+    print(f"[build] {len(episodes)} episodes"
+          + (f", step_log restored from raw for {restored}" if restored else ""))
+
+    #create the transitions
+    trans = [r for ep in episodes for r in episode_rows(ep)]
+    #create the mode pairs
+    pairs = mode_pairs(episodes)
+
+    #write the transitions and mode pairs to the output directory
+    out = Path(args.out_dir)
+    #write the transitions to the output directory
+    write_jsonl(trans, out / "transitions.jsonl")
+    #write the mode pairs to the output directory
+    write_jsonl(pairs, out / "mode_pairs.jsonl")
+
+    #count the actions
+    acts = Counter(r["action"] for r in trans)
+    print(f"[build] transitions {len(trans):>6}  "
+          + "  ".join(f"{a} {n}" for a, n in sorted(acts.items())))
+    print(f"[build] mode pairs  {len(pairs):>6}  "
+          f"both eligible {sum(p['both_eligible'] for p in pairs)}")
+    empty = sum(1 for ep in episodes if not ep.get("step_log"))
+    if empty:
+        print(f"[build] {empty} episodes had no steps --> stop row only")
+    print(f"[build] wrote to {out}/")
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+=============================================================================================
+
+
+
+
+### train_router.py
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import time
+from collections import Counter, defaultdict
+from pathlib import Path
+
+import numpy as np
+import torch
+import torch.nn as nn
+from sklearn.metrics import roc_auc_score
+
+#default configuration
+DEFAULT_CONFIG = {
+    #entropy weight the hyperparameter under test
+    "alpha": 0.05,
+    #advantage temperature
+    "beta": 0.5,
+    #token cost weight in the return
+    "lambda": 0.5,
+    #hidden layer size
+    "hidden": 64,
+    #number of epochs
+    "epochs": 60,
+    #learning rate
+    "lr": 1e-3,
+    #batch size
+    "batch": 256,
+    #number of folds
+    "folds": 5,
+    #seed
+    "seed": 0,
+    #frontier sweep: stop the most hopeless % of states. Quantiles of the held-out P(stop), so the sweep is by rank
+    "threshold_quantiles": [0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.85, 0.90, 0.93, 0.95, 0.97, 0.98, 0.99],
+    #used to pick the suggested threshold
+    "min_success_kept": 0.90,
+}
+
+#sites
+SITES = ["reddit", "shopping", "shopping_admin"]
+#categories
+CATEGORIES = ["bulk_action", "create", "delete", "information_retrieval", "modify_value", "navigation", "other", "purchase"]
+#risk order
+RISK_ORD = {"read_only": 0, "idempotent": 1, "non_idempotent": 2}
+#mode order
+MODE_ORD = {"execute": 0, "cycle": 1}
+#mode actions
+MODE_ACTIONS = ["execute", "cycle"]
+#stop actions
+STOP_ACTIONS = ["continue", "stop"]
+
+
+# features - shared with the live runner
+def task_features(r: dict) -> list[float]:
+    return ([float(r["tier_ord"]), float(r["pages_to_traverse"]),
+             float(r["retrieval_type"]), float(r["interaction"]),
+             float(r["target_locatability"]), float(RISK_ORD[r["risk_level"]]),
+             math.log2(r["budget_level"])]
+            + [1.0 if r["site"] == s else 0.0 for s in SITES]
+            + [1.0 if r["task_category"] == c else 0.0 for c in CATEGORIES])
+
+#function to get the stop features
+def stop_features(r: dict) -> list[float]:
+    return task_features(r) + [
+        float(r["step_index"]),
+        max(0.0, float(r["budget_remaining_frac"])),
+        float(r["last_error"]),
+        float(r["url_changed_last"]),
+        min(4.0, float(r["consecutive_errors"])),
+        float(MODE_ORD[r["mode"]]),
+    ]
+
+#mode feature names
+MODE_FEATURE_NAMES = (["tier_ord", "pages_to_traverse", "retrieval_type", "interaction", "target_locatability", "risk_ord", "log2_budget"]
+                      + [f"site={s}" for s in SITES] + [f"cat={c}" for c in CATEGORIES])
+#stop feature names
+STOP_FEATURE_NAMES = MODE_FEATURE_NAMES + ["step_index", "budget_remaining_frac", "last_error", "url_changed_last", "consecutive_errors", "mode_ord"]
+
+#multi-layer perceptron
+class MLP(nn.Module):
+    #number of input features, number of hidden layers, number of output classes
+    def __init__(self, n_in: int, hidden: int, n_out: int = 2):
+        #initialise the MLP
+        super().__init__()
+        #define the layers
+        self.net = nn.Sequential(nn.Linear(n_in, hidden), nn.ReLU(), nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, n_out))
+    #forward pass
+    def forward(self, x):
+        return self.net(x)
+
+#normalisation
+class Norm:
+    #fit the normalisation on the training fold only
+    def __init__(self, X: np.ndarray):
+        self.mean = X.mean(0)
+        self.std = X.std(0) + 1e-6
+    #normalise the input
+    def __call__(self, X: np.ndarray) -> np.ndarray:
+        return (X - self.mean) / self.std
+
+
+# training
+#Advantage weighted policy gradient with entropy bonus
+# X:states, A:action index taken, W:exp(advantage/beta) for that action
+def train_head(X: np.ndarray, A: np.ndarray, W: np.ndarray, cfg: dict) -> MLP:
+    #set the seed
+    torch.manual_seed(cfg["seed"])
+    #define the MLP
+    net = MLP(X.shape[1], cfg["hidden"])
+    #define the optimizer
+    opt = torch.optim.Adam(net.parameters(), lr=cfg["lr"])
+    #convert the input to tensors
+    Xt, At, Wt = (torch.tensor(X, dtype=torch.float32), torch.tensor(A), torch.tensor(W, dtype=torch.float32))
+    #train the MLP  
+    for epoch in range(cfg["epochs"]):
+        perm = torch.randperm(len(Xt))
+        for i in range(0, len(Xt), cfg["batch"]):
+            j = perm[i:i + cfg["batch"]] #batch index
+            logp = torch.log_softmax(net(Xt[j]), -1) #log probability of the action
+            chosen = logp.gather(1, At[j][:, None]).squeeze(1) #log probability of the chosen action
+            entropy = -(logp.exp() * logp).sum(-1).mean() #entropy of the policy
+            loss = -(Wt[j] * chosen).mean() - cfg["alpha"] * entropy #loss function
+            opt.zero_grad() #zero the gradients
+            loss.backward() #backpropagate the loss
+            opt.step() #update the parameters
+    return net
+
+#predict the action probability
+def predict(net: MLP, X: np.ndarray) -> np.ndarray:
+    #disable gradient computation
+    with torch.no_grad():
+        #predict the action probability
+        return torch.softmax(net(torch.tensor(X, dtype=torch.float32)), -1)[:, 1].numpy()
+
+
+#returns(n, 2) return of each action per state --> (n, 2) weights
+#Standard AWR weight is exp(A/beta)
+#advantage weights are clipped to avoid overflow
+def advantage_weights(returns: np.ndarray, beta: float, clip: float = 20.0) -> np.ndarray:
+    #calculate the advantage
+    adv = returns - returns.mean(1, keepdims=True)
+    #calculate the weights
+    w = np.minimum(np.exp(adv / beta), clip)
+    #subtract the minimum weight to avoid negative weights
+    return w - w.min(1, keepdims=True)
+
+
+#build the mode set
+def build_mode_set(pairs: list[dict], lam: float):
+    #filter the pairs that are both eligible
+    P = [p for p in pairs if p["both_eligible"]]
+    #convert the pairs to features
+    X = np.array([task_features(p) for p in P], dtype=np.float32)
+    #convert the pairs to returns
+    R = np.array([[p["a_success"] * (1 - lam * p["a_tokens"] / p["budget_level"]), p["b_success"] * (1 - lam * p["b_tokens"] / p["budget_level"])] for p in P])
+    #return the pairs, features, and returns
+    return P, X, R
+
+
+#build the stop set
+def build_stop_set(trans: list[dict], lam: float):
+    #filter the transitions that are not terminal and are reward eligible
+    S = [t for t in trans if not t["is_terminal"] and t["use_for_reward"]]
+    #convert the transitions to features
+    X = np.array([stop_features(t) for t in S], dtype=np.float32)
+    #convert the transitions to returns
+    R = np.zeros((len(S), 2))
+    for i, t in enumerate(S):
+        #calculate the spent tokens
+        spent = (1 - max(0.0, t["budget_remaining_frac"])) * t["budget_level"]
+        #calculate the remaining tokens
+        remaining = max(0.0, t["episode_tokens"] - spent)
+        #calculate the return
+        R[i, 0] = float(t["episode_success"]) - lam * remaining / t["budget_level"]
+    #return the transitions, features, and returns
+    return S, X, R
+
+
+#expand the features and returns to training rows
+def expand(X: np.ndarray, R: np.ndarray, beta: float):
+    #calculate the weights
+    W = advantage_weights(R, beta)
+    #number of states
+    n = len(X)
+    #concatenate the features and actions
+    Xe = np.concatenate([X, X])
+    Ae = np.concatenate([np.zeros(n, int), np.ones(n, int)])
+    We = np.concatenate([W[:, 0], W[:, 1]]) #concatenate the weights
+    keep = We > 0 #keep the rows with weight greater than 0
+    #return the features, actions, and weights
+    return Xe[keep], Ae[keep], We[keep]
+
+
+#evaluate the policy
+#run the policy on held-out pairs using logged episodes
+def simulate(pairs: list[dict], p_cycle: dict, p_stop: dict, threshold: float, episodes_by_arm: dict) -> dict:
+    #number of successes
+    succ = tok = 0
+    #number of stops at each step
+    stops_at = Counter()
+    #number of modes
+    modes = Counter()
+    for p in pairs:
+        key = (p["task_id"], p["budget_level"]) #task id and budget level
+        arm = "B" if p_cycle[key] >= 0.5 else "A"
+        modes[arm] += 1 #increment the mode count
+        ep = episodes_by_arm[(arm,) + key] #get the episodes by arm and key
+        probs = p_stop.get((arm,) + key, []) #get the stop probabilities by arm and key
+        stopped = next((k for k, q in enumerate(probs) if q >= threshold), None) #get the stopped step
+        if stopped is None:
+            succ += ep["success"] #increment the success count
+            tok += ep["tokens"] #increment the token count
+            stops_at["never"] += 1
+        else:
+            #increment the token count
+            tok += ep["spent"][stopped]
+            stops_at["step0" if stopped == 0 else "mid"] += 1
+    return {"successes": int(succ), "tokens": int(tok),
+            "mode_mix": dict(modes), "stops": dict(stops_at)}
+#baselines
+def baselines(pairs: list[dict]) -> dict:
+    #return the successes and tokens for each arm in (("always_A", "a"), ("always_B", "b"))
+    out = {}
+    #always choose arm A
+    for name, arm in (("always_A", "a"), ("always_B", "b")):
+        out[name] = {"successes": int(sum(p[f"{arm}_success"] for p in pairs)),
+                     "tokens": int(sum(p[f"{arm}_tokens"] for p in pairs))}
+    #oracle
+    s = t = 0
+    #calculate the successes and tokens for the oracle
+    for p in pairs:
+        wins = [p[f"{a}_tokens"] for a in "ab" if p[f"{a}_success"]] #get the tokens for the winning arm
+        if wins:
+            s += 1 #increment the success count
+            t += min(wins) #increment the token count
+            t += min(wins)
+    out["oracle"] = {"successes": s, "tokens": t}
+    return out
+
+
+#load the JSONL file
+def load_jsonl(path: str | Path) -> list[dict]:
+    return [json.loads(l) for l in Path(path).read_text().splitlines() if l.strip()]
+
+#run the router
+def run(pairs: list[dict], trans: list[dict], cfg: dict, out_dir: Path) -> dict:
+    t0 = time.time()
+    np.random.seed(cfg["seed"])
+    lam, beta = cfg["lambda"], cfg["beta"]
+
+    P, Xm, Rm = build_mode_set(pairs, lam)
+    S, Xs, Rs = build_stop_set(trans, lam)
+    groups_m = np.array([p["task_id"] for p in P])
+    groups_s = np.array([t["task_id"] for t in S])
+    #task ids
+    task_ids = sorted({p["task_id"] for p in pairs} | {t["task_id"] for t in trans})
+    perm = np.random.default_rng(cfg["seed"]).permutation(task_ids) #shuffle the task ids
+    #fold of the task ids
+    fold_of = {int(t): i % cfg["folds"] for i, t in enumerate(perm)}
+
+    #out-of-fold predictions, both heads share the task folds
+    oof_cycle = np.zeros(len(P))
+    oof_stop = np.zeros(len(S))
+    for f in range(cfg["folds"]):
+        #training data for the mode head
+        tr_m = np.array([fold_of[g] != f for g in groups_m])
+        tr_s = np.array([fold_of[g] != f for g in groups_s])
+        nm, ns = Norm(Xm[tr_m]), Norm(Xs[tr_s]) #normalise the features
+        Xe, Ae, We = expand(nm(Xm[tr_m]), Rm[tr_m], beta)
+        net_m = train_head(Xe, Ae, We, cfg) #train the mode head
+        oof_cycle[~tr_m] = predict(net_m, nm(Xm[~tr_m]))
+        Xe, Ae, We = expand(ns(Xs[tr_s]), Rs[tr_s], beta) #expand the features and returns
+        net_s = train_head(Xe, Ae, We, cfg)
+        oof_stop[~tr_s] = predict(net_s, ns(Xs[~tr_s]))
+
+    #metrics for the mode head
+    p_cycle = {(p["task_id"], p["budget_level"]): float(q) for p, q in zip(P, oof_cycle)}
+    better_b = np.array([Rm[i, 1] > Rm[i, 0] for i in range(len(P))]) #better arm
+    differ = np.array([p["a_success"] != p["b_success"] for p in P]) #differ in success
+    mode_metrics = {
+        "n_pairs": len(P), #number of pairs
+        "picks_cycle_frac": float((oof_cycle >= 0.5).mean()), #fraction of pairs that pick the cycle arm
+        "auc_better_arm": float(roc_auc_score(better_b, oof_cycle)) if better_b.any() and not better_b.all() else None, #AUC of the better arm
+        "auc_where_outcomes_differ": float(roc_auc_score(
+            [p["b_success"] for p, d in zip(P, differ) if d],
+            [q for q, d in zip(oof_cycle, differ) if d])) if differ.sum() > 1 else None, #AUC of the where outcomes differ
+        "picks_cycle_by_budget": {
+            str(b): float(np.mean([q >= 0.5 for p, q in zip(P, oof_cycle) if p["budget_level"] == b]))
+            for b in sorted({p["budget_level"] for p in P})}, #fraction of pairs that pick the cycle arm by budget
+    }
+
+    #metrics for the stop head
+    y_succ = np.array([t["episode_success"] for t in S])
+    stop_metrics = {
+        "n_states": len(S),
+        "auc_stop_vs_eventual_failure": float(roc_auc_score(~y_succ, oof_stop)),
+        "mean_p_stop_by_tier": {
+            tier: float(np.mean([q for t, q in zip(S, oof_stop) if t["difficulty_tier"] == tier]))
+            for tier in ["Easy", "Medium", "Hard"]},
+    }
+
+    #simulate the full policy on held-out pairs
+    p_stop = defaultdict(list) #stop probabilities by strategy, task id, and budget level
+    for t, q in zip(S, oof_stop):
+        p_stop[(t["strategy"], t["task_id"], t["budget_level"])].append(float(q)) #append the stop probability
+    eps = {} #episodes by strategy, task id, and budget level
+    for t in trans:
+        k = (t["strategy"], t["task_id"], t["budget_level"]) #key
+        e = eps.setdefault(k, {"success": int(t["episode_success"]), #success
+                               "tokens": t["episode_tokens"], "spent": []}) #tokens and spent
+        if not t["is_terminal"]: #if not terminal
+            e["spent"].append(int((1 - max(0.0, t["budget_remaining_frac"])) * t["budget_level"])) #append the spent
+    base = baselines(P) #baselines
+    frontier = [{"threshold": None, "quantile": None, **simulate(P, p_cycle, {}, 1.1, eps)}]
+    for q in cfg["threshold_quantiles"]: #quantiles of the held-out P(stop)
+        th = float(np.quantile(oof_stop, q))
+        frontier.append({"threshold": th, "quantile": q,
+                         **simulate(P, p_cycle, p_stop, th, eps)})
+    ref_s, ref_t = base["always_A"]["successes"], base["always_A"]["tokens"]
+    #frontier
+    for row in frontier:
+        row["success_kept_vs_A"] = round(row["successes"] / ref_s, 3) if ref_s else None
+        row["tokens_saved_vs_A"] = round(1 - row["tokens"] / ref_t, 3) if ref_t else None
+    ok = [r for r in frontier if r["threshold"] is not None
+          and r["success_kept_vs_A"] is not None
+          and r["success_kept_vs_A"] >= cfg["min_success_kept"]]
+    suggested = max(ok, key=lambda r: r["tokens_saved_vs_A"])["threshold"] if ok else None
+
+    per_budget = {}
+    for b in sorted({p["budget_level"] for p in P}):
+        sub = [p for p in P if p["budget_level"] == b]
+        per_budget[str(b)] = {"baselines": baselines(sub), "router": simulate(sub, p_cycle, p_stop, suggested or 1.1, eps)}
+
+    #final fit on everything, saved for the live runner
+    nm, ns = Norm(Xm), Norm(Xs) #normalise the features
+    Xe, Ae, We = expand(nm(Xm), Rm, beta) #expand the features and returns
+    net_m = train_head(Xe, Ae, We, cfg) #train the mode head
+    Xe, Ae, We = expand(ns(Xs), Rs, beta) #expand the features and returns
+    net_s = train_head(Xe, Ae, We, cfg) #train the stop head
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    #save the model
+    torch.save({
+        "config": cfg,
+        "mode_features": MODE_FEATURE_NAMES, "stop_features": STOP_FEATURE_NAMES,
+        "mode_norm": {"mean": nm.mean.tolist(), "std": nm.std.tolist()},
+        "stop_norm": {"mean": ns.mean.tolist(), "std": ns.std.tolist()},
+        "mode_state": net_m.state_dict(), "stop_state": net_s.state_dict(),
+        "stop_threshold": suggested,
+        "sites": SITES, "categories": CATEGORIES,
+    }, out_dir / "router.pt")
+
+    metrics = {
+        "config": cfg,
+        "train_seconds": round(time.time() - t0, 1),
+        "mode_head": mode_metrics,
+        "stop_head": stop_metrics,
+        "baselines": base,
+        "frontier": frontier,
+        "suggested_threshold": suggested,
+        "per_budget": per_budget,
+    }
+    (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
+
+    #save the out-of-fold predictions
+    with (out_dir / "oof_predictions.jsonl").open("w") as f:
+        for p, q in zip(P, oof_cycle):
+            k = (p["task_id"], p["budget_level"])
+            f.write(json.dumps({
+                "task_id": k[0], "budget_level": k[1], "difficulty_tier": p["difficulty_tier"],
+                "fold": fold_of[k[0]], "p_cycle": round(float(q), 4),
+                "p_stop_A": [round(x, 4) for x in p_stop.get(("A",) + k, [])],
+                "p_stop_B": [round(x, 4) for x in p_stop.get(("B",) + k, [])],
+                "a_success": p["a_success"], "a_tokens": p["a_tokens"],
+                "b_success": p["b_success"], "b_tokens": p["b_tokens"],
+            }) + "\n")
+
+    return metrics
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", type=int)
+    ap.add_argument("--alpha", type=float)
+    ap.add_argument("--pairs", default="../data/processed/router_c_models/mode_pairs.jsonl")
+    ap.add_argument("--transitions", default="../data/processed/router_c_models/transitions.jsonl")
+    args = ap.parse_args()
+
+    #output directory
+    out_dir = Path(__file__).parent / f"model_{args.model}"
+    cfg_path = out_dir / "config.json"
+    #configuration
+    cfg = dict(DEFAULT_CONFIG)
+    #update the configuration
+    if cfg_path.exists():
+        cfg.update(json.loads(cfg_path.read_text()))
+    if args.alpha is not None:
+        cfg["alpha"] = args.alpha
+    #the sweep grid is an evaluation setting, never persisted per model
+    cfg["threshold_quantiles"] = DEFAULT_CONFIG["threshold_quantiles"]
+    out_dir.mkdir(parents=True, exist_ok=True)
+    #save the configuration
+    cfg_path.write_text(json.dumps({k: v for k, v in cfg.items() if k != "threshold_quantiles"}, indent=2))
+    #load the pairs and transitions
+    pairs = load_jsonl(args.pairs)
+    trans = load_jsonl(args.transitions)
+    print(f"[router] model_{args.model}: {len(pairs)} pairs, {len(trans)} transitions")
+    #run the router
+    run(pairs, trans, cfg, out_dir)
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+=============================================================================================
+
+
+
+
+### compare_models.py
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+
+# validated categorical slots 1-3 (all-pairs safe), one per model
+MODEL_COLOUR = {1: "#2a78d6", 2: "#eb6834", 3: "#1baf7a"}
+MODEL_MARKER = {1: "o", 2: "s", 3: "^"}
+# ordinal ramp for difficulty tiers (same as tier_diagrams.py)
+TIER_COLOUR = {"Easy": "#86b6ef", "Medium": "#2a78d6", "Hard": "#104281"}
+INK, INK2, GRID, SURFACE = "#0b0b0b", "#52514e", "#e6e5e1", "#fcfcfb"
+BUDGETS = [2000, 4000, 8000, 16000, 32000, 64000]
+
+plt.rcParams.update({
+    "font.size": 10, "axes.edgecolor": INK2, "axes.labelcolor": INK2,
+    "xtick.color": INK2, "ytick.color": INK2, "axes.spines.top": False,
+    "axes.spines.right": False, "axes.grid": True, "grid.color": GRID,
+    "grid.linewidth": 1, "axes.axisbelow": True, "figure.facecolor": SURFACE,
+    "axes.facecolor": SURFACE, "legend.frameon": False,
+})
+
+#load the metrics and oof predictions for each model
+def load(models_dir: Path) -> dict[int, dict]:
+    out = {} #output dictionary
+    for n in (1, 2, 3):
+        d = models_dir / f"model_{n}"
+        if not (d / "metrics.json").exists():
+            continue
+        out[n] = {
+            "metrics": json.loads((d / "metrics.json").read_text()),
+            "oof": [json.loads(l) for l in (d / "oof_predictions.jsonl").read_text().splitlines() if l.strip()],
+        }
+    if not out:
+        raise SystemExit(f"no model_N/metrics.json under {models_dir}")
+    return out
+
+
+#create a new figure
+def new_fig(title: str, size=(8, 5.2)):
+    fig, ax = plt.subplots(figsize=size)
+    fig.subplots_adjust(top=0.88)
+    fig.text(0.02, 0.97, title, fontsize=13, fontweight="bold", color=INK, va="top")
+    return fig, ax
+
+#save the figure
+def save(fig, path: Path) -> None:
+    fig.savefig(path, dpi=300, bbox_inches="tight", facecolor=SURFACE)
+    plt.close(fig)
+
+#get the frontier at a given quantile
+#frontier meaning the set of trade offs the router can offer between success and tokens saved
+def at_quantile(m: dict, q: float) -> dict:
+    return next(r for r in m["frontier"] if r["quantile"] == q)
+
+#get the suggested row
+def suggested_row(m: dict) -> dict:
+    return next(r for r in m["frontier"] if r["threshold"] == m["suggested_threshold"])
+
+#figure for the frontier
+def fig_frontier(models: dict, chosen: int, out: Path) -> None:
+    fig, ax = new_fig("Cost–performance frontier of the Strategy C router", (8, 5.6))
+    #plot the frontier for each model
+    for n, d in models.items():
+        m = d["metrics"]
+        pts = [(100 * r["tokens_saved_vs_A"], 100 * r["success_kept_vs_A"]) #tokens saved vs always-A and successes kept vs always-A
+               for r in m["frontier"] if r["threshold"] is not None] #only the rows with a threshold
+        xs, ys = zip(*sorted(pts)) #sort the points by tokens saved vs always-A
+        ax.plot(xs, ys, "-", color=MODEL_COLOUR[n], lw=2, alpha=0.9, zorder=3)
+        ax.plot(xs, ys, MODEL_MARKER[n], color=MODEL_COLOUR[n], ms=6.5,
+                mec=SURFACE, mew=1.5, zorder=4,
+                label=f"model {n}  (α = {m['config']['alpha']})")
+        s = suggested_row(m)
+    #plot the baselines
+    b = next(iter(models.values()))["metrics"]["baselines"]
+    ref_s, ref_t = b["always_A"]["successes"], b["always_A"]["tokens"] #reference successes and tokens
+    for name, mk, dx, dy in (("always_A", "D", -10, 6), ("always_B", "X", 10, 6), ("oracle", "*", -12, -16)):
+        x = 100 * (1 - b[name]["tokens"] / ref_t) #tokens saved vs always-A
+        y = 100 * b[name]["successes"] / ref_s #successes kept vs always-A
+        ax.plot(x, y, mk, color=INK2, ms=10 if mk != "*" else 14, mec=SURFACE, mew=1.2, zorder=6)
+        ax.annotate(name.replace("_", "-"), (x, y), xytext=(dx, dy),
+                    textcoords="offset points", fontsize=9, color=INK2,
+                    ha="right" if dx < 0 else "left")
+    #plot the grid
+    ax.axhline(100, color=GRID, lw=1, zorder=1)
+    ax.axvline(0, color=GRID, lw=1, zorder=1)
+    ax.set_xlabel("Tokens saved vs always-A (%)")
+    ax.set_ylabel("Successes kept vs always-A (%)")
+    ax.set_xlim(-55, 95)
+    ax.set_ylim(45, 112)
+    ax.legend(loc="lower right", fontsize=9)
+    save(fig, out / "frontier.png")
+
+#figure for the mode head: P(cycle) on held-out task–budget pairs
+def fig_mode_p_cycle(models: dict, out: Path) -> None:
+    fig, ax = new_fig("Mode head: P(cycle) on held-out task–budget pairs")
+    bins = np.linspace(0, 1, 41) #bins for the histogram
+    for n, d in models.items():
+        p = [o["p_cycle"] for o in d["oof"]] #p(cycle) for each model
+        ax.hist(p, bins=bins, histtype="step", lw=2, color=MODEL_COLOUR[n],
+                label=f"model {n}  (picks cycle {d['metrics']['mode_head']['picks_cycle_frac']:.1%})")
+    ax.axvline(0.5, color=INK2, lw=1, ls=(0, (4, 3)))
+    ax.text(0.51, ax.get_ylim()[1] * 0.45, "decision\nboundary", fontsize=8.5, color=INK2, va="top")
+    ax.set_xlabel("P(cycle)")
+    ax.set_ylabel("Task–budget pairs")
+    ax.legend(fontsize=9, loc="upper right", bbox_to_anchor=(1.0, 0.98))
+    save(fig, out / "mode_p_cycle.png")
+
+#figure for the mode head: P(cycle) by which arm actually won
+def fig_mode_by_winner(models: dict, chosen: int, out: Path) -> None:
+    fig, ax = new_fig(f"Mode head: P(cycle) by which arm actually won (model {chosen})")
+    oof = models[chosen]["oof"] #oof predictions
+    groups = {"A only": [], "B only": [], "both": [], "neither": []}
+    for o in oof: #group the predictions by which arm actually won
+        k = ("A only" if o["a_success"] and not o["b_success"] else
+             "B only" if o["b_success"] and not o["a_success"] else
+             "both" if o["a_success"] else "neither")
+        groups[k].append(o["p_cycle"]) #add the p(cycle) to the group
+    names = list(groups)
+    bp = ax.boxplot([groups[k] for k in names], #boxplot of the p(cycle) for each group
+                    tick_labels=[f"{k}\n(n={len(groups[k])})" for k in names],
+                    widths=0.5, patch_artist=True, showfliers=False,
+                    medianprops=dict(color=INK, lw=1.5),
+                    whiskerprops=dict(color=INK2), capprops=dict(color=INK2))
+    for patch in bp["boxes"]: #set the color of the boxes
+        patch.set(facecolor=MODEL_COLOUR[chosen], alpha=0.35, edgecolor=MODEL_COLOUR[chosen])
+    ax.axhline(0.5, color=INK2, lw=1, ls=(0, (4, 3))) #add the decision boundary
+    ax.set_ylim(-0.02, 0.56)
+    ax.set_ylabel("P(cycle)")
+    ax.set_xlabel("Which arm succeeded on the pair")
+    auc = models[chosen]["metrics"]["mode_head"]["auc_where_outcomes_differ"] #AUC for the mode head
+    ax.text(0.98, 0.88, f"AUC, A-only vs B-only: {auc:.2f}", transform=ax.transAxes,
+            ha="right", va="top", fontsize=9, color=INK2)
+    save(fig, out / "mode_by_winner.png")
+
+#figure for the stop head: mean P(stop) by step (execute arm, held-out)
+def fig_stop_by_step(models: dict, out: Path) -> None:
+    fig, ax = new_fig("Stop head: mean P(stop) by step (execute arm, held-out)")
+    for n, d in models.items():
+        by_step: dict[int, list] = {}
+        for o in d["oof"]: #group the predictions by step
+            for k, q in enumerate(o["p_stop_A"]):
+                by_step.setdefault(k, []).append(q) #add the p(stop) to the group
+        ks = [k for k in sorted(by_step) if len(by_step[k]) >= 30]
+        ax.plot(ks, [np.mean(by_step[k]) for k in ks], "-", color=MODEL_COLOUR[n], lw=2,
+                marker=MODEL_MARKER[n], ms=6, mec=SURFACE, mew=1.2, label=f"model {n}")
+    ax.set_xlabel("Step index (website moves so far)")
+    ax.set_ylabel("Mean P(stop)")
+    ax.set_ylim(0, 1.02)
+    ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+    ax.legend(fontsize=9, loc="lower right")
+    save(fig, out / "stop_by_step.png")
+
+#figure for the stop head: P(stop) at step 0 by budget and difficulty
+def fig_stop_step0(models: dict, chosen: int, out: Path) -> None:
+    fig, ax = new_fig(f"Stop head: P(stop) at step 0 by budget and difficulty (model {chosen})")
+    oof = models[chosen]["oof"]
+    width = 0.26
+    for i, tier in enumerate(["Easy", "Medium", "Hard"]):
+        vals = []
+        for b in BUDGETS:
+            q = [o["p_stop_A"][0] for o in oof
+                 if o["budget_level"] == b and o["difficulty_tier"] == tier and o["p_stop_A"]]
+            vals.append(np.mean(q) if q else 0)
+        x = np.arange(len(BUDGETS)) + (i - 1) * width
+        ax.bar(x, vals, width - 0.03, color=TIER_COLOUR[tier], label=tier, zorder=3)
+    ax.set_xticks(np.arange(len(BUDGETS)), [f"{b // 1000}k" for b in BUDGETS])
+    ax.set_xlabel("Token budget")
+    ax.set_ylabel("Mean P(stop) at step 0")
+    ax.set_ylim(0, 1.18)
+    ax.legend(title="Difficulty tier", fontsize=9, title_fontsize=9, loc="upper right", ncol=3)
+    save(fig, out / "stop_step0.png")
+
+#figure for the stop head: successes and tokens at each budget
+def fig_per_budget(models: dict, chosen: int, out: Path) -> None:
+    m = models[chosen]["metrics"]
+    pb = m["per_budget"]
+    x = np.arange(len(BUDGETS))
+    w = 0.36
+    a_s = [pb[str(b)]["baselines"]["always_A"]["successes"] for b in BUDGETS]
+    r_s = [pb[str(b)]["router"]["successes"] for b in BUDGETS]
+    a_t = [pb[str(b)]["baselines"]["always_A"]["tokens"] / 1e6 for b in BUDGETS]
+    r_t = [pb[str(b)]["router"]["tokens"] / 1e6 for b in BUDGETS]
+    #plot the successes and tokens at each budget
+    for name, a, r, ylab, title in (
+            ("per_budget_successes", a_s, r_s, "Successes",
+             f"Successes by budget: model {chosen} vs always-A"),
+            ("per_budget_tokens", a_t, r_t, "Tokens spent (millions)",
+             f"Tokens spent by budget: model {chosen} vs always-A")):
+        fig, ax = new_fig(title)
+        ax.bar(x - w / 2, a, w - 0.03, color=INK2, alpha=0.55, label="always-A", zorder=3)
+        ax.bar(x + w / 2, r, w - 0.03, color=MODEL_COLOUR[chosen],
+               label=f"router (model {chosen})", zorder=3)
+        ax.set_xticks(x, [f"{b // 1000}k" for b in BUDGETS])
+        ax.set_xlabel("Token budget")
+        ax.set_ylabel(ylab)
+        ax.legend(fontsize=9, loc="upper left")
+        if name == "per_budget_tokens":
+            for i in range(len(BUDGETS)):
+                if a[i] > 0:
+                    ax.text(x[i] + w / 2, r[i] + max(a) * 0.015, f"−{1 - r[i] / a[i]:.0%}", ha="center", va="bottom", fontsize=8.5, color=INK)
+        save(fig, out / f"{name}.png")
+
+#main function
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--models", default="../data/processed/strategy_c_models")
+    ap.add_argument("--out", default="../data/processed/diagrams/strategy_c_model123_plots")
+    ap.add_argument("--chosen", type=int, default=2)
+    args = ap.parse_args()
+ 
+    models = load(Path(args.models))
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+
+    fig_frontier(models, args.chosen, out)
+    fig_mode_p_cycle(models, out)
+    fig_mode_by_winner(models, args.chosen, out)
+    fig_stop_by_step(models, out)
+    fig_stop_step0(models, args.chosen, out)
+    fig_per_budget(models, args.chosen, out)
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+=============================================================================================
+
+
+
+
+## Spending Schemes Module
+
+### agents.py
+
+
+
+### allowance.py
+
+
+
+### run_schemes.py
+
+
+
+### spending_scheme_config.py
+
+
+
+### select_tasks.py
+
+
+
+### analyse_schemes.py

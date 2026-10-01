@@ -9,9 +9,11 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
+#ACTION_OF is a dictionary to store the action of the strategy
 ACTION_OF = {"A": "execute", "B": "cycle"}
+#TIER_ORD is a dictionary to store the order of the tiers
 TIER_ORD = {"Easy": 0, "Medium": 1, "Hard": 2}
-
+#TASK_FIELDS is a list of fields to store the task information
 TASK_FIELDS = ["site", "task_category", "risk_level", "difficulty_tier", "pages_to_traverse", "retrieval_type", "interaction", "target_locatability", "rubric_total"]
 
 #load the jsonl file
@@ -23,16 +25,18 @@ def load_jsonl(path: str | Path) -> list[dict]:
             out.append(json.loads(line))
     return out
 
- #check if the action_error is not None, "None", or empty
+#check if the action_error is not None, "None", or empty
 def _has_error(entry: dict) -> bool:
     return entry.get("action_error") not in (None, "None", "")
 
-
+#function to group the log entries by website step, in step order
 def _by_step(step_log: list[dict]) -> list[list[dict]]:
     #group the log entries by website step, in step order
     groups: dict[int, list[dict]] = defaultdict(list)
+    #loop through the step log
     for e in step_log:
         groups[e["step"]].append(e)
+    #return the groups
     return [groups[k] for k in sorted(groups)]
 
 
@@ -52,11 +56,15 @@ def episode_rows(ep: dict) -> list[dict]:
         **{f: ep.get(f) for f in TASK_FIELDS},
     }
     base["tier_ord"] = TIER_ORD.get(ep.get("difficulty_tier"))
-
+    #rows is a list to store the rows
     rows = []
+    #cum_before is the cumulative tokens before the step
     cum_before = 0
+    #last_error is a boolean to store if the last error
     last_error = False
+    #url_changed is a boolean to store if the url changed
     url_changed = False
+    #consecutive_errors is the number of consecutive errors
     consecutive_errors = 0
 
     #loop through the steps
@@ -190,9 +198,8 @@ def main() -> None:
           f"both eligible {sum(p['both_eligible'] for p in pairs)}")
     empty = sum(1 for ep in episodes if not ep.get("step_log"))
     if empty:
-        print(f"[build] {empty} episodes had no steps -> stop row only")
-    print(f"[build] wrote -> {out}/")
-
+        print(f"[build] {empty} episodes had no steps --> stop row only")
+    print(f"[build] wrote to {out}/")
 
 if __name__ == "__main__":
     main()

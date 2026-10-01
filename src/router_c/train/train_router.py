@@ -71,7 +71,7 @@ def task_features(r: dict) -> list[float]:
             + [1.0 if r["site"] == s else 0.0 for s in SITES]
             + [1.0 if r["task_category"] == c else 0.0 for c in CATEGORIES])
 
-
+#function to get the stop features
 def stop_features(r: dict) -> list[float]:
     return task_features(r) + [
         float(r["step_index"]),
@@ -164,8 +164,7 @@ def build_mode_set(pairs: list[dict], lam: float):
     #convert the pairs to features
     X = np.array([task_features(p) for p in P], dtype=np.float32)
     #convert the pairs to returns
-    R = np.array([[p["a_success"] * (1 - lam * p["a_tokens"] / p["budget_level"]),
-                   p["b_success"] * (1 - lam * p["b_tokens"] / p["budget_level"])] for p in P])
+    R = np.array([[p["a_success"] * (1 - lam * p["a_tokens"] / p["budget_level"]), p["b_success"] * (1 - lam * p["b_tokens"] / p["budget_level"])] for p in P])
     #return the pairs, features, and returns
     return P, X, R
 
