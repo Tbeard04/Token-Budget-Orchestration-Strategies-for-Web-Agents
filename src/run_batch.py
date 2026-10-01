@@ -76,9 +76,8 @@ def main() -> None:
     out_path = Path(args.out or f"../data/raw/strategy_{args.strategy.lower()}.jsonl")
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    runner = {"A": strategy_a.run_episode,
-              "B": strategy_b.run_episode,
-              "C": strategy_c.run_episode}[args.strategy]
+    #runner = the function to run the episode
+    runner = {"A": strategy_a.run_episode, "B": strategy_b.run_episode, "C": strategy_c.run_episode}[args.strategy]
 
     #routing_fh = the file handle for the routing file
     routing_fh = None
@@ -185,12 +184,14 @@ def main() -> None:
     if routing_fh is not None:
         routing_fh.close()
 
+    #mins = the number of minutes it took to run the episodes
     mins = (time.time() - t_start) / 60
+    #print the results
     print(f"\n{'=' * 78}")
     print(f"[batch] finished in {mins:.0f} minutes")
     print(f"[batch] episodes ok: {n_ok}")
     print(f"[batch] successes: {n_success}"
-          f"  ({n_success / max(n_ok, 1):.1%})")
+          f" ({n_success / max(n_ok, 1):.1%})")
     print(f"[batch] errors: {n_err}")
     print(f"[batch] results in {out_path}")
 

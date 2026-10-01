@@ -7820,3 +7820,1742 @@ if __name__ == "__main__":
     main()
 
 
+
+
+=============================================================================================
+
+
+
+
+## Main Batch Module
+
+### run_batch.py
+from __future__ import annotations
+from itertools import groupby
+
+import argparse
+import json
+import random
+import time
+from pathlib import Path
+
+import wa_env as W
+import strategy_a
+import strategy_b
+import strategy_c
+
+#function to sample the tasks
+def sample_tasks(n: int, sites: list[str], seed: int) -> dict[str, list[int]]:
+    #pools = the pools of the tasks
+    pools = W.single_site_tasks(sites)
+    #rng = the random number generator
+    rng = random.Random(seed)
+    out: dict[str, list[int]] = {}
+    #for each site in the sites
+    for site in sites:
+        #pool = the pool of the site
+        pool = pools.get(site, [])
+        if not pool:
+            print(f"[batch] WARNING: no single-site tasks found for '{site}'")
+            out[site] = []
+            continue
+        k = min(n, len(pool))
+        if k < n:
+            print(f"[batch] note: only {k} tasks available for '{site}'")
+        out[site] = sorted(rng.sample(pool, k))
+    return out
+
+#function to load the completed tasks
+def load_completed(path: Path) -> set[tuple]:
+    #done = the set of completed tasks
+    done: set[tuple] = set()
+    #if the path does not exist, return the empty set
+    if not path.exists():
+        return done
+    with path.open() as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if "task_id" in r and "budget_level" in r:
+                done.add((r.get("strategy"), r["task_id"], r["budget_level"]))
+    return done
+
+#function to main
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--strategy", choices=["A", "B", "C"], required=True)
+    ap.add_argument("--router-dir", default=None)
+    ap.add_argument("--stop-answer", choices=["none", "na"], default=None)
+    ap.add_argument("--n", type=int, default=67, help="tasks per site")
+    ap.add_argument("--sites", nargs="+", default=W.SITES)
+    ap.add_argument("--budgets", nargs="+", type=int, default=W.BUDGETS)
+    ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--out", default=None)
+    args = ap.parse_args()
+
+    #out_path = the path to the output file
+    out_path = Path(args.out or f"../data/raw/strategy_{args.strategy.lower()}.jsonl")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    #runner = the function to run the episode
+    runner = {"A": strategy_a.run_episode, "B": strategy_b.run_episode, "C": strategy_c.run_episode}[args.strategy]
+
+    #routing_fh = the file handle for the routing file
+    routing_fh = None
+    #if the strategy is C
+    if args.strategy == "C":
+        strategy_c.configure(args.router_dir, args.stop_answer)
+        #routing_path = the path to the routing file
+        routing_path = out_path.with_name(out_path.stem + "_routing.jsonl")
+        #open the routing file for appending
+        routing_fh = routing_path.open("a")
+        print(f"[batch] routing trace: {routing_path}")
+
+    #plan = the plan of the tasks
+    plan = sample_tasks(args.n, args.sites, args.seed)
+    #done = the set of completed tasks
+    done = load_completed(out_path)
+
+    #todo = the list of tasks to run
+    todo = [(site, tid, b)
+            for site, ids in plan.items()
+            for tid in ids
+            for b in args.budgets
+            if (args.strategy, tid, b) not in done]
+
+    #group by (site, task_id), shuffle budgets within each group, then shuffle the group order. This keeps a task's budget conditions adjacent while still spreading order effects
+    todo.sort(key=lambda x: (x[0], x[1]))
+    rng = random.Random(args.seed)
+    groups = [list(g) for _, g in groupby(todo, key=lambda x: (x[0], x[1]))]
+    for g in groups:
+        rng.shuffle(g)
+    rng.shuffle(groups)
+    todo = [item for g in groups for item in g]
+
+    planned = sum(len(ids) for ids in plan.values()) * len(args.budgets)
+    print(f"\n[batch] strategy: {args.strategy}")
+    print(f"[batch] sites: {args.sites}")
+    print(f"[batch] budgets: {args.budgets}")
+    print(f"[batch] seed: {args.seed}")
+    print(f"[batch] output: {out_path}")
+    print(f"[batch] planned: {planned} episodes")
+    print(f"[batch] already done: {len(done)}")
+    print(f"[batch] to run: {len(todo)}")
+    for site, ids in plan.items():
+        print(f"[batch]   {site:16s} {len(ids)} tasks")
+
+    if not todo:
+        print("\n[batch] nothing to do - all episodes already collected")
+        return
+
+    t_start = time.time()
+    #n_ok = the number of tasks that were ok
+    #n_err = the number of tasks that were errors
+    #n_success = the number of tasks that were successful
+    n_ok = n_err = n_success = 0
+
+    #append: never truncate an existing results file
+    with out_path.open("a") as fh:
+        for idx, (site, tid, budget) in enumerate(todo, 1):
+            elapsed = time.time() - t_start
+            rate = elapsed / max(idx - 1, 1)
+            eta_min = (len(todo) - idx + 1) * rate / 60
+            print(f"\n[batch] {idx}/{len(todo)}  {site} task {tid} @ {budget}"
+                  f"(elapsed {elapsed/60:.0f}m, eta {eta_min:.0f}m,"
+                  f" ok {n_ok}, success {n_success}, err {n_err})")
+
+            try:
+                rec = runner(tid, budget)
+                n_ok += 1
+                if rec.get("success"):
+                    n_success += 1
+            except KeyboardInterrupt:
+                print("\n[batch] interrupted - completed episodes are saved.")
+                raise
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                n_err += 1
+                #record the failure so a resume does not retry it forever
+                rec = {
+                    "strategy": args.strategy,
+                    "site": site,
+                    "task_id": tid,
+                    "budget_level": budget,
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                    "error": f"{type(e).__name__}: {e}",
+                }
+
+            #Write immediately: an interrupt must never lose finished work
+            fh.write(json.dumps(rec) + "\n")
+            fh.flush()
+
+            #write the routing decisions to the routing file
+            if routing_fh is not None and "router" in rec:
+                routing_fh.write(json.dumps({
+                    "task_id": rec["task_id"], "site": rec["site"],
+                    "budget_level": rec["budget_level"], "timestamp": rec["timestamp"],
+                    "success": rec["success"], "total_tokens": rec["total_tokens"],
+                    "steps": rec["steps"], "termination_reason": rec["termination_reason"],
+                    **rec["router"],
+                }) + "\n")
+                routing_fh.flush()
+ 
+    #close the routing file
+    if routing_fh is not None:
+        routing_fh.close()
+
+    #mins = the number of minutes it took to run the episodes
+    mins = (time.time() - t_start) / 60
+    #print the results
+    print(f"\n{'=' * 78}")
+    print(f"[batch] finished in {mins:.0f} minutes")
+    print(f"[batch] episodes ok: {n_ok}")
+    print(f"[batch] successes: {n_success}"
+          f" ({n_success / max(n_ok, 1):.1%})")
+    print(f"[batch] errors: {n_err}")
+    print(f"[batch] results in {out_path}")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+=============================================================================================
+
+
+
+
+### strategy_a.py
+from __future__ import annotations
+
+import argparse
+import json
+import time
+from collections import Counter
+from pathlib import Path
+
+from pydantic import BaseModel, Field
+
+import wa_env as W
+
+DEFAULT_BUDGET = 16_000
+
+#Structured output: the model is constrained to emit a valid shape, so no regex extraction of the action is needed
+class AgentAction(BaseModel):
+    reasoning: str = Field(description="One short sentence justifying the action")
+    action: str = Field(description="A single BrowserGym action string")
+
+#instructions for the agent Strategy A
+INSTRUCTIONS = """\
+You are a web-navigation agent operating a website through BrowserGym.
+You are given a task goal and the page's accessibility tree (AXTree). Each
+element has a bracketed id such as [a31]. Return EXACTLY ONE action string,
+using the id WITHOUT the brackets:
+
+  click('a31')                  - click an element
+  fill('b12', 'some text')      - type into a field
+  select_option('c4', 'Blue')   - choose a dropdown option
+  press('a31', 'Enter')         - press a key
+  scroll(0, 400)                - scroll the page
+  goto('http://...')            - navigate to a URL
+  go_back()                     - browser back
+  send_msg_to_user('answer')    - ANSWER an information-seeking task
+  noop()                        - do nothing
+
+Rules:
+- Only use ids that appear in the current AXTree.
+- If the task asks a question, it is complete only once you call
+  send_msg_to_user(...) with the answer.
+- Keep reasoning to one sentence. Output one action only.
+- Review ACTIONS YOU HAVE ALREADY TAKEN. Each line shows an action and the URL
+  it led to. Element ids change on every page load, so the SAME destination can
+  have a DIFFERENT id - judge repetition by the URL, not the id. If a URL
+  appears repeatedly WITHOUT you reaching any new page in between, you are
+  going in circles: try a different route or a different part of the page.
+  Returning to a hub page to take a different branch is fine.
+- Prefer navigating via links and scrolling over using site search boxes.
+  Search endpoints are slow and often fail. Only use search if no navigational
+  path is visible.
+- If the page shows a server error (500, 502, 504) or fails to load, use
+  go_back() and try a different route. Do NOT answer N/A because of a page
+  error - N/A means the information genuinely does not exist.
+- If the task is impossible to complete on this site (the data does not exist,
+  or the site does not support the requested operation), send exactly:
+  send_msg_to_user('N/A')
+- Dropdowns come in two forms. Try select_option('378', 'games') first.
+  If it errors with "Element is not a <select> element", the control is a
+  custom widget: click it once, then look at the NEXT observation. A searchbox
+  may appear - fill it with the option name to filter, then click the matching
+  option. Do not retry select_option on such an element; it will never work.
+- Some tasks only require you to REACH a page ("browse X", "search for Y",
+  "go to Z"). These need no answer: once the correct page is loaded the task
+  is complete. Do not click into individual items or navigate away - use
+  noop() to stay on the page.
+
+Answering with send_msg_to_user - the answer is graded by EXACT MATCH:
+- Send ONLY the answer itself. No explanation, no preamble, no quotes,
+  no sentence wrapping it.
+  Correct: send_msg_to_user('Sprite Stasis Ball 65 cm')
+  Wrong: send_msg_to_user('The top seller is Sprite Stasis Ball 65 cm')
+- For a list of items, comma-separate them: send_msg_to_user('Alice, Bob')
+- If nothing on the page satisfies the criteria, send exactly:
+  send_msg_to_user('N/A')
+- Numbers: send digits only, e.g. send_msg_to_user('0')
+- Do NOT answer until you have navigated to and verified the specific
+  information the task asks for. Answering early ends the episode and
+  cannot be undone.
+"""
+
+#make the agent
+agent = W.make_agent(INSTRUCTIONS, AgentAction, label="strategy_a")
+
+#run the episode
+def run_episode(task_id: int, budget: int | None = None) -> dict:
+    cap = budget if budget is not None else DEFAULT_BUDGET
+    site = W.site_of(task_id)
+    print(f"\n{'=' * 60}\nTASK {task_id}  (site: {site})  [A, budget {cap}]\n{'=' * 60}")
+
+    env = W.make_env(task_id)
+    obs, _ = env.reset()
+
+    goal = W.goal_of(obs)
+    print(f"Goal: {goal}")
+    print(f"Start URL: {obs.get('url', 'unknown')}\n")
+
+    #initialize the input and output tokens
+    in_tok = out_tok = 0
+    steps: list[dict] = []
+    action_history: list[str] = []
+    url_history: list[str] = [obs.get("url", "")] #initialize the url history with the current url
+    url_action_counts: Counter = Counter() #initialize the url action counts
+    consecutive_errors = 0 #initialize the consecutive errors
+    success = False #initialize the success
+    reason = "max_steps" #initialize the reason
+    reward = 0.0 #initialize the reward
+    t0 = time.time() #initialize the time
+
+    #loop through the steps
+    for i in range(W.MAX_STEPS):
+        prompt = W.build_prompt(obs, action_history, url_history)
+
+        #Check BEFORE paying: an episode must never exceed its stated budget.
+        spent = in_tok + out_tok
+        est_in = len(prompt) // 4
+        if spent + est_in > cap:
+            reason = "budget_would_exceed"
+            print(f"\n step {i}: SKIPPED - est. {est_in} input tokens would exceed "
+                  f"cap (used {spent}/{cap})")
+            break
+
+        result = W.call_agent(agent, prompt)
+        u = result.usage()
+
+        #update the input and output tokens
+        in_tok += u.input_tokens
+        out_tok += u.output_tokens
+        #total = the total number of tokens
+        total = in_tok + out_tok
+        #decided = the decided action
+        decided = result.output
+        action_history.append(decided.action)
+
+        #Count this action taken FROM this page (obs is still pre-step here)
+        pair = (obs.get("url", ""), decided.action)
+        url_action_counts[pair] += 1
+        pair_n = url_action_counts[pair]
+
+        print(f"\n step {i}")
+        print(f"reason: {decided.reasoning}")
+        print(f"action: {decided.action}")
+        print(f"url: {obs.get('url', '')[:90]}")
+        print(f"tokens: +{u.input_tokens} in / +{u.output_tokens} out"
+              f"(cumulative {total})")
+        if getattr(u, "details", None):
+            print(f"detail: {u.details}")
+
+        #append the step to the steps list
+        steps.append({
+            "step": i,
+            "agent_role": "single",
+            "action": decided.action,
+            "url": obs.get("url", ""),
+            "prompt_chars": len(prompt),
+            "input_tokens": u.input_tokens,
+            "output_tokens": u.output_tokens,
+            "cumulative_tokens": total,
+            "usage_details": dict(u.details) if getattr(u, "details", None) else None,
+        })
+
+        if total >= cap:
+            reason = "safety_token_cap"
+            break
+
+        #step the environment
+        obs, reward, terminated, truncated, _ = env.step(decided.action)
+        url_history.append(obs.get("url", ""))
+        #err = the last action error
+        err = obs.get("last_action_error")
+        #consecutive_errors = the number of consecutive errors
+        consecutive_errors = consecutive_errors + 1 if err else 0
+
+        #attach the outcome to the step that produced it
+        steps[-1]["action_error"] = str(err) if err else None
+        steps[-1]["step_reward"] = reward
+        steps[-1]["next_url"] = obs.get("url", "")
+
+        #print the result
+        print(f"result: reward={reward}"
+              f"{'ERROR: ' + str(err) if err else '  (action accepted)'}")
+
+        #if the reward is greater than or equal to 1.0, set the success to True and the reason to "success"
+        if reward >= 1.0:
+            success, reason = True, "success"
+            break
+        #if the environment is terminated or truncated, set the reason to "env_terminated"
+        if terminated or truncated:
+            reason = "env_terminated"
+            break
+
+        #Shared environment constraints (identical for A, B and C).
+        #if the consecutive errors is greater than or equal to the maximum consecutive errors, set the reason to "repeated_action_failure"
+        if consecutive_errors >= W.MAX_CONSECUTIVE_ERRORS:
+            reason = "repeated_action_failure"
+            print(f"STALL: {consecutive_errors} consecutive failed actions")
+            break
+        #if the pair number is greater than or equal to the maximum same action from page, set the reason to "navigation_cycle"
+        if pair_n >= W.MAX_SAME_ACTION_FROM_PAGE:
+            reason = "navigation_cycle"
+            print(f"CYCLE: same action from same page {pair_n}x")
+            break
+
+    env.close()
+
+    #record = the record to store the results
+    record = {
+        "strategy": "A",
+        "site": site,
+        "task_id": task_id,
+        "budget_level": cap,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "goal": goal,
+        "success": success,
+        "final_reward": reward,
+        "termination_reason": reason,
+        "steps": len(steps),
+        "agent_calls": len(steps),
+        "input_tokens": in_tok,
+        "output_tokens": out_tok,
+        "total_tokens": in_tok + out_tok,
+        "wall_clock_seconds": round(time.time() - t0, 1),
+        "step_log": steps,
+    }
+
+    #print the results
+    print(f"\n --- A / {site} / task {task_id} ---")
+    #for each key in the record, print the key and the value
+    for k in ("success", "termination_reason", "steps", "input_tokens", "output_tokens", "total_tokens", "wall_clock_seconds"):
+        print(f" {k:20s}: {record[k]}")
+    return record
+
+
+#main
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("tasks", nargs="*", type=int, help="task ids; default is one per site")
+    ap.add_argument("--budget", type=int, default=None)
+    ap.add_argument("--out", default="../data/raw/strategy_a_results.jsonl")
+    args = ap.parse_args()
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if args.tasks:
+        task_ids = args.tasks
+    else:
+        #get the task ids for each site
+        pools = W.single_site_tasks()
+        task_ids = [ids[0] for ids in pools.values() if ids]
+        print(f"No tasks given; using one per site: {task_ids}")
+
+    results = [] #results = the list to store the results
+    with open(args.out, "w") as fh:
+        for tid in task_ids:
+            try:
+                rec = run_episode(tid, args.budget)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                rec = {"strategy": "A", "task_id": tid, "site": W.site_of(tid), "error": f"{type(e).__name__}: {e}"}
+            results.append(rec)
+            fh.write(json.dumps(rec) + "\n")
+            fh.flush()
+
+    #print the summary
+    print(f"\n{'=' * 78}\nSummary\n{'=' * 78}")
+    print(f"{'site':16s}{'task':>6s}{'ok':>7s}{'steps':>7s}{'tokens':>9s}"
+          f"{'secs':>8s} reason")
+    #for each result in the results
+    for r in results:
+        #if the result has an error
+        if "error" in r:
+            #print the site, task id, error and reason
+            print(f"{r['site']:16s}{r['task_id']:>6}{'ERR':>7s}"
+                  f"{'-':>7s}{'-':>9s}{'-':>8s}  {r['error'][:34]}")
+        else:
+            #print the site, task id, success, steps, total tokens and wall clock seconds and reason
+            print(f"{r['site']:16s}{r['task_id']:>6}{str(r['success']):>7s}"
+                  f"{r['steps']:>7}{r['total_tokens']:>9}"
+                  f"{r['wall_clock_seconds']:>8}  {r['termination_reason']}")
+
+    #print the number of episodes written to the output file
+    print(f"\nWrote {len(results)} episodes to {args.out}")
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+=============================================================================================
+
+
+
+
+### strategy_b.py
+from __future__ import annotations
+
+import argparse
+import json
+import time
+from collections import Counter
+from pathlib import Path
+
+from pydantic import BaseModel, Field
+
+import wa_env as W
+import strategy_a
+
+#default budget
+DEFAULT_BUDGET = 16_000
+
+
+#Structured outputs -- one per role.
+class PlannerPlan(BaseModel):
+    reasoning: str = Field(description="One sentence of analysis")
+    plan: str = Field(description="The next sub-goal in plain English, NOT an action string")
+
+#structured output for the executor
+class ExecutorAction(BaseModel):
+    reasoning: str = Field(description="One sentence justifying the action")
+    action: str = Field(description="A single BrowserGym action string")
+
+#structured output for the critic
+class CriticVerdict(BaseModel):
+    approve: bool = Field(description="True if the proposed action should be executed unchanged")
+    reasoning: str = Field(description="One sentence explaining the verdict")
+    revised_action: str | None = Field(default=None, description="A corrected BrowserGym action string, only when approve is False",)
+
+
+#Role instructions
+#_ACTION_VOCAB is the part of Strategy A's instructions before "Rules:" - the environment interface. Everything after it here is role-specific: the Planner
+#never emits an action so needs no answer-formatting rules; the Executor never chooses strategy so needs no exploration heuristics
+_ACTION_VOCAB = strategy_a.INSTRUCTIONS.split("Rules:")[0]
+
+#instructions for the planner
+PLANNER_INSTRUCTIONS = f"""\
+You are the PLANNER in a three-agent web-navigation pipeline. You decide what
+should happen next. You do NOT produce actions and you do NOT answer the task.
+
+{_ACTION_VOCAB}
+
+Given the goal, current page, and action history, output the next sub-goal in
+one short sentence.
+
+NAVIGATION
+- Name the specific element or region, e.g. "open the user's profile via the
+  username link", not "find the user".
+- Element ids change on every page load. Judge repetition by the URL an action
+  led to, not the id. If previous attempts have not changed the page, plan a
+  DIFFERENT route.
+- Returning to a hub page to take a different branch is legitimate; repeating
+  the same branch is not.
+- Prefer links and scrolling over search boxes; search endpoints often fail.
+- If select_option was tried on an element without the page changing, it is a
+  custom widget. Plan to click it open, then look for the option or a
+  searchbox in the next observation.
+
+INFORMATION TASKS
+- If the answer is visible on this page, say "the answer is on this page:
+  <value>" and the Executor will submit it.
+- For counting, summing, or comparing across items, ensure ALL relevant items
+  are visible first - scroll or paginate before answering.
+- On admin pages, navigate to the correct section and apply filters BEFORE
+  reading. Dashboard summaries may not match the required period or status.
+
+NAVIGATION-ONLY TASKS
+- If the task only requires reaching a page ("browse X", "search for Y") and
+  you are on it, say "the target page has been reached; stay here". Do not
+  click into individual items.
+- Apply any required sort or filter BEFORE declaring the target reached.
+
+STATE-CHANGE TASKS
+- Calculate the target value ONCE from the ORIGINAL value on the page. After
+  the action history shows the field was filled, plan to SAVE. Do NOT re-read
+  and re-apply the modification - that compounds the change.
+- Complete one field at a time; do not move on while a required field still
+  shows its default.
+- Once all fields are filled, the next sub-goal is "click the Save button".
+  Identify it by label (Save, Submit, Post, Create), not position - a
+  "Submit" link in the site header is navigation, not the form's submit.
+
+CREATE TASKS
+- Identify all required fields first, then fill them in order, then submit.
+- For forum posts, select the forum FIRST and confirm it before title/body.
+- For rating or review tasks, navigate to the product before looking for the
+  review form.
+
+BULK ACTIONS
+- For "like all" / "dislike all" tasks, reach the page listing all items, then
+  act on each sequentially, scrolling to reveal more.
+
+DELETE TASKS
+- Some admin views require checkbox selection then a bulk action - plan for
+  that pattern rather than looking for a per-row delete button.
+
+IMPOSSIBLE TASKS
+- If you have checked and confirmed the task cannot be done on this site, say
+  "this task is impossible on this site" and the Executor will submit N/A.
+
+ERROR RECOVERY
+- On a server error (500, 502, 504) or a page that fails to load, plan to go
+  back and try a different route.
+"""
+
+#instructions for the executor
+EXECUTOR_INSTRUCTIONS = f"""\
+You are the EXECUTOR in a three-agent web-navigation pipeline. A Planner has
+given you one sub-goal. Translate it into exactly one action.
+
+{_ACTION_VOCAB}
+
+- Only use element ids that appear in the current AXTree.
+- Do exactly what the sub-goal asks. Do not pursue a different route.
+- Use the exact value the sub-goal specifies. Do not recalculate or rephrase.
+
+DROPDOWNS AND WIDGETS
+- For standard dropdowns use select_option. If the sub-goal says to click a
+  widget open or type into a searchbox, do that instead.
+
+FORM FILLING
+- Put multi-line text (descriptions, post bodies) in a single fill() call.
+- Identify save/submit buttons by their label (Save, Submit, Post, Create).
+  A "Submit" link in the site header navigates away - it is not the form's
+  submit button.
+
+ANSWERING
+- Graded by EXACT MATCH. Send ONLY the value, no explanation or sentence.
+      Correct:   send_msg_to_user('Sprite Stasis Ball 65 cm')
+      Wrong:     send_msg_to_user('The top seller is Sprite Stasis Ball 65 cm')
+- Numbers as digits only. Lists comma-separated. Include currency symbols if
+  shown on the page. If nothing matches, or the task is impossible, send 'N/A'.
+
+NAVIGATION
+- If the sub-goal says the page has been reached, use noop().
+- On a page error (500, 502, 504), use go_back().
+"""
+
+#instructions for the critic
+CRITIC_INSTRUCTIONS = f"""\
+You are the CRITIC in a three-agent web-navigation pipeline. You are shown the
+goal, current page, the Planner's sub-goal and the Executor's proposed action.
+Decide whether it should be executed.
+ 
+{_ACTION_VOCAB}
+ 
+FIRST: confirm the element id in the proposed action actually appears in the
+current AXTree. Do not claim an element is present without checking -
+approving actions on non-existent elements is the most common failure.
+ 
+Approve unless there is a concrete problem:
+ 
+ELEMENT PROBLEMS
+- The element id is not in the current AXTree.
+- The action uses syntax outside the vocabulary above.
+- select_option or fill is proposed on an element where the same action type
+  already appears in the action history at this URL without the page changing.
+ 
+STATE-CHANGE PROBLEMS
+- The same field is being filled with a DIFFERENT value than a previous fill
+  on that element - the agent is re-applying a modification that was already
+  made. Suggest saving instead.
+- A form is being submitted with a required field still empty or at default.
+- The action clicks a header navigation link instead of the form's submit.
+ 
+ANSWER PROBLEMS
+- The answer is malformed: wrapped in a sentence, explained, or not an exact
+  match to what the task asks for.
+- The answer is submitted before the information was verified on the page, or
+  counted from a partial list.
+ 
+NAVIGATION PROBLEMS
+- The action does not serve the stated sub-goal.
+- The target page was reached but the action navigates away from it.
+- The page shows a server error but the action is not go_back().
+ 
+If you reject, supply revised_action drawn from the current AXTree. Do not
+reject because you would have chosen a different route - only when the action
+is wrong.
+"""
+
+#make the agents
+planner = W.make_agent(PLANNER_INSTRUCTIONS, PlannerPlan, label="planner")
+executor = W.make_agent(EXECUTOR_INSTRUCTIONS, ExecutorAction, label="executor")
+critic = W.make_agent(CRITIC_INSTRUCTIONS, CriticVerdict, label="critic")
+
+#QUICK CHECK ON INSTANCE TO SEE IF ACTION VOCABULARY IS VISIBLE TO AGENTS
+for _label, _instr in [("planner", PLANNER_INSTRUCTIONS), ("executor", EXECUTOR_INSTRUCTIONS), ("critic", CRITIC_INSTRUCTIONS)]:
+    if "click('a31')" not in _instr:
+        raise RuntimeError(
+            f"{_label} instructions do not contain the action vocabulary. "
+            f"Check for doubled braces: {{_ACTION_VOCAB}} escapes the "
+            f"f-string interpolation and must be {{_ACTION_VOCAB}} singly."
+        )
+
+_INSTRUCTION_TOKENS = (
+    len(PLANNER_INSTRUCTIONS)
+    + len(EXECUTOR_INSTRUCTIONS)
+    + len(CRITIC_INSTRUCTIONS)
+) // 4
+_OUTPUT_MARGIN = 900
+
+#run the episode
+def run_episode(task_id: int, budget: int | None = None) -> dict:
+    #initialize the budget
+    cap = budget if budget is not None else DEFAULT_BUDGET
+    #get the site of the task
+    site = W.site_of(task_id)
+    #print the task information
+    print(f"\n{'=' * 60}\nTask {task_id}  (site: {site})  [B, budget {cap}]\n{'=' * 60}")
+
+    env = W.make_env(task_id)
+    obs, _ = env.reset()
+    #get the goal of the task
+    goal = W.goal_of(obs)
+    #print the goal and start url
+    print(f"Goal: {goal}")
+    print(f"Start URL: {obs.get('url', 'unknown')}\n")
+    #initialize the input and output tokens
+    in_tok = out_tok = 0
+    steps: list[dict] = [] #initialize the steps
+    action_history: list[str] = []
+    url_history: list[str] = [obs.get("url", "")]
+    url_action_counts: Counter = Counter()
+    consecutive_errors = 0
+    critic_revisions = 0
+    success = False
+    reason = "max_steps"
+    reward = 0.0
+    t0 = time.time()
+
+    def record(step_i: int, role: str, usage, action: str | None, url: str, extra: dict | None = None) -> None:
+        nonlocal in_tok, out_tok
+        in_tok += usage.input_tokens
+        out_tok += usage.output_tokens
+        rec = {
+            "step": step_i,
+            "agent_role": role,
+            "action": action,
+            "url": url,
+            "prompt_chars": len(base),
+            "input_tokens": usage.input_tokens,
+            "output_tokens": usage.output_tokens,
+            "cumulative_tokens": in_tok + out_tok,
+            "usage_details": dict(usage.details) if getattr(usage, "details", None) else None,
+        }
+        #if extra is provided, update the record with the extra
+        if extra:
+            rec.update(extra)
+        steps.append(rec)
+        #print the role, input tokens, output tokens and cumulative tokens
+        print(f"{role:8s}: +{usage.input_tokens} in / +{usage.output_tokens} out"
+              f"(cumulative {in_tok + out_tok})")
+
+    for i in range(W.MAX_STEPS):
+        #build the base prompt
+        base = W.build_prompt(obs, action_history, url_history)
+        #the current url
+        cur_url = obs.get("url", "")
+
+        #Pre-step check. Committing to a step means committing to three calls, so estimate three prompts plus a margin for the appended plan/action text and the three outputs
+        #if the spent tokens plus the estimated step tokens is greater than the budget, set the reason to "budget_would_exceed"
+        spent = in_tok + out_tok
+        est_step = (len(base) // 4) * 3 + _INSTRUCTION_TOKENS + _OUTPUT_MARGIN
+        if spent + est_step > cap:
+            reason = "budget_would_exceed"
+            print(f"\n step {i}: SKIPPED - est. {est_step} tokens for a 3-agent "
+                  f"step would exceed cap (used {spent}/{cap})")
+            break
+
+        print(f"\n step {i}")
+        print(f"url: {cur_url[:90]}")
+
+        #1.Planner: what should happen next
+        r_plan = W.call_agent(planner, base)
+        if in_tok + out_tok >= cap:
+            reason = "budget_exhausted_mid_step"
+            print("Stop: budget exhausted after the Planner")
+            break
+        plan = r_plan.output.plan
+        record(i, "planner", r_plan.usage(), None, cur_url,{"plan": plan})
+        print(f"plan: {plan}")
+
+        #2. Executor: turn the sub-goal into one action
+        exec_prompt = f"{base}\n\nPLANNER SUB-GOAL:\n{plan}"
+        r_exec = W.call_agent(executor, exec_prompt)
+        proposed = r_exec.output.action
+        record(i, "executor", r_exec.usage(), proposed, cur_url,{"proposed_action": proposed})
+        if in_tok + out_tok >= cap:
+            reason = "budget_exhausted_mid_step"
+            print("Stop: budget exhausted after the Executor")
+            break
+        print(f"proposed: {proposed}")
+
+        #3. Critic: approve or revise
+        crit_prompt = (f"{base}\n\nPLANNER SUB-GOAL:\n{plan}\n\n"
+                       f"EXECUTOR PROPOSED ACTION:\n{proposed}")
+        r_crit = W.call_agent(critic, crit_prompt)
+        verdict = r_crit.output
+        revised = (not verdict.approve) and bool(verdict.revised_action)
+        final_action = verdict.revised_action if revised else proposed
+        #if the action was revised, increment the critic revisions
+        if revised:
+            critic_revisions += 1
+        #record the critic usage
+        record(i, "critic", r_crit.usage(), final_action, cur_url,
+               {"approved": verdict.approve,
+                "revised": revised,
+                "proposed_action": proposed,
+                "critic_reasoning": verdict.reasoning})
+        print(f"critic: {'REVISED' if revised else 'approved'} -> {final_action}")
+        #if the action was revised, print the reason
+        if revised:
+            print(f"why: {verdict.reasoning}")
+
+        #if the total tokens are greater than or equal to the budget, set the reason to "safety_token_cap"
+        if in_tok + out_tok >= cap:
+            reason = "safety_token_cap"
+            break
+
+        #4. Execute
+        action_history.append(final_action)
+        pair = (cur_url, final_action)
+        url_action_counts[pair] += 1
+        pair_n = url_action_counts[pair]
+
+        obs, reward, terminated, truncated, _ = env.step(final_action)
+        url_history.append(obs.get("url", ""))
+        err = obs.get("last_action_error")
+        consecutive_errors = consecutive_errors + 1 if err else 0
+
+        #Attach the outcome to all three role records for this step
+        for s in steps:
+            if s["step"] == i:
+                s["action_error"] = str(err) if err else None
+                s["step_reward"] = reward
+                s["next_url"] = obs.get("url", "")
+
+        print(f"result: reward={reward}"
+              f"{'ERROR: ' + str(err)[:70] if err else '  (action accepted)'}")
+
+        if reward >= 1.0:
+            success, reason = True, "success"
+            break
+        if terminated or truncated:
+            reason = "env_terminated"
+            break
+
+        # Shared environment constraints --- identical thresholds to A and C.
+        if consecutive_errors >= W.MAX_CONSECUTIVE_ERRORS:
+            reason = "repeated_action_failure"
+            print(f"Stall: {consecutive_errors} consecutive failed actions")
+            break
+        if pair_n >= W.MAX_SAME_ACTION_FROM_PAGE:
+            reason = "navigation_cycle"
+            print(f"Cycle: same action from same page {pair_n}x")
+            break
+
+    env.close()
+
+    logical_steps = len({s["step"] for s in steps})
+    by_role = {"planner": 0, "executor": 0, "critic": 0}
+    for s in steps:
+        by_role[s["agent_role"]] += s["input_tokens"] + s["output_tokens"]
+
+    record_out = {
+        "strategy": "B",
+        "site": site,
+        "task_id": task_id,
+        "budget_level": cap,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "goal": goal,
+        "success": success,
+        "final_reward": reward,
+        "termination_reason": reason,
+        "steps": logical_steps,
+        "agent_calls": len(steps),
+        "critic_revisions": critic_revisions,
+        "tokens_by_role": by_role,
+        "input_tokens": in_tok,
+        "output_tokens": out_tok,
+        "total_tokens": in_tok + out_tok,
+        "wall_clock_seconds": round(time.time() - t0, 1),
+        "step_log": steps,
+    }
+
+    print(f"\n --- B / {site} / task {task_id} ---")
+    for k in ("success", "termination_reason", "steps", "agent_calls", "critic_revisions", "input_tokens", "output_tokens", "total_tokens", "wall_clock_seconds"):
+        print(f" {k:22s}: {record_out[k]}")
+    print(f" {'tokens_by_role':22s}: {by_role}")
+    return record_out
+
+
+#main
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("tasks", nargs="+", type=int)
+    ap.add_argument("--budget", type=int, default=None)
+    ap.add_argument("--out", default="../data/raw/strategy_b_results.jsonl")
+    args = ap.parse_args()
+
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    results = []
+    with out_path.open("w") as fh:
+        #for each task in the tasks
+        for tid in args.tasks:
+            try:
+                rec = run_episode(tid, args.budget)
+                #if an exception occurs, print the traceback and store the error in the record
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                rec = {"strategy": "B", "task_id": tid, "site": W.site_of(tid), "error": f"{type(e).__name__}: {e}"}
+            #append the record to the results list
+            results.append(rec)
+            #write the record to the output file
+            fh.write(json.dumps(rec) + "\n")
+            fh.flush()
+    #print the summary
+    print(f"\n{'=' * 88}\nSummary\n{'=' * 88}")
+    print(f"{'site':16s}{'task':>6s}{'ok':>7s}{'steps':>7s}{'calls':>7s}"
+          f"{'revis':>7s}{'tokens':>9s}{'secs':>8s}  reason")
+    #for each result in the results
+    for r in results:
+        if "error" in r:
+            print(f"{r['site']:16s}{r['task_id']:>6}{'ERR':>7s}"
+                  f"{'-':>7s}{'-':>7s}{'-':>7s}{'-':>9s}{'-':>8s}  {r['error'][:30]}")
+        else:
+            #print the site, task id, success, steps, agent calls, critic revisions, total tokens and wall clock seconds and reason
+            print(f"{r['site']:16s}{r['task_id']:>6}{str(r['success']):>7s}"
+                  f"{r['steps']:>7}{r['agent_calls']:>7}{r['critic_revisions']:>7}"
+                  f"{r['total_tokens']:>9}{r['wall_clock_seconds']:>8}"
+                  f"{r['termination_reason']}")
+
+    print(f"\nWrote {len(results)} episodes to {out_path}")
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+=============================================================================================
+
+
+
+
+### strategy_c.py
+from __future__ import annotations
+
+import argparse
+import json
+import time
+from collections import Counter
+from pathlib import Path
+
+import numpy as np
+import torch
+
+import wa_env as W
+import strategy_a
+import strategy_b
+from router_c.train.train_router import MLP, task_features, stop_features
+
+DEFAULT_BUDGET = 16_000
+#Path to the router-directed dynamic strategy model
+ROUTER_DIR = Path("../data/processed/router_c_models/model_2")
+#Path to the task metadata
+TASK_METADATA = Path("../data/processed/final_annotation_difficulty_tiers/task_metadata.jsonl")
+#Path to the task risk levels
+TASK_RISK = Path("../data/processed/task_list/task_risk_levels.jsonl")
+#Ordinal mapping for task difficulty tiers
+TIER_ORD = {"Easy": 0, "Medium": 1, "Hard": 2}
+
+#What a router-initiated stop submits. "none": end the episode with no answer
+STOP_ANSWER = "none"
+
+#router class for the router-directed dynamic strategy
+class Router:
+    def __init__(self, model_dir: Path):
+        #load the router model
+        ck_path = model_dir / "router.pt"
+        #load the router model
+        ck = torch.load(ck_path, map_location="cpu", weights_only=False)
+        #get the hidden layer size
+        hidden = ck["config"]["hidden"]
+        #create the mode network
+        self.mode_net = MLP(len(ck["mode_features"]), hidden)
+        #load the mode network state
+        self.mode_net.load_state_dict(ck["mode_state"])
+        #create the stop network
+        self.stop_net = MLP(len(ck["stop_features"]), hidden)
+        #load the stop network state
+        self.stop_net.load_state_dict(ck["stop_state"])
+        #set the mode network to evaluation mode
+        self.mode_net.eval()
+        #set the stop network to evaluation mode
+        self.stop_net.eval()
+        #get the mode mean
+        self.mode_mean = np.array(ck["mode_norm"]["mean"], np.float32)
+        #get the mode standard deviation
+        self.mode_std = np.array(ck["mode_norm"]["std"], np.float32)
+        #get the stop mean
+        self.stop_mean = np.array(ck["stop_norm"]["mean"], np.float32)
+        #get the stop standard deviation
+        self.stop_std = np.array(ck["stop_norm"]["std"], np.float32)
+        #get the stop threshold
+        self.threshold = ck["stop_threshold"]
+        #get the alpha
+        self.alpha = ck["config"]["alpha"]
+        #set the model directory
+        self.model_dir = str(model_dir)
+        #print the router loaded from the model directory
+        print(f"[strategy_c] router loaded from {model_dir}  alpha={self.alpha}  "
+              f"stop_threshold={self.threshold:.6f}")
+
+    #helper function to compute the probability of a network output
+    def _p1(self, net: MLP, x: list[float], mean, std) -> float:
+        #normalize the input
+        z = (np.array(x, np.float32) - mean) / std
+        #compute the probability of the network output
+        with torch.no_grad():
+            return float(torch.softmax(net(torch.tensor(z)[None]), -1)[0, 1])
+
+    #choose the mode based on the task features
+    def choose_mode(self, task_row: dict) -> tuple[str, float]:
+        p_cycle = self._p1(self.mode_net, task_features(task_row), self.mode_mean, self.mode_std)
+        return ("cycle" if p_cycle >= 0.5 else "execute"), p_cycle
+
+    #compute the probability of a stop based on the state features
+    def p_stop(self, state_row: dict) -> float:
+        return self._p1(self.stop_net, stop_features(state_row), self.stop_mean, self.stop_std)
+
+ #global router and tasks variables
+_router: Router | None = None
+#global tasks variable
+_tasks: dict[int, dict] | None = None
+
+#configure the router and tasks
+def configure(router_dir: str | Path | None = None, stop_answer: str | None = None) -> None:
+    global _router, _tasks, STOP_ANSWER
+    #if the stop answer is not None, check if it is valid
+    if stop_answer is not None:
+        if stop_answer not in ("none", "na"):
+            raise ValueError("stop_answer must be 'none' or 'na'")
+        STOP_ANSWER = stop_answer
+    #load the router
+    _router = Router(Path(router_dir) if router_dir else ROUTER_DIR)
+    #load the tasks
+    _tasks = load_task_rows()
+
+#load the task rows
+def load_task_rows() -> dict[int, dict]:
+    #load the task metadata
+    meta = {r["task_id"]: r for r in map(json.loads, TASK_METADATA.read_text().splitlines()) if r}
+    #load the task risk levels
+    risk = {r["task_id"]: r for r in map(json.loads, TASK_RISK.read_text().splitlines()) if r}
+    #create a dictionary to store the task rows
+    rows = {}
+    #iterate over the task metadata
+    for tid, m in meta.items():
+        #if the task id is not in the task risk levels, continue
+        if tid not in risk:
+            continue
+        #create a dictionary to store the task row
+        rows[tid] = {
+            "tier_ord": TIER_ORD[m["difficulty_tier"]],
+            "pages_to_traverse": m["pages_to_traverse"],
+            "retrieval_type": m["retrieval_type"],
+            "interaction": m["interaction"],
+            "target_locatability": m["target_locatability"],
+            "risk_level": risk[tid]["risk_level"],
+            "site": m["site"],
+            "task_category": m["task_category"],
+        }
+    #print the number of tasks loaded
+    print(f"[strategy_c] task features loaded for {len(rows)} tasks")
+    #return the task rows
+    return rows
+
+#check if the router and tasks are loaded
+def _ready() -> tuple[Router, dict[int, dict]]:
+    #if the router or tasks are not loaded, configure them
+    if _router is None or _tasks is None:
+        configure()
+    return _router, _tasks
+
+#episode function for the router-directed dynamic strategy
+def run_episode(task_id: int, budget: int | None = None) -> dict:
+    #get the router and tasks
+    router, tasks = _ready()
+    #get the budget
+    cap = budget if budget is not None else DEFAULT_BUDGET
+    #get the site
+    site = W.site_of(task_id)
+    #get the task row
+    task_row = {**tasks[task_id], "budget_level": cap}
+    #choose the mode
+    mode, p_cycle = router.choose_mode(task_row)
+    #print the task id, site, budget, and mode
+    print(f"\n{'=' * 60}\nTASK {task_id}  (site: {site})  [C, budget {cap}]  "
+          f"router -> {mode} (p_cycle={p_cycle:.3f})\n{'=' * 60}")
+
+    #make the environment
+    env = W.make_env(task_id)
+    #reset the environment
+    obs, _ = env.reset()
+    #get the goal
+    goal = W.goal_of(obs)
+    #print the goal and start URL
+    print(f"Goal: {goal}\nStart URL: {obs.get('url', 'unknown')}\n")
+
+    #initialize the input and output tokens
+    in_tok = out_tok = 0
+    #create a list to store the steps
+    steps: list[dict] = []
+    #create a list to store the decisions
+    decisions: list[dict] = []
+    #create a list to store the action history
+    action_history: list[str] = []
+    url_history: list[str] = [obs.get("url", "")]
+    #create a counter to store the url action counts
+    url_action_counts: Counter = Counter()
+    #initialize the consecutive errors
+    consecutive_errors = 0
+    #initialize the critic revisions
+    critic_revisions = 0
+    #initialize the last error
+    last_error = False
+    url_changed = False
+    #initialize the success
+    success = False
+    #initialize the reason
+    reason = "max_steps"
+    reward = 0.0
+    #initialize the stop step
+    stop_step: int | None = None
+    #initialize the time
+    t0 = time.time()
+
+    #loop through the steps
+    for i in range(W.MAX_STEPS):
+        #compute the spent tokens
+        spent = in_tok + out_tok
+        #create the state
+        state = {**task_row, "step_index": i,
+                 "budget_remaining_frac": 1 - spent / cap,
+                 "last_error": int(last_error), "url_changed_last": int(url_changed),
+                 "consecutive_errors": consecutive_errors, "mode": mode}
+        #compute the probability of a stop
+        p_stop = router.p_stop(state)
+        #check if the stop is triggered
+        stop = p_stop >= router.threshold
+        #store the decision
+        decisions.append({"step": i, "p_stop": round(p_stop, 6), "stop": stop,
+                          "budget_remaining_frac": round(state["budget_remaining_frac"], 4),
+                          "last_error": int(last_error), "url_changed_last": int(url_changed),
+                          "consecutive_errors": consecutive_errors})
+        #print the step, router p_stop, and stop decision
+        print(f"\n step {i}   router p_stop={p_stop:.4f} -> {'STOP' if stop else 'continue'}")
+        #if the stop is triggered, set the stop step and reason
+        if stop:
+            stop_step = i
+            reason = "router_stop"
+            #if the stop answer is "na", send a message to the user
+            if STOP_ANSWER == "na":
+                obs, reward, terminated, truncated, _ = env.step("send_msg_to_user('N/A')")
+                #if the reward is 1.0, set the success to True
+                if reward >= 1.0:
+                    success = True
+            break
+
+        #build the base prompt
+        base = W.build_prompt(obs, action_history, url_history)
+        #get the current url
+        cur_url = obs.get("url", "")
+
+        #if the mode is "execute", take one website step
+        if mode == "execute":
+            #compute the estimated input tokens
+            est_in = len(base) // 4
+            #if the spent tokens plus the estimated input tokens exceeds the budget, set the reason to "budget_would_exceed"
+            if spent + est_in > cap:
+                reason = "budget_would_exceed"
+                print(f" SKIPPED - est. {est_in} input tokens would exceed cap (used {spent}/{cap})")
+                break
+            #call the agent
+            result = W.call_agent(strategy_a.agent, base)
+            #get the usage
+            u = result.usage()
+            #update the input and output tokens
+            in_tok += u.input_tokens
+            out_tok += u.output_tokens
+            #get the final action
+            final_action = result.output.action
+            #print the reason, action, url, and tokens
+            print(f"reason: {result.output.reasoning}\naction: {final_action}\nurl: {cur_url[:90]}")
+            print(f"tokens: +{u.input_tokens} in / +{u.output_tokens} out (cumulative {in_tok + out_tok})")
+            #store the step
+            steps.append({
+                "step": i, "agent_role": "single", "action": final_action, "url": cur_url,
+                "prompt_chars": len(base), "input_tokens": u.input_tokens,
+                "output_tokens": u.output_tokens, "cumulative_tokens": in_tok + out_tok,
+                "usage_details": dict(u.details) if getattr(u, "details", None) else None,
+                "router_p_stop": round(p_stop, 6),
+            })
+            #if the input and output tokens exceed the budget, set the reason to "safety_token_cap"
+            if in_tok + out_tok >= cap:
+                reason = "safety_token_cap"
+                break
+
+        #if the mode is "cycle", take one website step
+        else:
+            #compute the estimated step
+            #identical to strategy_b.run_episode's step body
+            est_step = ((len(base) // 4) * 3 + strategy_b._INSTRUCTION_TOKENS + strategy_b._OUTPUT_MARGIN)
+            if spent + est_step > cap:
+                reason = "budget_would_exceed"
+                print(f" SKIPPED - est. {est_step} tokens for a 3-agent step would exceed "
+                      f"cap (used {spent}/{cap})")
+                break
+            #record function to store the step
+            def record(role, usage, action, extra=None):
+                nonlocal in_tok, out_tok
+                in_tok += usage.input_tokens
+                out_tok += usage.output_tokens
+                #create a dictionary to store the step
+                rec = {"step": i, "agent_role": role, "action": action, "url": cur_url,
+                       "prompt_chars": len(base), "input_tokens": usage.input_tokens,
+                       "output_tokens": usage.output_tokens,
+                       "cumulative_tokens": in_tok + out_tok,
+                       "usage_details": dict(usage.details) if getattr(usage, "details", None) else None}
+                #if extra is not None, update the step
+                if extra:
+                    #update the step
+                    rec.update(extra)
+                #if the role is "planner", update the router p_stop
+                if role == "planner":
+                    #update the router p_stop
+                    rec["router_p_stop"] = round(p_stop, 6)
+                steps.append(rec)
+                print(f"{role:8s}: +{usage.input_tokens} in / +{usage.output_tokens} out "
+                      f"(cumulative {in_tok + out_tok})")
+            #call the planner
+            r_plan = W.call_agent(strategy_b.planner, base)
+            #if the input and output tokens exceed the budget, set the reason to "budget_exhausted_mid_step"
+            if in_tok + out_tok >= cap:
+                reason = "budget_exhausted_mid_step"
+                break
+            #get the plan
+            plan = r_plan.output.plan
+            #store the step
+            record("planner", r_plan.usage(), None, {"plan": plan})
+            #print the plan
+            print(f"plan: {plan}")
+            #call the executor
+            r_exec = W.call_agent(strategy_b.executor, f"{base}\n\nPLANNER SUB-GOAL:\n{plan}")
+            #get the proposed action
+            proposed = r_exec.output.action
+            #store the step
+            record("executor", r_exec.usage(), proposed, {"proposed_action": proposed})
+            #if the input and output tokens exceed the budget, set the reason to "budget_exhausted_mid_step"
+            if in_tok + out_tok >= cap:
+                reason = "budget_exhausted_mid_step"
+                break
+            #print the proposed action
+            print(f"proposed: {proposed}")
+            #call the critic
+            r_crit = W.call_agent(strategy_b.critic,
+                                  f"{base}\n\nPLANNER SUB-GOAL:\n{plan}\n\n"
+                                  f"EXECUTOR PROPOSED ACTION:\n{proposed}")
+            #get the verdict
+            verdict = r_crit.output
+            #check if the action is revised
+            revised = (not verdict.approve) and bool(verdict.revised_action)
+            final_action = verdict.revised_action if revised else proposed
+            #update the critic revisions
+            critic_revisions += int(revised)
+            #store the step
+            record("critic", r_crit.usage(), final_action,
+                   {"approved": verdict.approve, "revised": revised,
+                    "proposed_action": proposed, "critic_reasoning": verdict.reasoning})
+            print(f"critic: {'REVISED' if revised else 'approved'} -> {final_action}")
+            if in_tok + out_tok >= cap:
+                reason = "safety_token_cap"
+                break
+
+        #update the action history
+        action_history.append(final_action)
+        #create a pair of the current url and the final action
+        pair = (cur_url, final_action)
+        #update the url action counts
+        url_action_counts[pair] += 1
+        #get the number of times the pair has been seen
+        pair_n = url_action_counts[pair]
+
+        #step the environment
+        obs, reward, terminated, truncated, _ = env.step(final_action)
+        #get the new url
+        new_url = obs.get("url", "")
+        #update the url history
+        url_history.append(new_url)
+        #get the last action error
+        err = obs.get("last_action_error")
+        #update the consecutive errors
+        consecutive_errors = consecutive_errors + 1 if err else 0
+        #update the last error
+        last_error = bool(err)
+        #update the url changed
+        url_changed = new_url != cur_url
+
+        #update the steps
+        for s in steps:
+            #if the step index is the current step, update the step
+            if s["step"] == i:
+                s["action_error"] = str(err) if err else None
+                s["step_reward"] = reward
+                s["next_url"] = new_url
+
+        #print the result
+        print(f"result: reward={reward}{'  ERROR: ' + str(err)[:70] if err else '  (action accepted)'}")
+
+        #if the reward is 1.0, set the success to True and reason to "success"
+        if reward >= 1.0:
+            success, reason = True, "success"
+            break
+        if terminated or truncated:
+            reason = "env_terminated"
+            break
+        if consecutive_errors >= W.MAX_CONSECUTIVE_ERRORS:
+            reason = "repeated_action_failure"
+            break
+        if pair_n >= W.MAX_SAME_ACTION_FROM_PAGE:
+            reason = "navigation_cycle"
+            break
+
+    env.close()
+    #get the logical steps
+    logical_steps = len({s["step"] for s in steps})
+    #create a counter to store the tokens by role
+    by_role = Counter()
+    #iterate over the steps
+    for s in steps:
+        #update the tokens by role
+        by_role[s["agent_role"]] += s["input_tokens"] + s["output_tokens"]
+
+    #create a dictionary to store the record output
+    record_out = {
+        "strategy": "C",
+        "site": site,
+        "task_id": task_id,
+        "budget_level": cap,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "goal": goal,
+        "success": success,
+        "final_reward": reward,
+        "termination_reason": reason,
+        "steps": logical_steps,
+        "agent_calls": len(steps),
+        "mode_chosen": mode,
+        "critic_revisions": critic_revisions if mode == "cycle" else None,
+        "tokens_by_role": dict(by_role),
+        "input_tokens": in_tok,
+        "output_tokens": out_tok,
+        "total_tokens": in_tok + out_tok,
+        "wall_clock_seconds": round(time.time() - t0, 1),
+        #create a dictionary to store the router output
+        "router": {
+            "model_dir": router.model_dir,
+            "alpha": router.alpha,
+            "stop_threshold": router.threshold,
+            "stop_answer": STOP_ANSWER,
+            "mode": mode,
+            "p_cycle": round(p_cycle, 6),
+            "stopped_by_router": stop_step is not None,
+            "stop_step": stop_step,
+            "decisions": decisions,
+        },
+        "step_log": steps,
+    }
+
+    #print the record output
+    print(f"\n --- C / {site} / task {task_id} ---")
+    #iterate over the keys
+    for k in ("mode_chosen", "success", "termination_reason", "steps", "agent_calls",
+              "total_tokens", "wall_clock_seconds"):
+        print(f" {k:20s}: {record_out[k]}")
+    print(f" {'router':20s}: p_cycle={p_cycle:.3f}  stopped_by_router={stop_step is not None}"
+          f"{'' if stop_step is None else f' at step {stop_step}'}")
+    return record_out
+
+#main function
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("tasks", nargs="*", type=int)
+    ap.add_argument("--budget", type=int, default=None)
+    ap.add_argument("--router-dir", default=None)
+    ap.add_argument("--stop-answer", choices=["none", "na"], default=None)
+    ap.add_argument("--out", default="../data/raw/strategy_c_results.jsonl")
+    args = ap.parse_args()
+
+    configure(args.router_dir, args.stop_answer)
+
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w") as fh:
+        for tid in args.tasks:
+            try:
+                rec = run_episode(tid, args.budget)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                rec = {"strategy": "C", "task_id": tid, "site": W.site_of(tid), "error": f"{type(e).__name__}: {e}"}
+            fh.write(json.dumps(rec) + "\n")
+            fh.flush()
+    print(f"\nWrote {len(args.tasks)} episodes to {out_path}")
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+=============================================================================================
+
+
+
+
+### wa_env.py
+from __future__ import annotations
+
+import json
+import os
+import sys
+import types
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# WA_* to bare names BrowserGym/WebArena expects
+for _wa, _bare in [
+    ("WA_SHOPPING", "SHOPPING"),
+    ("WA_SHOPPING_ADMIN", "SHOPPING_ADMIN"),
+    ("WA_REDDIT", "REDDIT"),
+    ("WA_GITLAB", "GITLAB"),
+    ("WA_WIKIPEDIA", "WIKIPEDIA"),
+    ("WA_MAP", "MAP"),
+    ("WA_HOMEPAGE", "HOMEPAGE"),
+]:
+    if os.getenv(_wa) and not os.getenv(_bare):
+        os.environ[_bare] = os.environ[_wa]
+
+#openai>=1.0 compatibility, WebArena's codebase targets openai 0.x. pydantic-ai requires openai 1.x.
+import openai
+#if the openai module does not have an error attribute
+if not hasattr(openai, "error"):
+    _err = types.ModuleType("openai.error")
+    for _n in ["OpenAIError", "APIError", "RateLimitError", "APIConnectionError",
+               "AuthenticationError", "InvalidRequestError",
+               "ServiceUnavailableError", "Timeout", "TryAgain"]:
+        setattr(_err, _n, type(_n, (Exception,), {}))
+    openai.error = _err
+    sys.modules["openai.error"] = _err
+
+#the model to use for evaluation
+EVAL_MODEL = "gpt-4o-mini"
+
+#WebArena's evaluators call openai.ChatCompletion.create(), removed in openai>=1.0. Rather than patching every import path that references it,
+#put a compatible shim on the openai module itself so ALL callers are covered
+if not hasattr(openai, "ChatCompletion"):
+    from openai import OpenAI as _OpenAI
+    _chat_client = _OpenAI()
+
+    #fake chat completion class
+    class _FakeChatCompletion:
+        #create a fake chat completion
+        #static method to create a chat completion
+        @staticmethod
+        def create(model=None, messages=None, temperature=1.0,max_tokens=None, top_p=1.0, stop=None, **kwargs):
+            #create a response from the chat client
+            resp = _chat_client.chat.completions.create(
+                model=EVAL_MODEL,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=top_p,
+                stop=stop,
+            )
+            return {
+                "choices": [
+                    {"message": {"content": resp.choices[0].message.content}}
+                ]
+            }
+
+        #async method to create a chat completion
+        @staticmethod
+        async def acreate(**kwargs):
+            #create a response from the chat client
+            return _FakeChatCompletion.create(**kwargs)
+
+    openai.ChatCompletion = _FakeChatCompletion
+    print(f"[wa_env] shimmed openai.ChatCompletion (eval model: {EVAL_MODEL})")
+
+
+
+#WebArena's fuzzy-match evaluators call openai.ChatCompletion (removed in 1.0) and hardcode gpt-4-1106-preview (retired). Replace with a v1 client.
+#this changes the grader model relative to the original paper
+
+#function to patch the webarena openai
+def _patch_webarena_openai() -> None:
+    #try to import the openai utils
+    try:
+        from llms.providers import openai_utils as _ou  # type: ignore
+    #if the openai utils are not found, print a warning
+    except Exception as _e:
+        print(f"[wa_env] could not patch WebArena openai_utils: {_e}")
+        return
+
+    #open the openai client
+    from openai import OpenAI
+    _client = OpenAI()
+
+    #v1 chat completion function
+    def _v1_chat(messages, model, temperature, max_tokens, top_p, context_length, stop_token=None):
+        resp = _client.chat.completions.create(
+            model=EVAL_MODEL,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            top_p=top_p,
+            stop=[stop_token] if stop_token else None,
+        )
+        return resp.choices[0].message.content
+    #patch the openai utils to use the v1 chat completion
+    _ou.generate_from_openai_chat_completion = _v1_chat
+
+    #The evaluator may have imported the function directly, holding its own reference that the module-level patch above does not reach. So I patch it here too.
+    for _mod_name in ("evaluation_harness.evaluators", "webarena.evaluation_harness.evaluators"):
+        try:
+            #import the importlib
+            import importlib
+            #import the evaluation module
+            _eval_mod = importlib.import_module(_mod_name)
+            #if the evaluation module has the generate_from_openai_chat completion
+            if hasattr(_eval_mod, "generate_from_openai_chat_completion"):
+                _eval_mod.generate_from_openai_chat_completion = _v1_chat
+                print(f"[wa_env] also patched {_mod_name}")
+        except Exception:
+            pass
+
+    print(f"[wa_env] patched WebArena openai_utils (eval model: {EVAL_MODEL})")
+
+#patch the webarena openai
+_patch_webarena_openai()
+
+#browsergym: everything above must already have run
+import gymnasium as gym
+import browsergym.webarena
+from browsergym.utils.obs import flatten_axtree_to_str
+from pydantic_ai import Agent
+
+
+#shared configuration - identical for every strategy
+MODEL = "openai:gpt-5-mini"
+REASONING_EFFORT = "low"
+MAX_STEPS = 25
+SITES = ["shopping", "shopping_admin", "reddit"]
+BUDGETS = [2000, 4000, 8000, 16000, 32000, 64000]
+
+#Guard thresholds (applied to A, B and C alike) page will not respond to any action
+MAX_CONSECUTIVE_ERRORS = 4
+
+#agent is circling
+MAX_SAME_ACTION_FROM_PAGE = 3
+
+#prior actions shown in the prompt
+ACTION_HISTORY_LEN = 8
+
+#Task configs
+def config_dir() -> Path:
+    import webarena
+
+    #candidates = the list of paths to the webarena modules
+    candidates: list[Path] = []
+    #for each path in the webarena modules
+    for p in list(getattr(webarena, "__path__", [])):
+        candidates.append(Path(p))
+    #if the webarena module has a file
+    if getattr(webarena, "__file__", None):
+        candidates.append(Path(webarena.__file__).parent)
+
+    for base in candidates:
+        for sub in (base / "config_files", base):
+            if (sub / "test.raw.json").exists() or list(sub.glob("[0-9]*.json")):
+                return sub
+
+    raise FileNotFoundError(
+        + ", ".join(str(c) for c in candidates)
+    )
+
+#config cache
+_CONFIG_CACHE: list[dict] | None = None
+
+#load the configs
+def load_configs() -> list[dict]:
+    global _CONFIG_CACHE
+    if _CONFIG_CACHE is None:
+        d = config_dir()
+        files = sorted(d.glob("[0-9]*.json"))
+        if files:
+            _CONFIG_CACHE = [json.loads(f.read_text()) for f in files]
+        else:
+            _CONFIG_CACHE = json.loads((d / "test.raw.json").read_text())
+    return _CONFIG_CACHE
+
+#get the site of a task
+def site_of(task_id: int) -> str:
+    for cfg in load_configs():
+        if cfg.get("task_id") == task_id:
+            sites = cfg.get("sites", [])
+            return sites[0] if sites else "unknown"
+    return "unknown"
+
+#get the single site tasks
+def single_site_tasks(sites: list[str] | None = None) -> dict[str, list[int]]:
+    sites = sites or SITES
+    out: dict[str, list[int]] = {s: [] for s in sites}
+    for cfg in load_configs():
+        cfg_sites = cfg.get("sites", [])
+        if len(cfg_sites) == 1 and cfg_sites[0] in out:
+            out[cfg_sites[0]].append(cfg["task_id"])
+    return out
+
+#Observation --> prompt
+def build_prompt(obs: dict, history: list[str] | None = None, urls: list[str] | None = None) -> str:
+    goal = obs.get("goal") or " ".join(p.get("text", "") for p in obs.get("goal_object", []))
+
+    try:
+        axtree = flatten_axtree_to_str(
+            obs["axtree_object"],
+            extra_properties=obs["extra_element_properties"],
+            filter_visible_only=True,
+            filter_with_bid_only=True,
+        )
+    except (TypeError, ValueError, KeyError) as _e:
+        axtree = flatten_axtree_to_str(obs["axtree_object"])
+        print(f"[wa_env] AXTree filtering unavailable ({_e}); using full tree")
+
+    err = obs.get("last_action_error") or "none"
+    if err != "none" and "Timeout" in err and "exceeded" in err:
+        #A timeout may mean the action landed and only the navigation wait expired, OR that the element genuinely cannot be actioned. If the
+        # same action just failed with no page change
+        repeated = (
+            history is not None and len(history) >= 2
+            and history[-1] == history[-2]
+            and urls is not None and len(urls) >= 2
+            and urls[-1] == urls[-2]
+        )
+        #if the action has been repeated more than twice and the page has not changed, 
+        #set the error to "this exact action has FAILED more than once and the page has not changed. 
+        #It will not work. Choose a DIFFERENT element or a different approach and not to rety it"
+        if repeated:
+            err = ("this exact action has FAILED more than once and the page has "
+                   "not changed. It will not work. Choose a DIFFERENT element or "
+                   "a different approach - do not retry it.")
+        else:
+            err = ("previous action timed out waiting for the page to settle - "
+                   "it may have succeeded. Check the current page before retrying.")
+    hist = "none yet"
+    #if history is provided
+    if history:
+        #rows = the list of rows
+        rows = []
+        #for each history in the history
+        for n in range(max(0, len(history) - ACTION_HISTORY_LEN), len(history)):
+            #u = the url
+            u = urls[n] if urls and n < len(urls) else ""
+            rows.append(f"  {n}. {history[n]}  -> {u[:70]}")
+        hist = "\n".join(rows)
+
+    return (
+        f"GOAL:\n{goal}\n\n"
+        f"URL: {obs.get('url', 'unknown')}\n"
+        f"LAST ACTION ERROR: {err}\n\n"
+        f"ACTIONS YOU HAVE ALREADY TAKEN:\n{hist}\n\n"
+        f"PAGE (AXTree):\n{axtree}"
+    )
+
+#get the goal of a task
+def goal_of(obs: dict) -> str:
+    return obs.get("goal") or " ".join(
+        p.get("text", "") for p in obs.get("goal_object", [])
+    )
+
+#Agent construction and invocation
+def make_agent(instructions: str, output_type, label: str = "agent") -> Agent:
+    try:
+        #import the openai responses model
+        from pydantic_ai.models.openai import (OpenAIResponsesModel, OpenAIResponsesModelSettings)
+        #model = the model to use
+        model = OpenAIResponsesModel(MODEL.split(":", 1)[1])
+        #settings = the settings to use
+        settings = OpenAIResponsesModelSettings(openai_reasoning_effort=REASONING_EFFORT)
+        a = Agent(model, output_type=output_type, instructions=instructions, model_settings=settings)
+        print(f"[wa_env] {label}: reasoning_effort='{REASONING_EFFORT}'")
+        return a
+    except Exception as _e:
+        print(f"[wa_env] WARNING: {label} could not pin reasoning_effort ({_e})")
+        return Agent(MODEL, output_type=output_type, instructions=instructions)
+
+
+#Playwright's sync API runs inside an event loop; agent.run_sync() would try to start another inside it. Calling from a worker thread avoids the clash
+_executor = ThreadPoolExecutor(max_workers=1)
+
+#call the agent
+def call_agent(agent: Agent, prompt: str):
+    return _executor.submit(agent.run_sync, prompt).result()
+
+#make the environment
+def make_env(task_id: int, timeout: int = 10000):
+    return gym.make(f"browsergym/webarena.{task_id}", timeout=timeout)

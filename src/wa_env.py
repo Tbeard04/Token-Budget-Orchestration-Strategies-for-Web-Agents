@@ -7,14 +7,15 @@ Everything here is used by ALL strategies. Nothing here decides what action to t
 B and C cannot drift apart on observation format, guards or configuration -- which is what makes the cross-strategy comparison valid.
 
 Contents:
-    - .env loading and WA_* -> bare env var mapping
-    - openai>=1.0 compatibility shims for WebArena's 2023 code
-    - task config discovery and loading
-    - build_prompt(): observation -> text
-    - make_agent(): agent construction with reasoning_effort pinned
-    - call_agent(): off-thread agent invocation
-    - shared constants (MODEL, MAX_STEPS, SITES, guard thresholds)
+- .env loading and WA_* to bare env var mapping
+- openai>=1.0 compatibility shims for WebArena's 2023 code
+- task config discovery and loading:
+- build_prompt(): observation to text
+- make_agent(): agent construction with reasoning_effort pinned
+- call_agent(): off-thread agent invocation:
+- shared constants (MODEL, MAX_STEPS, SITES, guard thresholds)
 """
+
 from __future__ import annotations
 
 import json
@@ -28,7 +29,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# WA_* --> bare names BrowserGym/WebArena expects
+# WA_* to bare names BrowserGym/WebArena expects
 for _wa, _bare in [
     ("WA_SHOPPING", "SHOPPING"),
     ("WA_SHOPPING_ADMIN", "SHOPPING_ADMIN"),
@@ -43,7 +44,7 @@ for _wa, _bare in [
 
 #openai>=1.0 compatibility, WebArena's codebase targets openai 0.x. pydantic-ai requires openai 1.x.
 import openai
-
+#if the openai module does not have an error attribute
 if not hasattr(openai, "error"):
     _err = types.ModuleType("openai.error")
     for _n in ["OpenAIError", "APIError", "RateLimitError", "APIConnectionError",
@@ -53,6 +54,7 @@ if not hasattr(openai, "error"):
     openai.error = _err
     sys.modules["openai.error"] = _err
 
+#the model to use for evaluation
 EVAL_MODEL = "gpt-4o-mini"
 
 #WebArena's evaluators call openai.ChatCompletion.create(), removed in openai>=1.0. Rather than patching every import path that references it,
@@ -61,6 +63,7 @@ if not hasattr(openai, "ChatCompletion"):
     from openai import OpenAI as _OpenAI
     _chat_client = _OpenAI()
 
+    #fake chat completion class
     class _FakeChatCompletion:
         #create a fake chat completion
         #static method to create a chat completion
@@ -139,6 +142,7 @@ def _patch_webarena_openai() -> None:
 
     print(f"[wa_env] patched WebArena openai_utils (eval model: {EVAL_MODEL})")
 
+#patch the webarena openai
 _patch_webarena_openai()
 
 #browsergym: everything above must already have run

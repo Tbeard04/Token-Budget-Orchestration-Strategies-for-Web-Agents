@@ -127,9 +127,12 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         result = W.call_agent(agent, prompt)
         u = result.usage()
 
+        #update the input and output tokens
         in_tok += u.input_tokens
         out_tok += u.output_tokens
+        #total = the total number of tokens
         total = in_tok + out_tok
+        #decided = the decided action
         decided = result.output
         action_history.append(decided.action)
 
@@ -147,6 +150,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         if getattr(u, "details", None):
             print(f"detail: {u.details}")
 
+        #append the step to the steps list
         steps.append({
             "step": i,
             "agent_role": "single",
@@ -176,12 +180,15 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         steps[-1]["step_reward"] = reward
         steps[-1]["next_url"] = obs.get("url", "")
 
+        #print the result
         print(f"result: reward={reward}"
               f"{'ERROR: ' + str(err) if err else '  (action accepted)'}")
 
+        #if the reward is greater than or equal to 1.0, set the success to True and the reason to "success"
         if reward >= 1.0:
             success, reason = True, "success"
             break
+        #if the environment is terminated or truncated, set the reason to "env_terminated"
         if terminated or truncated:
             reason = "env_terminated"
             break
@@ -200,6 +207,7 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
 
     env.close()
 
+    #record = the record to store the results
     record = {
         "strategy": "A",
         "site": site,
@@ -219,7 +227,9 @@ def run_episode(task_id: int, budget: int | None = None) -> dict:
         "step_log": steps,
     }
 
+    #print the results
     print(f"\n --- A / {site} / task {task_id} ---")
+    #for each key in the record, print the key and the value
     for k in ("success", "termination_reason", "steps", "input_tokens", "output_tokens", "total_tokens", "wall_clock_seconds"):
         print(f" {k:20s}: {record[k]}")
     return record
@@ -238,11 +248,12 @@ def main() -> None:
     if args.tasks:
         task_ids = args.tasks
     else:
+        #get the task ids for each site
         pools = W.single_site_tasks()
         task_ids = [ids[0] for ids in pools.values() if ids]
         print(f"No tasks given; using one per site: {task_ids}")
 
-    results = []
+    results = [] #results = the list to store the results
     with open(args.out, "w") as fh:
         for tid in task_ids:
             try:
@@ -255,9 +266,10 @@ def main() -> None:
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
 
+    #print the summary
     print(f"\n{'=' * 78}\nSummary\n{'=' * 78}")
     print(f"{'site':16s}{'task':>6s}{'ok':>7s}{'steps':>7s}{'tokens':>9s}"
-          f"{'secs':>8s}  reason")
+          f"{'secs':>8s} reason")
     #for each result in the results
     for r in results:
         #if the result has an error
@@ -271,6 +283,7 @@ def main() -> None:
                   f"{r['steps']:>7}{r['total_tokens']:>9}"
                   f"{r['wall_clock_seconds']:>8}  {r['termination_reason']}")
 
+    #print the number of episodes written to the output file
     print(f"\nWrote {len(results)} episodes to {args.out}")
 
 if __name__ == "__main__":
