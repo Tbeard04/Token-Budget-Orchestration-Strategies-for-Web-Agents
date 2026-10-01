@@ -19,12 +19,10 @@ python-dotenv
 ```
 
 ## Reproducing the Experiment & Environment
-```text
 This guide rebuilds the AWS environment used to collect every episode in this project (Strategies A, B and C, and the spending-scheme runs). 
 It is reconstructed from the project journal. Stock WebArena will not run this project unmodified. 
 The WebArena codebase (2023) is incompatible with the current OpenAI SDK and API, and BrowserGym's default action timeout is too short for this deployment. 
 The required fixes are listed in Section 0 and applied in Sections 3–5.
-```
 
 ### Section 0. Summary of deviations from stock WebArena/BrowserGym
 ---
@@ -50,16 +48,14 @@ This follows the WebArena environment README which is located at: <https://githu
 |---|---|
 | Region | us-east-2 (Ohio), where the WebArena AMI is published |
 | AMI | webarena-with-configurable-map-backend — ami-08a862bf98e3bd7aa (Ubuntu 22.04; all WebArena sites pre-installed as Docker containers; Miniconda pre-installed at ~/miniconda3 |
-| Instance Type |  |
-| Storage | t3a.xlarge (4 vCPU, 16 GiB RAM) |
+| Instance Type | t3a.xlarge (4 vCPU, 16 GiB RAM) |
+| Storage | 1 × 1000 GiB gp3 root volume |
 | Key Pair | New key pair webarena-key then download “webarena-key.pem” |
 | Elastic IP | None (the public IP changes on each stop/start; look it up in the EC2 console before connecting) |
 
 ---
 
-```text
 Security group (inbound rules)
-```
 
 ---
 | Type | Port | Source | Purpose |
@@ -70,12 +66,12 @@ Security group (inbound rules)
 | Custom TCP | 9999 | 0.0.0.0/0 | Forum (Postmill) |
 ---
 
-```text
+
 Once the instance is creatred, start it from the AWS EC2 Management Concole. Once started, wait for the status check (completed when
 3/3 checks passed). Since no Elastic IP is set, check the public IPv4 address to be able to SSH in. 
 
 Open a terminal inside the root folder where the "webarena-key.pem" is located and run:
-```
+
 ```bash
 chmod 400 webarena-key.pem
 ssh -i webarena-key.pem ubuntu@PUBLIC_IPv4
