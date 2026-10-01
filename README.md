@@ -27,7 +27,7 @@ This follows the WebArena environment README which is located at: <https://githu
 | Setting | Value |
 |---|---|
 | Region | us-east-2 (Ohio), where the WebArena AMI is published |
-| AMI | webarena-with-configurable-map-backend — ami-08a862bf98e3bd7aa (Ubuntu 22.04; all WebArena sites pre-installed as Docker containers; Miniconda pre-installed at ~/miniconda3 |
+| AMI | webarena-with-configurable-map-backend — ami-08a862bf98e3bd7aa (Ubuntu 22.04; all WebArena sites pre-installed as Docker containers; Miniconda pre-installed at ~/miniconda3) |
 | Instance Type | t3a.xlarge (4 vCPU, 16 GiB RAM) |
 | Storage | 1 × 1000 GiB gp3 root volume |
 | Key Pair | New key pair webarena-key then download “webarena-key.pem” |
@@ -263,7 +263,14 @@ python -m pip install -r requirements_local.txt
 ```
 
 #### 11.4 Run the scripts
-Refer to `Dir_info.md` in each module.
+Refer to `Dir_info.md` in each module folder:
+`src/Dir_info.md`
+`batch_analysis/Dir_info.md`
+`clean_contamination/Dir_info.md`
+`router_c/Dir_info.md`
+`spending_schemes/Dir_info.md`
+`task_analysis/Dir_info.md`
+`task_annotation/Dir_info.md`
 
 ## Directory Tree:
 ```text
