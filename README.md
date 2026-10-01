@@ -83,9 +83,9 @@ Miniconda comes with the AMI, so only the project environment needs creating. On
 conda create -n tokenbudget python=3.11 -y
 conda activate tokenbudget
 
-pip install pydantic-ai browsergym browsergym-webarena openai python-dotenv
-pip install scikit-learn 
-pip install torch --index-url https://download.pytorch.org/whl/cpu
+git clone https://github.com/Tbeard04/Token-Budget-Orchestration-Strategies-for-Web-Agents.git ~/project
+cd ~/project
+pip install -r requirements_instance.txt
 playwright install --with-deps chromium
 ```
 
