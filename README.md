@@ -264,19 +264,14 @@ python -m pip install -r requirements_local.txt
 
 #### 11.4 Run the scripts
 Refer to `Dir_info.md` in each module folder:
-`src/Dir_info.md`
 
-`batch_analysis/Dir_info.md`
-
-`clean_contamination/Dir_info.md`
-
-`router_c/Dir_info.md`
-
-`spending_schemes/Dir_info.md`
-
-`task_analysis/Dir_info.md`
-
-`task_annotation/Dir_info.md`
+1. `src/Dir_info.md`
+2. `batch_analysis/Dir_info.md`
+3. `clean_contamination/Dir_info.md`
+4. `router_c/Dir_info.md`
+5. `spending_schemes/Dir_info.md`
+6. `task_analysis/Dir_info.md`
+7.`task_annotation/Dir_info.md`
 
 ## Directory Tree:
 ```text
