@@ -99,7 +99,7 @@ def mcnemar_exact(x_only: int, y_only: int) -> float:
 def print_section(title: str) -> None:
     print(f"\n{'=' * 70}\n{title}\n{'=' * 70}")
 
-# Loading
+#Loading
 def load(path: str, clean: bool = True) -> pd.DataFrame:
     rows = []
     with open(path) as f:
@@ -112,9 +112,12 @@ def load(path: str, clean: bool = True) -> pd.DataFrame:
             except json.JSONDecodeError:
                 continue
     df = pd.DataFrame(rows)
+    #if the error column is in the dataframe, filter the dataframe to only include episodes with no errors
     if "error" in df.columns:
         df = df[df["error"].isna()].copy()
+    #if the use_for_reward column is in the dataframe, filter the dataframe to only include episodes with use_for_reward set to True
     if "use_for_reward" in df.columns:
+        #get the number of episodes in the dataframe
         n = len(df)
         if clean:
             df = df[df["use_for_reward"] == True].copy()
@@ -124,7 +127,7 @@ def load(path: str, clean: bool = True) -> pd.DataFrame:
             print(f"[load] {Path(path).name}: all {n} episodes (contaminated rows INCLUDED)")
     return df
 
-
+#function to join the difficulty tiers to the dataframe
 def join_tiers(df: pd.DataFrame, tiers_path: str) -> pd.DataFrame:
     if not tiers_path or not Path(tiers_path).exists():
         return df
@@ -144,11 +147,14 @@ def join_tiers(df: pd.DataFrame, tiers_path: str) -> pd.DataFrame:
 # Shared tables
 def success_by_budget(df: pd.DataFrame) -> pd.DataFrame:
     print_section("Success Rate by Budget Level (Cost Curve)")
-
+    #initialize the rows list
     rows = []
     for budget, grp in df.groupby("budget_level"):
+        #get the number of distinct tasks solved
         distinct_solved = grp.loc[grp["success"] == True, "task_id"].nunique()
+        #get the number of distinct total tasks
         distinct_total = grp["task_id"].nunique()
+        #append the data for the current budget level to the rows list
         rows.append({
             "budget_level": budget,
             "episodes": len(grp),
@@ -160,12 +166,14 @@ def success_by_budget(df: pd.DataFrame) -> pd.DataFrame:
             "median_tokens": grp["total_tokens"].median(),
             "median_steps": grp["steps"].median(),
         })
-
+    #create a dataframe from the rows list and set the budget level as the index
     tbl = pd.DataFrame(rows).set_index("budget_level")
     print(tbl.to_string(float_format=lambda x: f"{x:.2%}" if x < 1 else f"{x:.0f}"))
-
+    #get the number of distinct tasks solved at any budget
     any_success = df.loc[df["success"] == True, "task_id"].nunique()
+    #get the number of distinct total tasks
     total_tasks = df["task_id"].nunique()
+    #print the number of distinct tasks solved at any budget and the percentage
     print(f"\n Distinct tasks solved at ANY budget: {any_success}/{total_tasks}"
           f" ({any_success/total_tasks:.0%})")
     return tbl
@@ -174,9 +182,13 @@ def success_by_budget(df: pd.DataFrame) -> pd.DataFrame:
 def success_by_site(df: pd.DataFrame) -> pd.DataFrame:
     print_section("Success Rate by Site")
     rows = []
+    #loop through each site
     for site, grp in df.groupby("site"):
+        #get the number of distinct tasks solved
         distinct_solved = grp.loc[grp["success"] == True, "task_id"].nunique()
+        #get the number of distinct total tasks
         distinct_total = grp["task_id"].nunique()
+        #append the data for the current site to the rows list
         rows.append({
             "site": site,
             "episodes": len(grp),
@@ -194,7 +206,7 @@ def success_by_site(df: pd.DataFrame) -> pd.DataFrame:
 #table for task solvability
 def task_solvability(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     print_section("Task Solvability")
-
+    #group the dataframe by task id and calculate the site, minimum budget, maximum budget, number of times solved, and number of unique budgets tested
     solved = df[df["success"] == True].groupby("task_id").agg(
         site=("site", "first"),
         min_budget=("budget_level", "min"),
@@ -202,11 +214,11 @@ def task_solvability(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
         times_solved=("success", "sum"),
         budgets_tested=("budget_level", "nunique"),
     ).sort_values("min_budget")
-
+    #get the number of distinct total tasks
     total_tasks = df["task_id"].nunique()
     print(f"{len(solved)}/{total_tasks} tasks solved at least once "
           f"({len(solved)/total_tasks:.0%})\n")
-
+    #if there are any solved tasks
     if len(solved):
         if verbose:
             print(solved.to_string())
@@ -219,21 +231,28 @@ def task_solvability(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
         print(f"\n Minimum budget needed (median of solved tasks): "
               f"{solved['min_budget'].median():.0f}")
     else:
-        print(" No tasks solved at any budget level.")
+        print("No tasks solved at any budget level.")
 
     return solved
 
 #table for termination reasons
 def termination_reasons(df: pd.DataFrame) -> pd.Series:
     print_section("Termination Reasons")
+    #calculate the value counts of the termination reasons
     counts = df["termination_reason"].value_counts()
+    #get the number of episodes
     total = len(df)
+    #loop through each termination reason and print the count and percentage
     for reason, n in counts.items():
         print(f" {reason:30s} {n:5d}  ({n/total:.0%})")
 
+    #get the number of budget-driven terminations
     budget_driven = df["termination_reason"].isin(BUDGET_TERMINATIONS).sum()
+    #get the number of stuck terminations
     stuck = df["termination_reason"].isin(STUCK_TERMINATIONS).sum()
+    #print the number of budget-driven terminations and the percentage
     print(f"\n budget-driven total: {budget_driven:5d} ({budget_driven/total:.0%})")
+    #print the number of stuck terminations and the percentage
     print(f"stuck (guard-fired): {stuck:5d} ({stuck/total:.0%})")
     return counts
 
@@ -275,9 +294,13 @@ def difficulty_breakdown(df: pd.DataFrame) -> None:
     df["difficulty_tier"] = pd.Categorical(df["difficulty_tier"], categories=tier_order, ordered=True)
 
     rows = []
+    #loop through each difficulty tier and budget level and calculate the number of distinct tasks solved and the number of distinct total tasks
     for (tier, budget), grp in df.groupby(["difficulty_tier", "budget_level"],observed=True):
+        #get the number of distinct tasks solved
         distinct_solved = grp.loc[grp["success"] == True, "task_id"].nunique()
+        #get the number of distinct total tasks
         distinct_total = grp["task_id"].nunique()
+        #append the data for the current difficulty tier and budget level to the rows list
         rows.append({
             "tier": tier,
             "budget": budget,
@@ -293,10 +316,14 @@ def difficulty_breakdown(df: pd.DataFrame) -> None:
 
 #chi-square test of independence on a table of counts; None if scipy is missing
 def chi_square(counts: pd.DataFrame) -> tuple[float, int, float] | None:
+    #filter the counts dataframe to only include rows and columns with sums greater than 0
     counts = counts.loc[counts.sum(axis=1) > 0, counts.sum(axis=0) > 0]
+    #if the number of rows or columns is less than 2, return None
     if counts.shape[0] < 2 or counts.shape[1] < 2:
         return None
+    #calculate the chi-square statistic, degrees of freedom, and p-value
     chi2, p, dof, _ = chi2_contingency(counts.values)
+    #return the chi-square statistic, degrees of freedom, and p-value
     return chi2, dof, p
 
 
@@ -306,17 +333,25 @@ def chi_square(counts: pd.DataFrame) -> tuple[float, int, float] | None:
 def failure_modes_by_tier(df: pd.DataFrame) -> pd.DataFrame | None:
     if "difficulty_tier" not in df.columns:
         return None
+    #get the strategy
     strategy = _strategy_of(df)
     print_section(f"Strategy {strategy}: Failure Modes by Difficulty Tier")
     fails = df[df["success"] == False].copy()
+    #map the termination reasons to the outcome groups
     fails["outcome"] = fails["termination_reason"].map(outcome_group)
+    #group the dataframe by difficulty tier and outcome and calculate the size
     counts = (fails.groupby(["difficulty_tier", "outcome"], observed=True).size().unstack(fill_value=0).reindex(index=[t for t in TIER_ORDER if t in set(fails["difficulty_tier"])],
                        columns=[g for g in OUTCOME_ORDER[1:] if g in set(fails["outcome"])], fill_value=0))
+    #calculate the shares
     shares = counts.div(counts.sum(axis=1), axis=0)
+    #insert the failures column
     shares.insert(0, "failures", counts.sum(axis=1))
+    #set the column names to None and the index name to "tier"
     shares.columns.name = None
+    #set the index name to "tier"
     shares.index.name = "tier"
     print(shares.to_string(float_format=lambda x: f"{x:.0%}" if x <= 1 else f"{x:.0f}"))
+    #return the counts dataframe
     return counts
 
 #Shared plots

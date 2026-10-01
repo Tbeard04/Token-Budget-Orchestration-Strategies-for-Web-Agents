@@ -38,10 +38,14 @@ def comparison_table(d: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
     budgets = sorted(set().union(*[set(df["budget_level"]) for df in d.values()]))
     rows = []
+    #loop through each budget level
     for budget in budgets:
         row = {"budget": budget}
+        #loop through each strategy
         for s, df in d.items():
+            #filter the dataframe to only include episodes in the current budget level
             g = df[df["budget_level"] == budget]
+            #append the number of episodes to the row
             row[f"{s}_n"] = len(g)
             row[f"{s}_SR"] = g["success"].mean() if len(g) else float("nan")
             row[f"{s}_med_tok"] = g["total_tokens"].median() if len(g) else float("nan")
@@ -55,19 +59,24 @@ def comparison_table(d: dict[str, pd.DataFrame]) -> pd.DataFrame:
         print(tbl.to_string())
     return tbl
 
-
+#function to calculate the equivalent budget
 def equivalent_budget(d: dict[str, pd.DataFrame]) -> None:
+    #if A is not in the dictionary, return
     if "A" not in d:
         return
     print_section(f"{vs(d)}: Equivalent Budget (relative to A)")
 
+    #group the dataframe by budget level and calculate the success rate
     a_sr = d["A"].groupby("budget_level")["success"].mean()
+    #loop through each strategy
     for s, df in d.items():
         if s == "A":
             continue
         print(f"\n Strategy {s}")
         for s_budget, s_val in df.groupby("budget_level")["success"].mean().items():
+            #calculate the closest budget level
             closest = (a_sr - s_val).abs().idxmin()
+            #calculate the ratio of the current budget level to the closest budget level
             ratio = s_budget / closest if closest else float("inf")
             print(f" {s} @ {s_budget//1000:>2}k ({s_val:>5.1%})  "
                   f"~=  A @ {closest//1000:>2}k ({a_sr[closest]:>5.1%})   "
@@ -78,21 +87,27 @@ def cost_ratio(d: dict[str, pd.DataFrame]) -> None:
     if "A" not in d:
         return
     print_section(f"{vs(d)}: Cost Ratio on Shared Successes (relative to A)")
-
+    #get the dataframe for A
     a = d["A"]
     a_solved = set(a.loc[a["success"] == True, "task_id"])
+    #loop through each strategy
     for s, df in d.items():
+        #if the strategy is A, skip to the next strategy
         if s == "A":
             continue
+        #get the tasks solved by the current strategy
         s_solved = set(df.loc[df["success"] == True, "task_id"])
         ratios = []
         for tid in a_solved & s_solved:
-            #cheapest success of each strategy on this task
+            #get the cheapest success of each strategy on this task
             a_cost = a.loc[(a["task_id"] == tid) & (a["success"] == True), "total_tokens"].min()
+            #get the cheapest success of the current strategy on this task
             s_cost = df.loc[(df["task_id"] == tid) & (df["success"] == True), "total_tokens"].min()
+            #if the cost is not None and greater than 0, append the ratio to the ratios list
             if a_cost and a_cost > 0:
                 ratios.append(s_cost / a_cost)
         print(f"\n Strategy {s}")
+        #if there are no shared successes, print a message and skip to the next strategy
         if not ratios:
             print("no shared successes to compare")
             continue
@@ -139,22 +154,26 @@ def router_vs_fixed_policies(d: dict[str, pd.DataFrame]) -> None:
     if not all(s in d for s in "ABC"):
         return
     print_section("Strategy C vs Fixed Policies (same task, same budget)")
-
+    #get the key columns
     key = ["task_id", "budget_level"]
     cols = key + ["success", "total_tokens"]
     m = (d["A"][cols].merge(d["B"][cols], on=key, suffixes=("_A", "_B")).merge(d["C"][cols].rename(columns={"success": "success_C", "total_tokens": "total_tokens_C"}), on=key))
-
+    #get the success and total tokens for each strategy
     sa, sb, sc = (m[f"success_{s}"].astype(bool) for s in "ABC")
     ta, tb, tc = (m[f"total_tokens_{s}"] for s in "ABC")
     #oracle: knows the outcomes.
+    #get the oracle success and tokens
     #Takes the cheaper arm that succeeded, or stops at zero cost when neither did
     oracle_success = sa | sb
     oracle_tokens = np.where(sa & sb, np.minimum(ta, tb), np.where(sa, ta, np.where(sb, tb, 0)))
-
+    #get the base success and tokens
     base_s, base_t = int(sa.sum()), int(ta.sum())
+    #initialize the rows list
     rows = []
+    #loop through the policies
     for name, s, t in [("Always A", sa, ta), ("Always B", sb, tb), ("Strategy C (live)", sc, tc), ("Oracle", oracle_success, oracle_tokens)]:
         s_n, t_n = int(s.sum()), int(np.sum(t))
+        #append the data for the current policy to the rows list
         rows.append({
             "policy": name,
             "successes": s_n,
@@ -164,34 +183,42 @@ def router_vs_fixed_policies(d: dict[str, pd.DataFrame]) -> None:
         })
     print(f" {len(m)} cells shared by A, B and C\n")
     print(pd.DataFrame(rows).set_index("policy").to_string())
-
+    #get the number of episodes that stopped the router
     stopped = (d["C"]["termination_reason"] == "router_stop").sum()
     print(f"\n C router stops: {stopped} of {len(d['C'])} episodes")
+    #if the mode chosen column is in the dataframe, get the value counts
     if "mode_chosen" in d["C"].columns:
+        #get the value counts of the mode chosen column
         modes = d["C"]["mode_chosen"].value_counts()
         print(" C mode choices: " + ", ".join(f"{k} {v}" for k, v in modes.items()) + "   (execute = A's way, cycle = B's way)")
 
 #differences in task-level performance
 def task_level_comparison(d: dict[str, pd.DataFrame]) -> None:
     print_section(f"{vs(d)}: Task-Level Comparison (solved at any budget)")
-
+    #get the names of the strategies
     names = list(d)
+    #get the tasks solved by each strategy
     solved = {s: set(df.loc[df["success"] == True, "task_id"]) for s, df in d.items()}
+    #get the all tasks
     all_tasks = set().union(*[set(df["task_id"]) for df in d.values()])
 
     #every solved / not-solved pattern across the loaded strategies
     for pattern in itertools.product([True, False], repeat=len(names)):
-        tasks = {t for t in all_tasks
-                 if all((t in solved[s]) == want for s, want in zip(names, pattern))}
+        #get the tasks that match the pattern
+        tasks = {t for t in all_tasks if all((t in solved[s]) == want for s, want in zip(names, pattern))}
+        #get the winners
         winners = [s for s, want in zip(names, pattern) if want]
+        #get the label for the winners
         label = ("neither" if len(names) == 2 else "none") if not winners else \
             (" + ".join(winners) + (" only" if len(winners) < len(names) else " (all)"))
         print(f"solved by {label:14s} {len(tasks):>4}")
-
-    #B's wins over A: did the Critic contribute?
+    #if A and B are in the dictionary, get the tasks solved by B but not A
     if "A" in d and "B" in d:
+        #get the dataframes for A and B
         a, b = d["A"], d["B"]
+        #get the tasks solved by B but not A
         b_only = solved["B"] - solved["A"]
+        #if there are tasks solved by B but not A, print the tasks
         if b_only:
             print(f"\n Tasks B solved that A could not:")
             with_rev = 0
@@ -213,6 +240,7 @@ def task_level_comparison(d: dict[str, pd.DataFrame]) -> None:
         lost = solved["A"] - solved["C"]
         gained = solved["C"] - solved["A"]
         print(f"\n Tasks A solved that C never did: {len(lost)}")
+        #if there are tasks solved by C but not A, print the tasks
         if lost:
             why = c[c["task_id"].isin(lost)]["termination_reason"].map(outcome_group).value_counts()
             print("C's episodes on those tasks ended as: " + ", ".join(f"{k} {v}" for k, v in why.items()))
@@ -230,15 +258,25 @@ def difficulty_table(d: dict[str, pd.DataFrame]) -> None:
         return
     print_section(f"{vs(d)}: Success Rate by Difficulty Tier")
     rows = []
+    #loop through each tier
     for tier in TIER_ORDER:
+        #initialize the row
         row = {"tier": tier}
+        #loop through each strategy
         for s, df in d.items():
+            #filter the dataframe to only include episodes in the current tier
             g = df[df["difficulty_tier"] == tier]["success"]
+            #get the number of successes and the number of episodes
             k, n = int(g.sum()), len(g)
+            #calculate the Wilson score interval
             lo, hi = wilson(k, n)
+            #append the number of successes and the number of episodes to the row
             row[f"{s}_n"] = n
+            #append the success rate to the row
             row[f"{s}_SR"] = f"{k / n:.1%}" if n else "n/a"
+            #append the 95% confidence interval to the row
             row[f"{s}_95%CI"] = f"{lo:.1%}-{hi:.1%}" if n else ""
+        #append the row to the rows list
         rows.append(row)
     print(pd.DataFrame(rows).set_index("tier").to_string())
 
@@ -282,33 +320,43 @@ def difficulty_sensitivity(d: dict[str, pd.DataFrame], reps: int = 2000, seed: i
         return None
     print_section(f"{vs(d)}: Difficulty Sensitivity, Easy to Hard")
  
-    tiers = (pd.concat([df[["task_id", "difficulty_tier"]] for df in d.values()])
-             .drop_duplicates("task_id").set_index("task_id")["difficulty_tier"])
+    #concatenate the task id and difficulty tier columns for each strategy and drop duplicates
+    tiers = (pd.concat([df[["task_id", "difficulty_tier"]] for df in d.values()]).drop_duplicates("task_id").set_index("task_id")["difficulty_tier"])
+    #set the random number generator seed
     rng = np.random.default_rng(seed)
     #per tier: task ids, and each strategy's successes / episodes per task aligned to them
     ids = {t: tiers[tiers == t].index.to_numpy() for t in ("Easy", "Hard")}
+    #initialize the arrays dictionary
     arrays = {}
+    #loop through each strategy
     for s, df in d.items():
+        #group the dataframe by task id and calculate the sum and count of successes
         per = df.groupby("task_id")["success"].agg(["sum", "count"])
+        #append the sum and count of successes for each task id to the arrays dictionary
         arrays[s] = {t: (per["sum"].reindex(ids[t]).fillna(0).to_numpy(), per["count"].reindex(ids[t]).fillna(0).to_numpy()) for t in ids}
     draws = {t: rng.integers(0, len(ids[t]), size=(reps, len(ids[t]))) for t in ids}
-
+    #initialize the point and boot dictionaries
     point, boot = {}, {}
+    #loop through each strategy
     for s in d:
+        #calculate the success rate for each task id
         sr = {t: arrays[s][t][0].sum() / arrays[s][t][1].sum() for t in ids}
+        #append the success rate for each task id to the point dictionary
         point[s] = (sr["Easy"] - sr["Hard"], sr["Hard"] / sr["Easy"] if sr["Easy"] else np.nan)
+        #initialize the b dictionary
         b = {}
         for t in ids:
             k, n = arrays[s][t]
             b[t] = k[draws[t]].sum(axis=1) / np.maximum(n[draws[t]].sum(axis=1), 1)
         boot[s] = (b["Easy"] - b["Hard"], np.where(b["Easy"] > 0, b["Hard"] / np.where(b["Easy"] > 0, b["Easy"], 1), np.nan))
-
+    #helper function to calculate the confidence interval
     def ci(a):
         lo, hi = np.nanpercentile(a, [2.5, 97.5])
         return f"{lo:.2f} to {hi:.2f}"
-
+    #initialize the rows list
     rows = []
     for s in d:
+        #append the data for the current strategy to the rows list
         rows.append({"strategy": s,
                      "drop_Easy_to_Hard (pp)": f"{100 * point[s][0]:.1f}",
                      "95%CI (pp)": ci(100 * boot[s][0]),
@@ -316,9 +364,13 @@ def difficulty_sensitivity(d: dict[str, pd.DataFrame], reps: int = 2000, seed: i
                      "95%CI": ci(boot[s][1])})
     print(pd.DataFrame(rows).set_index("strategy").to_string())
     print("\n difference in Hard/Easy ratio between strategies (paired bootstrap):")
+    #loop through each pair of strategies
     for x, y in present_pairs(d):
+        #calculate the difference in the Hard/Easy ratio
         diff = boot[y][1] - boot[x][1]
+        #calculate the confidence interval
         lo, hi = np.nanpercentile(diff, [2.5, 97.5])
+        #calculate the verdict based on the confidence interval and print the result
         verdict = "differs" if (lo > 0 or hi < 0) else "no clear difference"
         print(f"{y} - {x}: {point[y][1] - point[x][1]:+.2f}  (95% CI {lo:+.2f} to {hi:+.2f})  -> {verdict}")
     return {"point": point, "boot": boot}
@@ -329,12 +381,17 @@ def failure_modes_by_tier(d: dict[str, pd.DataFrame]) -> None:
         return
     print_section(f"{vs(d)}: Failure Modes by Difficulty Tier (RQ2)")
     try:
+        #import the chi2_contingency function from scipy.stats
         from scipy.stats import chi2_contingency
     except ImportError:
         chi2_contingency = None
+    #loop through each strategy
     for s, df in d.items():
+        #get the failed episodes
         fails = df[df["success"] == False]
+        #calculate the contingency table
         counts = (pd.crosstab(fails["difficulty_tier"], fails["termination_reason"].map(outcome_group)).reindex(index=TIER_ORDER, fill_value=0))
+        #get the outcome columns
         counts = counts[[g for g in OUTCOME_ORDER[1:] if g in counts.columns]]
         shares = counts.div(counts.sum(axis=1), axis=0)
         shares.insert(0, "failures", counts.sum(axis=1))

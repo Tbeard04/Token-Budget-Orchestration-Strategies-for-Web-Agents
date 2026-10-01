@@ -32,11 +32,16 @@ def per_tier_router(df: pd.DataFrame) -> None:
         return
     print_section("Router by Difficulty Tier")
     rows = []
+    #loop through each tier in the TIER_ORDER
     for tier in TIER_ORDER:
+        #filter the dataframe to only include episodes in the current tier
         g = df[df["difficulty_tier"] == tier]
+        #if there are no episodes in the current tier, skip to the next tier
         if g.empty:
             continue
+        #filter the dataframe to only include episodes that did not stop the router
         att = g[~g["router_stop"]]
+        #append the data for the current tier to the rows list
         rows.append({
             "tier": tier,
             "episodes": len(g),
@@ -45,6 +50,7 @@ def per_tier_router(df: pd.DataFrame) -> None:
             "SR_attempted": att["success"].mean() if len(att) else float("nan"),
             "gap": (att["success"].mean() if len(att) else 0) - g["success"].mean(),
         })
+    #print the dataframe
     with pd.option_context("display.float_format", lambda x: f"{x:.3f}"):
         print(pd.DataFrame(rows).set_index("tier").to_string())
 
@@ -52,8 +58,11 @@ def per_tier_router(df: pd.DataFrame) -> None:
 def per_budget_router(df: pd.DataFrame) -> pd.DataFrame:
     print_section("Router by Budget: Stops and the Two Success Rates")
     rows = []
+    #loop through each budget level in the dataframe
     for budget, g in df.groupby("budget_level"):
+        #filter the dataframe to only include episodes that did not stop the router
         att = g[~g["router_stop"]]
+        #append the data for the current budget level to the rows list
         rows.append({
             "budget": f"{budget // 1000}k",
             "episodes": len(g),
@@ -65,12 +74,16 @@ def per_budget_router(df: pd.DataFrame) -> pd.DataFrame:
             "mean_tokens": g["total_tokens"].mean(),
             "cycle_share": (g["mode_chosen"] == "cycle").mean() if "mode_chosen" in g else float("nan"),
         })
+    #create a dataframe from the rows list and set the budget level as the index
     tbl = pd.DataFrame(rows).set_index("budget")
+    #print the dataframe with the float format set to 3 decimal places and the display width set to 200
     with pd.option_context("display.float_format", lambda x: f"{x:.3f}", "display.width", 200):
         print(tbl.to_string())
     return tbl
 
+#function to finish the plot
 def _finish(fig, ax, out_dir: Path, name: str, legend: bool = True) -> None:
+    #if the legend is True, add the legend to the plot
     if legend:
         ax.legend()
     ax.grid(axis="y", alpha=0.3)
@@ -79,10 +92,12 @@ def _finish(fig, ax, out_dir: Path, name: str, legend: bool = True) -> None:
     fig.savefig(path, dpi=150)
     print(f"saved: {path}")
     plt.close(fig)
- 
- 
+
+#function to plot the two success rates
 def plot_two_success_rates(df: pd.DataFrame, out_dir: Path) -> None:
+    #get the unique budget levels and sort them
     budgets = sorted(df["budget_level"].unique())
+    #initialize lists to store the success rates and confidence intervals
     all_sr, att_sr, all_ci = [], [], []
     for b in budgets:
         g = df[df["budget_level"] == b]
@@ -90,7 +105,7 @@ def plot_two_success_rates(df: pd.DataFrame, out_dir: Path) -> None:
         all_sr.append(g["success"].mean())
         att_sr.append(att["success"].mean() if len(att) else np.nan)
         all_ci.append(wilson(int(g["success"].sum()), len(g)))
- 
+
     fig, ax = plt.subplots()
     lo, hi = zip(*all_ci)
     ax.fill_between(budgets, lo, hi, color=COLOURS["C"], alpha=0.12, linewidth=0)
@@ -105,18 +120,16 @@ def plot_two_success_rates(df: pd.DataFrame, out_dir: Path) -> None:
     ax.set_ylabel("Success Rate")
     ax.set_title("Strategy C: Success Rate, All vs Attempted Episodes")
     _finish(fig, ax, out_dir, "success_all_vs_attempted_c.png")
- 
- 
+
+
 def plot_stop_rate_by_budget(df: pd.DataFrame, out_dir: Path) -> None:
     g = df.groupby("budget_level")["router_stop"].agg(["sum", "count"])
     rate = g["sum"] / g["count"]
     lo, hi = zip(*[wilson(int(k), int(n)) for k, n in zip(g["sum"], g["count"])])
- 
+
     fig, ax = plt.subplots()
     x = np.arange(len(g))
-    ax.bar(x, rate, 0.6, color=ROUTER_COLOUR,
-           yerr=[rate - np.array(lo), np.array(hi) - rate], capsize=3,
-           error_kw={"elinewidth": 1, "ecolor": "#52514e"})
+    ax.bar(x, rate, 0.6, color=ROUTER_COLOUR, yerr=[rate - np.array(lo), np.array(hi) - rate], capsize=3, error_kw={"elinewidth": 1, "ecolor": "#52514e"})
     #episode count above each bar, offset right of the error bar
     for xi, (r, k) in enumerate(zip(rate, g["sum"])):
         ax.annotate(f"{int(k)} stopped", (xi, r), textcoords="offset points", xytext=(12, 3), fontsize=9, color="#52514e")
@@ -128,14 +141,15 @@ def plot_stop_rate_by_budget(df: pd.DataFrame, out_dir: Path) -> None:
     ax.set_title("Strategy C: Router Stop Rate by Budget")
     _finish(fig, ax, out_dir, "router_stop_rate_c.png", legend=False)
 
-
+#function to plot the stop rate by difficulty tier
 def plot_stop_rate_by_tier(df: pd.DataFrame, out_dir: Path) -> None:
     if "difficulty_tier" not in df.columns:
         return
+    #get the unique budget levels and sort them
     budgets = sorted(df["budget_level"].unique())
     x = np.arange(len(budgets))
     width = 0.8 / len(TIER_ORDER)
- 
+
     fig, ax = plt.subplots()
     for i, tier in enumerate(TIER_ORDER):
         sub = df[df["difficulty_tier"] == tier]
@@ -154,9 +168,11 @@ def plot_stop_rate_by_tier(df: pd.DataFrame, out_dir: Path) -> None:
 def plot_stop_step(df: pd.DataFrame, out_dir: Path) -> None:
     if "stop_step" not in df.columns or not df["router_stop"].any():
         return
+    #filter the dataframe to only include episodes that stopped the router
     steps = df.loc[df["router_stop"], "stop_step"].dropna().astype(int)
+    #count the number of episodes at each stop step
     counts = steps.value_counts().sort_index()
-
+    #plot the bar chart
     fig, ax = plt.subplots()
     ax.bar(counts.index, counts.values, 0.6, color=ROUTER_COLOUR)
     ax.set_xticks(counts.index)
@@ -170,9 +186,11 @@ def plot_stop_step(df: pd.DataFrame, out_dir: Path) -> None:
 def plot_tier_all_vs_attempted(df: pd.DataFrame, out_dir: Path) -> None:
     if "difficulty_tier" not in df.columns:
         return
+    #get the number of tiers
     x = np.arange(len(TIER_ORDER))
     width = 0.38
     fig, ax = plt.subplots()
+    #loop through the labels, colours and sub_of functions
     for i, (label, colour, sub_of) in enumerate([
             ("All episodes (router stops count as failures)", COLOURS["C"], lambda g: g),
             ("Attempted episodes only (router stops removed)", ROUTER_COLOUR, lambda g: g[~g["router_stop"]])]):
@@ -193,7 +211,9 @@ def plot_tier_all_vs_attempted(df: pd.DataFrame, out_dir: Path) -> None:
     ax.set_title("Strategy C: Success by Tier, All vs Attempted Episodes")
     _finish(fig, ax, out_dir, "tier_all_vs_attempted_c.png")
 
+#main function
 def main() -> None:
+    #create an argument parser
     ap = argparse.ArgumentParser()
     ap.add_argument("--file", required=True)
     ap.add_argument("--tiers", default=None)
