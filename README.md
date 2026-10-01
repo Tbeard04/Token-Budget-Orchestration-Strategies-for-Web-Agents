@@ -151,6 +151,49 @@ In `site-packages/browsergym/core/action/functions.py`: `timeout=500)` to `timeo
 #### 5.4 Clear stale bytecode
 The script deletes __pycache__ directories under the patched packages so the edits take effect.
 
+### Section 6. Initialising the sites (commands provided by WebArena Environment ReadMe)
+<https://github.com/web-arena-x/webarena/blob/main/environment_docker/README.md>
+
+```bash
+#1. Recreate the containers from the original images (images are not deleted)
+#Magento and its database take ~2 minutes to boot
+docker stop shopping shopping_admin forum
+docker rm shopping shopping_admin forum
+docker run --name shopping -p 7770:80 -d shopping_final_0712
+docker run --name shopping_admin -p 7780:80 -d shopping_admin_final_0719
+docker run --name forum -p 9999:80 -d postmill-populated-exposed-withimg
+sleep 120
+```
+
+```bash
+#2. Point Magento at localhost (the forum needs no configuration)
+docker exec shopping /var/www/magento2/bin/magento setup:store-config:set --base-url="http://localhost:7770"
+docker exec shopping mysql -u magentouser -pMyPassword magentodb -e \
+  'UPDATE core_config_data SET value="http://localhost:7770/" WHERE path LIKE "web/%base_url";'
+docker exec shopping /var/www/magento2/bin/magento cache:flush
+
+docker exec shopping_admin /var/www/magento2/bin/magento setup:store-config:set --base-url="http://localhost:7780"
+docker exec shopping_admin mysql -u magentouser -pMyPassword magentodb -e \
+  'UPDATE core_config_data SET value="http://localhost:7780/" WHERE path LIKE "web/%base_url";'
+docker exec shopping_admin /var/www/magento2/bin/magento cache:flush
+```
+
+```bash
+#3. Check all three sites respond
+curl -s -o /dev/null -w "shopping %{http_code}\n" http://localhost:7770
+curl -s -o /dev/null -w "cms %{http_code}\n" http://localhost:7780
+curl -s -o /dev/null -w "forum %{http_code}\n" http://localhost:9999
+```
+
+Each site should report `200` or `302`. A `302` from Magento is a normal redirect. 
+`magentouser` / `MyPassword` are the public defaults shipped in the WebArena AMI.
+
+- If a `docker exec ... mysql` line fails with a connection error, the database is still booting. Wait a minute and run step 2 again.
+- The `localhost` setting is stored inside each container, so it survives stopping and starting the instance. *After an ordinary restart, only this is needed:*
+```bash
+docker start shopping shopping_admin forum
+```
+
 
 ## Directory Tree:
 ```text
