@@ -104,7 +104,7 @@ Localhost and the ports are correct as they are, because the agent runs on the s
 Once you've completed the step above, src/wa_env.py loads this file and maps all the WebArena (WA_*) names onto the bare names WebArena expects (Shopping, Shopping_Admin & Reddit)
 before importing browsergym.webarena. The import order matters, because importing first leaves the environment unconfigured.
 
-### 5. Apply the WebArena / BrowserGym patches
+### Section 5. Apply the WebArena / BrowserGym patches
 ```bash
 conda activate tokenbudget
 bash ~/project/setup/patch_webarena.sh
@@ -169,10 +169,61 @@ Each site should report `200` or `302`. A `302` from Magento is a normal redirec
 `magentouser` / `MyPassword` are the public defaults shipped in the WebArena AMI.
 
 - If a `docker exec ... mysql` line fails with a connection error, the database is still booting. Wait a minute and run step 2 again.
-- The `localhost` setting is stored inside each container, so it survives stopping and starting the instance. *After an ordinary restart, only this is needed:*
+- The `localhost` setting is stored inside each container, so it survives stopping and starting the instance. *After an AWS restart, only this is needed:*
 ```bash
 docker start shopping shopping_admin forum
 ```
+
+### Section 7. Strategy Tests
+Make sure you are in the conda & in the src directory, if not then:
+```bash
+conda activate tokenbudget
+cd ~/project/src
+```
+
+#### 7.1 Strategy A single task and single budget
+```bash
+python strategy_a.py --budget 32000 276
+```
+
+#### 7.2 Strategy B single task and single budget
+```bash
+python strategy_b.py --budget 32000 276
+```
+
+#### 7.3 Strategy C single task and single budget
+```bash
+python strategy_c.py --budget 32000 276
+```
+
+### Section 8. Running the collections
+All runs are made from ~project/src inside tmux, so they survive SSH disconnects. Tmux starts in (base), so activate the environment inside it. Run 1 batch at a time.
+```bash
+tmux new -s collect
+conda activate tokenbudget && cd ~/project/src
+
+python run_batch.py --strategy A --n 999 ||
+python run_batch.py --strategy B --n 999 ||
+python run_batch.py --strategy C --n 999 --out ../data/raw/6_budgets_ALL_tasks_batch/batch_Strategy_C/strategy_c.jsonl
+```
+
+To detatch from the tmux session do: Ctrl-B then D
+To re-attach to the tmux session:
+```bash
+tmux attach -t collect
+```
+
+- --n is tasks per site; min(n, pool size) is taken, so --n 999 means every task (all 475 tasks)
+- After a run, environment errors (page-load timeouts, Chromium crashes) are removed with python -m clean_contamination.remove_errors --file <jsonl batch file> (from localy machine). Re-running the same run_batch.py command then re-collects only those episodes.
+
+Spending scheme run (100 read only tasks at a fixed budget of 32k tokens):
+```bash
+python -m spending_schemes.run_schemes 2>&1 | tee -a ../data/processed/spending_schemes/run_log.txt
+```
+
+### Section 9. Resetting site states
+
+
 
 
 ## Directory Tree:
