@@ -34,21 +34,28 @@ def summarise_eval(raw: str) -> tuple[str, str]:
         m = re.search(r'"eval_types":\s*\[([^\]]*)\]', raw)
         types = m.group(1).replace('"', "").replace(" ", "") if m else "?"
         return f"{types} (truncated)", raw[:120]
-
+    #types is the evaluation types
     types = "+".join(e.get("eval_types") or [])
 
+    #ans is the reference answers
     ans = e.get("reference_answers")
+    #check if the reference answers are not None
     if ans:
+        #loop through the keys
         for key in ("exact_match", "must_include", "fuzzy_match"):
+            #check if the key is in the reference answers
             if key in ans:
+                #get the value for the key
                 v = ans[key]
                 v = ", ".join(str(x) for x in v) if isinstance(v, list) else str(v)
                 return types, f"{key}: {v[:200]}"
-
+    #check if the reference url is not None
     if e.get("reference_url"):
         return types, f"url: {e['reference_url'][:200]}"
 
+    #ph is the program html
     ph = e.get("program_html") or []
+    #check if the program html is not empty
     if ph:
         urls = {p.get("url", "") for p in ph}
         return types, f"DOM check x{len(ph)} on {len(urls)} page(s)"
@@ -73,15 +80,19 @@ def cluster_similar(rows: list, threshold: float = 0.85) -> dict:
     tmpl = {r["task_id"]: normalise_template(r.get("intent", "")) for r in rows}
     ids = sorted(tmpl)
     parent = {i: i for i in ids}
-
+    #find is a function to find the root of a task id
     def find(x):
+        #while the parent of x is not x
         while parent[x] != x:
+            #set the parent of x to the parent of the parent of x
             parent[x] = parent[parent[x]]
+            #set x to the parent of x
             x = parent[x]
         return x
 
     #for each a and b in the ids
     for a_i, a in enumerate(ids):
+        #loop through the ids after a
         for b in ids[a_i + 1:]:
             if SequenceMatcher(None, tmpl[a], tmpl[b]).ratio() >= threshold:
                 #find the root of a and b
@@ -105,7 +116,6 @@ def cluster_similar(rows: list, threshold: float = 0.85) -> dict:
         #for each member in the members
         for m in members:
             out[m] = label[root]
-    #return the out
     return out
 
 #function to convert the gold set to a CSV
@@ -127,10 +137,15 @@ def to_csv(gold_path: str, csv_path: str, threshold: float = 0.85) -> None:
     with out.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=COLUMNS)
         w.writeheader()
+        #loop through the ordered rows
         for r in ordered:
+            #get the evaluation type and target
             etype, etarget = summarise_eval(r.get("eval_criteria", ""))
+            #get the observed hint
             obs = r.get("observed_hint") or {}
+            #get the group id
             gid = group_of.get(r.get("task_id"), "")
+            #write the row
             w.writerow({
                 "task_id": r.get("task_id"),
                 "site": r.get("site", ""),
@@ -280,13 +295,20 @@ def check(gold_path: str) -> None:
         print(f"\n {len(groups)} near-identical groups: all consistent")
 #AI-Generated
 
+# main function to run the label tool
 def main() -> None:
     ap = argparse.ArgumentParser()
+    #add the gold argument
     ap.add_argument("--gold", required=True)
+    #add the csv argument
     ap.add_argument("--csv", default=None)
+    #add the out argument
     ap.add_argument("--out", default=None)
+    #add the to-csv argument
     ap.add_argument("--to-csv", action="store_true")
+    #add the from-csv argument
     ap.add_argument("--from-csv", action="store_true")
+    #add the check argument
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
 

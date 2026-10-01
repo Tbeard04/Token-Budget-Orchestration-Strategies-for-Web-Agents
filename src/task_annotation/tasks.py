@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import wa_env as W
 
+#SITES is the list of sites
 SITES = W.SITES
 
 #Single-site task ids per site, empty sites dropped.
@@ -51,6 +52,7 @@ def allocate(n: int, site_pools: dict) -> dict:
 
     # a site ran out of tasks: spill the remainder onto whichever still has room
     i = 0
+    #loop while the left is greater than 0 and the index is less than 10000
     while left > 0 and i < 10_000:
         s = sites[i % len(sites)]
         if alloc[s] < len(site_pools[s]):

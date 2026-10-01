@@ -11,15 +11,19 @@ def load_observed_cost(episode_paths) -> dict:
         return {}
     if isinstance(episode_paths, (str, Path)):
         episode_paths = [episode_paths]
-
+    #observed is a dictionary to store the observed cost
     observed: dict = {}
+    #loop through the episode paths
     for path in episode_paths:
+        #check if the path exists
         if not Path(path).exists():
             print(f"[observed] not found, skipped: {path}")
             continue
-
+        #by_task is a dictionary to store the episodes by task id
         by_task = defaultdict(list)
+        #open the path
         with open(path) as f:
+            #loop through the lines in the file
             for line in f:
                 line = line.strip()
                 if not line:
@@ -31,21 +35,23 @@ def load_observed_cost(episode_paths) -> dict:
                 if "error" in ep:
                     continue
                 by_task[ep.get("task_id")].append(ep)
-
+        #added is the number of tasks added
         added = 0
+        #loop through the tasks and episodes
         for tid, eps in by_task.items():
             acting = [e for e in eps if e.get("steps", 0) > 0]
             if not acting:
                 continue
-
+            #urls is a set of urls
             urls = set()
+            #loop through the episodes
             for e in acting:
                 for s in e.get("step_log") or []:
                     if s.get("url"):
                         urls.add(s["url"])
                     if s.get("next_url"):
                         urls.add(s["next_url"])
-
+            #stat is a dictionary to store the statistics
             stat = {
                 "median_steps": statistics.median(e["steps"] for e in acting),
                 "max_steps": max(e["steps"] for e in acting),

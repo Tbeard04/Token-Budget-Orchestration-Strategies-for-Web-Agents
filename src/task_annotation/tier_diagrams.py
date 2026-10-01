@@ -35,15 +35,17 @@ SITE_LABELS = {"shopping": "Shopping", "shopping_admin": "Shopping admin", "redd
 # Dimension labels
 DIMENSION_LABELS = {"pages_to_traverse": "Pages to traverse", "retrieval_type": "Retrieval type", "interaction": "Interaction", "target_locatability": "Target locatability",}
 
-# DPI
+#DPI is the dots per inch
 DPI = 300
-# Surface gap between touching fills
+#GAP_PT is the surface gap between touching fills
 GAP_PT = 2.0
-# rounded data-end
+#ROUND_PT is the rounded data-end
 ROUND_PT = 4.0
 
 
+#function to style the figure
 def _style() -> None:
+    #update the parameters
     plt.rcParams.update({
         "figure.facecolor": SURFACE,
         "axes.facecolor": SURFACE,
@@ -65,14 +67,14 @@ def _style() -> None:
         "figure.dpi": DPI,
     })
 
-# Layout helpers
-# Create a new figure and adjust the layout
+#Layout helpers
+#Create a new figure and adjust the layout
 def _canvas(w: float, h: float, left: float, right: float, top: float, bottom: float):
     fig, ax = plt.subplots(figsize=(w, h))
     fig.subplots_adjust(left=left, right=right, top=top, bottom=bottom)
     return fig, ax
 
-# Add a title and subtitle to the figure
+#Add a title and subtitle to the figure
 def _header(fig, title: str, subtitle: str | None, x: float = 0.015) -> None:
     # one point, in figure fraction
     pt = 1.0 / (fig.get_figheight() * 72.0)
@@ -80,10 +82,9 @@ def _header(fig, title: str, subtitle: str | None, x: float = 0.015) -> None:
     if subtitle:
         fig.text(x, 1 - 34 * pt, subtitle, fontsize=9.2, color=INK_SECONDARY, va="top", ha="left")
 
-# Add a legend to the figure
+#Add a legend to the figure
 def _legend(fig, labels: list[str], colours: list[str], x: float = 0.015, y: float = 0.012) -> None:
-    handles = [Patch(facecolor=c, edgecolor="none", label=l)
-               for l, c in zip(labels, colours)]
+    handles = [Patch(facecolor=c, edgecolor="none", label=l) for l, c in zip(labels, colours)]
     leg = fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(x, y), ncol=len(labels), frameon=False, fontsize=8.8,
                      handlelength=0.85, handleheight=0.85, columnspacing=1.8, handletextpad=0.55)
     for t in leg.get_texts():
@@ -95,41 +96,52 @@ def _save(fig, out: Path) -> None:
     plt.close(fig)
 
 
-# Helper functions
-# Calculate the luminance of a hex colour
+#Helper functions
+#Calculate the luminance of a hex colour
 def _luminance(hex_colour: str) -> float:
+    #r, g, b are the red, green and blue values of the hex colour
     r, g, b = (int(hex_colour[i:i + 2], 16) / 255 for i in (1, 3, 5))
-    # Calculate the luminance using the formula
+    #f is a lambda function to calculate the luminance
     f = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    #return the luminance
     return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
 
-# Determine the ink or white inside a coloured fill, whichever clears contrast
+#Determine the ink or white inside a coloured fill, whichever clears contrast
 def _on_fill(hex_colour: str) -> str:
     return "#ffffff" if _luminance(hex_colour) < 0.42 else INK
 
-# Convert points to data coordinates
+#Convert points to data coordinates
 def _pt_to_data(ax, pts: float) -> tuple[float, float]:
+    #inv is the inverted transformation
     inv = ax.transData.inverted()
+    #scale is the scale of the figure
     scale = ax.figure.dpi / 72.0
+    #x0, y0 are the transformed coordinates
     x0, y0 = inv.transform((0, 0))
+    #x1, y1 are the transformed coordinates
     x1, y1 = inv.transform((pts * scale, pts * scale))
+    #return the absolute difference between x1 and x0 and y1 and y0
     return abs(x1 - x0), abs(y1 - y0)
 
 def _rounded_hbar(ax, y, width, height, colour) -> None:
     # Horizontal bar: square at the baseline, rounded at the data end.
     if width == 0:
         return
+    #rx, ry are the rounded data end
     rx, ry = _pt_to_data(ax, ROUND_PT)
+    #r_x, r_y are the rounded data end
     r_x, r_y = min(rx, abs(width)), min(ry, height / 2)
+    #yb, yt are the y-axis values
     yb, yt = y - height / 2, y + height / 2
+    #verts are the vertices of the path
     verts = [(0, yb), (width - r_x, yb), (width, yb), (width, yb + r_y), (width, yt - r_y), (width, yt), (width - r_x, yt), (0, yt), (0, yb)]
-    # Define the path codes
+    #Define the path codes
     codes = [MPath.MOVETO, MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO, MPath.CLOSEPOLY]
     ax.add_patch(PathPatch(MPath(verts, codes), facecolor=colour, edgecolor="none", lw=0, zorder=3))
 
-
+#function to check if the text fits inside the segment
 def _fits(ax, text: str, seg_width_data: float, fontsize: float) -> bool:
-    # Measure the rendered label before placing it inside a segment.
+    #Measure the rendered label before placing it inside a segment
     ax.figure.canvas.draw()
     t = ax.text(0, 0, text, fontsize=fontsize, alpha=0)
     bb = t.get_window_extent(renderer=ax.figure.canvas.get_renderer())
@@ -141,7 +153,7 @@ def _fits(ax, text: str, seg_width_data: float, fontsize: float) -> bool:
 
  
 def _stacked_row(ax, y, parts, total, height, fontsize=8.5) -> None:
-    # One 100%-stacked row. parts = [(value, colour), ...]
+    #One 100%-stacked row. parts = [(value, colour), ...]
     gap_x, _ = _pt_to_data(ax, GAP_PT)
     left = 0.0
     for value, colour in parts:
@@ -153,7 +165,7 @@ def _stacked_row(ax, y, parts, total, height, fontsize=8.5) -> None:
             ax.text(left + (w - gap_x) / 2, y, str(value), ha="center", va="center", fontsize=fontsize, color=_on_fill(colour), zorder=4)
         left += w
 
-
+#function to set the x-axis ticks and labels
 def _pct_axis(ax) -> None:
     # Set the x-axis ticks and labels
     ax.set_xticks([0, 25, 50, 75, 100])
@@ -215,9 +227,9 @@ def fig_tier_by_site(rows: list, out: Path) -> None:
     _legend(fig, TIERS, [TIER_COLOURS[t] for t in TIERS])
     _save(fig, out / "tier_by_site.png")
 
-
+#function to create a figure and axis for the tier by category
 def fig_tier_by_category(rows: list, out: Path) -> None:
-    # Count the number of tasks in each category
+    #Count the number of tasks in each category
     by_cat = defaultdict(Counter)
     for r in rows:
         by_cat[r.get("task_category", "unknown")][r["difficulty_tier"]] += 1

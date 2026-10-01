@@ -36,6 +36,7 @@ def annotate_one(agent, cfg: dict, category: str, observed) -> dict:
     #calculate the total score
     total = total_of(a)
 
+    #create a dictionary to store the row
     row = {
         "task_id": cfg.get("task_id"),
         "site": site,
@@ -47,7 +48,9 @@ def annotate_one(agent, cfg: dict, category: str, observed) -> dict:
         "task_category": category,
         "confidence": a.confidence,
     }
+    #check if the observed is not None
     if observed:
+        #add the observed to the row
         row["observed"] = observed
     return row
 
@@ -72,12 +75,9 @@ def load_categories(intents_path: str | None) -> dict:
     for site_data in data.get("sites", {}).values():
         #for each category and info in the site data
         for cat, info in site_data.get("categories", {}).items():
+            #for each task in the tasks
             for t in info.get("tasks", []):
+                #add the task id and category to the dictionary
                 cats[t["task_id"]] = cat
-    total = data.get("summary", {}).get("total_tasks")
     print(f"[annotate] categories loaded for {len(cats)} tasks")
-    if total and len(cats) < total:
-        print(f"[annotate] WARNING: the intents file has no 'task_categories' "
-              f"mapping, so only {len(cats)} of {total} tasks have a category. "
-              f"Re-run extract_task_intent.py to add it.")
     return cats

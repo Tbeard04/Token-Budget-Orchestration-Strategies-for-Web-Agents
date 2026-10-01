@@ -16,10 +16,14 @@ SCORES = [0, 1, 2]
 
 #Loading and pairing
 def load_jsonl(path: str) -> list[dict]:
+    #rows is a list of dictionaries
     rows = []
+    #loop through the lines in the path
     for line in Path(path).read_text().splitlines():
         line = line.strip()
+        #check if the line is not empty
         if line:
+            #try to load the line as a JSON object
             try:
                 rows.append(json.loads(line))
             except json.JSONDecodeError:
@@ -48,6 +52,7 @@ def build_pairs(gold_rows: list, pred_rows: list) -> tuple[list, dict]:
             #add the task id to the missing rows
             missing.append(tid)
             continue
+        #add the pair to the pairs list
         pairs.append({
             "task_id": tid,
             "site": g.get("site") or p.get("site", ""),
@@ -59,6 +64,7 @@ def build_pairs(gold_rows: list, pred_rows: list) -> tuple[list, dict]:
             "confidence": p.get("confidence"),
         })
 
+    #create a dictionary to store the diagnostics
     diag = {
         "gold_rows": len(gold_rows),
         "gold_complete": len(gold_rows) - len(blank),
@@ -108,20 +114,22 @@ def score(pairs: list) -> dict:
     #calculate the tiers for the predicted rows
     m_tier = [tier_of(t) for t in m_tot]
 
+    #create a dictionary to store the tier
     out["tier"] = {
         "kappa": kappa(g_tier, m_tier, TIERS, "none"),
         "kappa_quadratic": kappa(g_tier, m_tier, TIERS, "quadratic"),
         "exact_agreement": sum(1 for x, y in zip(g_tier, m_tier) if x == y) / len(pairs),
         "confusion": confusion(g_tier, m_tier, TIERS),
         "gold_distribution": {t: g_tier.count(t) for t in TIERS},
-        "pred_distribution": {t: m_tier.count(t) for t in TIERS},
+        "pred_distribution": {t: m_tier.count(t) for t in TIERS}
     }
+    #create a dictionary to store the rubric total
     out["rubric_total"] = {
         "mean_gold": sum(g_tot) / len(g_tot),
         "mean_pred": sum(m_tot) / len(m_tot),
         "mean_abs_error": sum(abs(x - y) for x, y in zip(g_tot, m_tot)) / len(pairs),
         "pearson": pearson(g_tot, m_tot),
-        "spearman": spearman(g_tot, m_tot),
+        "spearman": spearman(g_tot, m_tot)
     }
 
     #for each key and field in the keys and fields
@@ -152,24 +160,33 @@ def print_subset(name: str, s: dict) -> None:
 
     print(f"{'dimension':22s} {'kappa':>6} {'quad':>6} {'exact':>7} {'+-1':>6} "
           f"{'bias':>7}  interpretation (quadratic)")
+    #loop through the dimensions
     for d in DIMENSIONS:
+        #get the scores for the dimension
         v = s["dimensions"][d]
+        #print the dimension
         print(f"{d:22s} {_k(v['kappa'])} {_k(v['kappa_quadratic'])} "
               f"{v['exact_agreement']:>6.0%} {v['within_one']:>6.0%} "
               f"{v['bias_pred_minus_gold']:>+7.2f}  {landis_koch(v['kappa_quadratic'])}")
 
+    #get the tier scores
     t = s["tier"]
+    #print the difficulty tier
     print(f"\n{'difficulty tier':22s} {_k(t['kappa'])} {_k(t['kappa_quadratic'])} "
-          f"{t['exact_agreement']:>6.0%}                {landis_koch(t['kappa'])}")
+          f"{t['exact_agreement']:>6.0%} {landis_koch(t['kappa'])}")
+    #print the mean of 4 dimensions
     print(f"{'mean of 4 dimensions':22s} {_k(s['mean_dimension_kappa'])} "
           f"{_k(s['mean_dimension_kappa_quadratic'])}")
-
+    #get the rubric total
     r = s["rubric_total"]
+    #print the rubric total
     print(f"\nrubric total 0-8:  human mean {r['mean_gold']:.2f}   "
-          f"model mean {r['mean_pred']:.2f}   MAE {r['mean_abs_error']:.2f}   "
-          f"r={_r(r['pearson'])}   rho={_r(r['spearman'])}")
+          f"model mean {r['mean_pred']:.2f} MAE {r['mean_abs_error']:.2f}   "
+          f"r={_r(r['pearson'])} rho={_r(r['spearman'])}")
 
+    #print the tier confusion
     print("\ntier confusion (rows = human, cols = model)")
+    #loop through the tiers
     print(" " + "".join(f"{c:>10}" for c in TIERS))
     for i, row in enumerate(t["confusion"]):
         print(f"{TIERS[i]:10s}" + "".join(f"{v:>10}" for v in row))
@@ -203,13 +220,20 @@ def print_disagreements(pairs: list, limit: int) -> None:
 
     print(f"\n{'=' * 74}\nLargest disagreements "
           f"({len(scored)} of {len(pairs)} tasks differ)\n{'=' * 74}")
+    #loop through the scored pairs
     for gap, p in scored[:limit]:
+        #get the sub
         sub = "exemplar" if p["exemplar"] else ("held out" if p["heldout"] else "")
+        #print the task id, site, gap and sub
         print(f"\n task {p['task_id']:>4}  {p['site']:15s} gap {gap}  {sub}")
+        #print the intent
         print(f"{p['intent'][:90]}")
+        #loop through the dimensions
         for d in DIMENSIONS:
+            #get the gold and predicted scores
             g, m = p["gold"][d], p["pred"][d]
             if g != m:
+                #print the dimension, human score and model score
                 print(f" {d:22s} human {g}  model {m}")
 
 
@@ -241,10 +265,6 @@ def main() -> None:
         print(f"[kappa] {len(diag['missing_from_pred'])} gold tasks absent from "
               f"the annotator output: {diag['missing_from_pred'][:20]}")
 
-    if not pairs:
-        print("\nNothing to compare. Fill in the gold set scores first.")
-        return
-
     #function to get the heldout and exemplar pairs
     heldout = [p for p in pairs if p["heldout"]]
     #function to get the exemplar pairs
@@ -261,7 +281,9 @@ def main() -> None:
     }
     print_subset("ALL matched gold tasks", report["all"])
 
+    #check if the heldout or exemplar pairs are not empty
     if heldout or exemplar:
+        #score the heldout pairs
         report["heldout"] = score(heldout)
         report["exemplar"] = score(exemplar)
         print_subset("HELD OUT", report["heldout"])

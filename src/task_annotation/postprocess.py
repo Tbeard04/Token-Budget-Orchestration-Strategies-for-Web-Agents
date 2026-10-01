@@ -15,8 +15,9 @@ def harmonise_templates(rows: list, protect: set | None = None) -> int:
     groups = defaultdict(list)
     for r in rows:
         groups[r["template"]].append(r)
-
+    #adjusted is the number of templates adjusted
     adjusted = 0
+    #loop through the groups
     for grp in groups.values():
         if len(grp) < 2:
             continue

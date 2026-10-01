@@ -128,23 +128,29 @@ def write_gold_set(n: int, out: str, seed: int, sites: list, episode_paths) -> N
     site_pools = tasks.pools(sites)
     alloc = tasks.allocate(n, site_pools)
     rng = random.Random(seed)
-
+    #chosen is a list of task ids
     chosen: list = []
+    #loop through the sites
     for site in sorted(alloc):
+        #sample the tasks from the site
         chosen.extend(rng.sample(site_pools[site], alloc[site]))
 
+    #load the observed costs
     observed = load_observed_cost(episode_paths)
+    #get the configurations by id
     by_id = tasks.configs_by_id()
 
     out_path = Path(out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-
+    #written is the number of rows written
     written = 0
     with out_path.open("w") as f:
         for tid in sorted(chosen):
+            #get the configuration by id
             cfg = by_id.get(tid)
             if not cfg:
                 continue
+            #create a dictionary to store the row
             row = {
                 "task_id": tid,
                 "site": cfg["sites"][0],
@@ -174,16 +180,25 @@ def apply_gold(pred_path: str, gold: dict, out: str) -> None:
     #Overwrite the model's scores with the human ones for gold tasks
     rows = [json.loads(l) for l in open(pred_path) if l.strip()]
     replaced = 0
+    #loop through the rows
     for r in rows:
+        #get the gold scores for the task id
         g = gold.get(r.get("task_id"))
+        #check if the gold scores are not None
         if not g:
+            #set the label source to model
             r.setdefault("label_source", "model")
+            #continue to the next row
             continue
         if any(r[d] != g[d] for d in DIMENSIONS):
+            #increment the number of replaced rows
             replaced += 1
+        #loop through the dimensions
         for d in DIMENSIONS:
             r[d] = g[d]
+        #set the rubric total
         r["rubric_total"] = total_of(r)
+        #set the difficulty tier
         r["difficulty_tier"] = tier_of(r["rubric_total"])
         r["label_source"] = "human"
         r["needs_review"] = False
@@ -200,6 +215,9 @@ def apply_gold(pred_path: str, gold: dict, out: str) -> None:
     print(f"Wrote {len(rows)} rows to {out_path}")
     print(f"human labels applied: {n_human} ({replaced} differed from the model)")
     tiers = Counter(r["difficulty_tier"] for r in rows)
+    #loop through the tiers
     for t in TIERS:
+        #get the count for the tier
         c = tiers.get(t, 0)
+        #print the tier, count and percentage
         print(f" {t:8s} {c:>4}  ({c / max(len(rows), 1):.0%})")

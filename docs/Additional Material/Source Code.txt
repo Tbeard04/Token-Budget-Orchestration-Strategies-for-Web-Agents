@@ -3990,6 +3990,162 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ### annotate_tasks.py
+from __future__ import annotations
+
+import argparse
+import json
+from collections import Counter
+from pathlib import Path
+
+import tasks
+from annotator import annotate_one, build_annotator, load_categories
+from gold_set import (apply_gold, format_exemplars, load_gold_labels, split_exemplars, write_gold_set)
+from observed_cost import load_observed_cost
+from postprocess import flag_for_review, harmonise_templates, reband
+from reporting import report
+from rubric import TIERS, tier_of
+
+#function to re-band the tasks
+def do_reband(path: str) -> None:
+    #load the rows from the path
+    rows = [json.loads(l) for l in open(path) if l.strip()]
+    #re-band the tasks
+    changed = reband(rows)
+    #write the rows to the path
+    with open(path, "w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+    print(f"Re-banded {len(rows)} tasks, {changed} tiers changed")
+    tiers = Counter(r["difficulty_tier"] for r in rows)
+    #for each tier in the tiers
+    for t in TIERS:
+        #get the count for the tier
+        c = tiers.get(t, 0)
+        #print the tier and the count
+        print(f"{t:8s} {c:>4}  ({c / max(len(rows), 1):.0%})")
+
+#function to run the annotation
+def run_annotation(args) -> None:
+    #create the output path
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Calibration - some hand labels become exemplars, the rest are held back
+    gold = load_gold_labels(args.gold_labels)
+    exemplars, heldout = split_exemplars(gold, args.n_exemplars, args.seed)
+    if gold:
+        print(f"[annotate] exemplars shown to annotator: {len(exemplars)}  "
+              f"held out for kappa: {len(heldout)}")
+
+    #build the annotator
+    agent = build_annotator(format_exemplars(exemplars))
+    #load the categories
+    categories = load_categories(args.intents)
+    #load the observed cost
+    observed = load_observed_cost(args.episodes)
+
+    #sample the task ids
+    task_ids = args.tasks or tasks.sample_task_ids(args.n, args.sites, args.seed)
+    #load the configurations by id
+    by_id = tasks.configs_by_id()
+
+    print(f"[annotate] tasks: {len(task_ids)}")
+    print(f"[annotate] output: {out_path}\n")
+
+    #create a list to store the rows
+    rows = []
+    for i, tid in enumerate(task_ids, 1):
+        #get the configuration by id
+        cfg = by_id.get(tid)
+        #if the configuration is not found
+        if cfg is None:
+            print(f"[annotate] {i}/{len(task_ids)} task {tid}: NOT FOUND")
+            continue
+        try:
+            row = annotate_one(agent, cfg, categories.get(tid, "unknown"), observed.get(tid))
+        except Exception as e:
+            print(f"[annotate] {i}/{len(task_ids)} task {tid}: "
+                  f"{type(e).__name__}: {e}")
+            continue
+
+        row["gold_exemplar"] = tid in exemplars
+        row["gold_heldout"] = tid in heldout
+        rows.append(row)
+
+        #print the task id, site, rubric total, difficulty tier, mark, gmark, and task category
+        mark = "*" if row.get("observed") else " "
+        gmark = "E" if row["gold_exemplar"] else ("H" if row["gold_heldout"] else " ")
+        print(f"[annotate] {i}/{len(task_ids)} task {tid:>4} "
+              f"{row['site']:15s} {row['rubric_total']}/8 "
+              f"{row['difficulty_tier']:6s} {mark}{gmark} {row['task_category']}")
+
+    if not args.no_harmonise:
+        adjusted = harmonise_templates(rows, protect=set(exemplars))
+        print(f"\n[annotate] harmonised {adjusted} rows to their template median")
+
+    #flag the rows for review
+    flag_for_review(rows, args.review_threshold)
+
+    #write the rows to the output path
+    with out_path.open("w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+    report(rows, args.sites)
+    print(f"\n[annotate] wrote {len(rows)} rows to {out_path}")
+    if heldout:
+        print(f"[annotate] next: python cohen_kappa.py --gold {args.gold_labels} "
+              f"--pred {out_path}")
+
+#function to main
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tasks", nargs="*", type=int)
+    ap.add_argument("--n", type=int, default=999, help="tasks per site")
+    ap.add_argument("--sites", nargs="+", default=tasks.SITES)
+    ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--intents", default=None)
+    ap.add_argument("--episodes", nargs="+", default=None)
+    ap.add_argument("--gold-labels", default=None)
+    ap.add_argument("--n-exemplars", type=int, default=20)
+    ap.add_argument("--review-threshold", type=float, default=0.75)
+    ap.add_argument("--no-harmonise", action="store_true")
+    ap.add_argument("--out", default="../../data/tasks/task_metadata.jsonl")
+    ap.add_argument("--gold-out", default="../../data/raw/annotation_tests/run2/gold_set_50.jsonl")
+    ap.add_argument("--reband", default=None)
+    ap.add_argument("--gold-set", type=int, default=None)
+    ap.add_argument("--apply-gold", default=None)
+    args = ap.parse_args()
+
+    #if the reband argument is provided
+    if args.reband:
+        #re-band the tasks
+        do_reband(args.reband)
+        return
+
+    #if the gold set argument is provided
+    if args.gold_set:
+        #if the gold out path is the same as the output path
+        if Path(args.gold_out) == Path(args.out):
+            ap.error("--gold-out must differ from --out")
+        #write the gold set
+        write_gold_set(args.gold_set, args.gold_out, args.seed, args.sites, args.episodes)
+        return
+
+    #if the apply gold argument is provided
+    if args.apply_gold:
+        #load the gold labels
+        gold = load_gold_labels(args.gold_labels)
+        if not gold:
+            ap.error("--apply-gold needs a --gold-labels file with completed scores")
+        apply_gold(args.apply_gold, gold, args.out)
+        return
+
+    #run the annotation
+    run_annotation(args)
+
+if __name__ == "__main__":
+    main()
 
 
 
@@ -4000,6 +4156,86 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ### annotator.py
+from __future__ import annotations
+
+import json
+
+import wa_env as W
+from pathlib import Path
+from observed_cost import format_observed
+from rubric import (ANNOTATOR_INSTRUCTIONS, DIMENSIONS, TaskAnnotation, normalise_template, tier_of, total_of)
+
+
+#function to build the annotator
+def build_annotator(exemplar_block: str = ""):
+    #Construct the scoring agent, calibrated on the exemplars if given
+    return W.make_agent(ANNOTATOR_INSTRUCTIONS + exemplar_block, TaskAnnotation, label="annotator")
+
+#function to annotate one task
+def annotate_one(agent, cfg: dict, category: str, observed) -> dict:
+    #JSON object keys are strings; readers must int() them back
+    intent = cfg.get("intent", "")
+    #convert the evaluation criteria to a string
+    eval_criteria = json.dumps(cfg.get("eval", {}))[:1200]
+    #get the sites
+    sites = cfg.get("sites", [])
+    site = sites[0] if sites else "unknown"
+
+    prompt = (f"Site: {site}\n"
+              f"Intent: {intent}\n"
+              f"Evaluation criteria: {eval_criteria}"
+              f"{format_observed(observed)}")
+
+    #call the agent
+    a = W.call_agent(agent, prompt).output
+    #calculate the total score
+    total = total_of(a)
+
+    #create a dictionary to store the row
+    row = {
+        "task_id": cfg.get("task_id"),
+        "site": site,
+        "intent": intent,
+        "template": normalise_template(intent),
+        **{d: getattr(a, d) for d in DIMENSIONS},
+        "rubric_total": total,
+        "difficulty_tier": tier_of(total),
+        "task_category": category,
+        "confidence": a.confidence,
+    }
+    #check if the observed is not None
+    if observed:
+        #add the observed to the row
+        row["observed"] = observed
+    return row
+
+#function to load the categories
+def load_categories(intents_path: str | None) -> dict:
+    #task_category per task from extract_task_intent.py output "task_categories" mapping
+    if not intents_path or not Path(intents_path).exists():
+        return {}
+    data = json.load(open(intents_path))
+    #get the task categories
+    flat = data.get("task_categories") or {}
+    if flat:
+        #create a dictionary to store the categories
+        cats = {int(k): v for k, v in flat.items()}
+        #print the number of categories loaded
+        print(f"[annotate] categories loaded for {len(cats)} tasks")
+        return cats
+
+    #create a dictionary to store the categories
+    cats = {}
+    #for each site data in the data
+    for site_data in data.get("sites", {}).values():
+        #for each category and info in the site data
+        for cat, info in site_data.get("categories", {}).items():
+            #for each task in the tasks
+            for t in info.get("tasks", []):
+                #add the task id and category to the dictionary
+                cats[t["task_id"]] = cat
+    print(f"[annotate] categories loaded for {len(cats)} tasks")
+    return cats
 
 
 
@@ -4010,6 +4246,310 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ### cohen_kappa.py
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+from agreement import confusion, kappa, landis_koch, pearson, spearman
+from rubric import DIMENSIONS, TIERS, tier_of
+
+#scores for the dimensions
+SCORES = [0, 1, 2]
+
+
+#Loading and pairing
+def load_jsonl(path: str) -> list[dict]:
+    #rows is a list of dictionaries
+    rows = []
+    #loop through the lines in the path
+    for line in Path(path).read_text().splitlines():
+        line = line.strip()
+        #check if the line is not empty
+        if line:
+            #try to load the line as a JSON object
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass
+    return rows
+
+#function to build the pairs between the gold and predicted rows
+def build_pairs(gold_rows: list, pred_rows: list) -> tuple[list, dict]:
+    #Match gold and predicted rows on task_id
+    pred_by_id = {r.get("task_id"): r for r in pred_rows}
+
+    #create a list to store the pairs, blank rows, and missing rows
+    pairs, blank, missing = [], [], []
+    #for each gold row in the gold rows
+    for g in gold_rows:
+        tid = g.get("task_id")
+        #if any of the dimensions are None
+        if any(g.get(d) is None for d in DIMENSIONS):
+            #add the task id to the blank rows
+            blank.append(tid)
+            continue
+        #get the predicted row by task id
+        p = pred_by_id.get(tid)
+        #if the predicted row is not found
+        if p is None:
+            #add the task id to the missing rows
+            missing.append(tid)
+            continue
+        #add the pair to the pairs list
+        pairs.append({
+            "task_id": tid,
+            "site": g.get("site") or p.get("site", ""),
+            "intent": g.get("intent") or p.get("intent", ""),
+            "gold": {d: int(g[d]) for d in DIMENSIONS},
+            "pred": {d: int(p[d]) for d in DIMENSIONS},
+            "exemplar": bool(p.get("gold_exemplar")),
+            "heldout": bool(p.get("gold_heldout")),
+            "confidence": p.get("confidence"),
+        })
+
+    #create a dictionary to store the diagnostics
+    diag = {
+        "gold_rows": len(gold_rows),
+        "gold_complete": len(gold_rows) - len(blank),
+        "blank_gold_rows": blank,
+        "missing_from_pred": missing,
+        "matched": len(pairs),
+    }
+    return pairs, diag
+
+
+# Scoring one subset
+def score(pairs: list) -> dict:
+    out: dict = {"n": len(pairs), "dimensions": {}}
+    if not pairs:
+        return out
+
+    #for each dimension in the dimensions
+    for d in DIMENSIONS:
+        #get the gold scores for the dimension
+        g = [p["gold"][d] for p in pairs]
+        #get the predicted scores for the dimension
+        m = [p["pred"][d] for p in pairs]
+        #create a dictionary to store the scores
+        out["dimensions"][d] = {
+            #calculate the kappa for the dimension
+            "kappa": kappa(g, m, SCORES, "none"),
+            "kappa_quadratic": kappa(g, m, SCORES, "quadratic"),
+            #calculate the kappa for the dimension
+            "kappa_linear": kappa(g, m, SCORES, "linear"),
+            #calculate the exact agreement for the dimension
+            "exact_agreement": sum(1 for x, y in zip(g, m) if x == y) / len(g),
+            "within_one": sum(1 for x, y in zip(g, m) if abs(x - y) <= 1) / len(g),
+            #calculate the mean of the gold scores
+            "mean_gold": sum(g) / len(g),
+            #calculate the mean of the predicted scores
+            "mean_pred": sum(m) / len(m),
+            #calculate the bias of the predicted scores minus the gold scores
+            "bias_pred_minus_gold": sum(m) / len(m) - sum(g) / len(g),
+            "confusion": confusion(g, m, SCORES),
+        }
+
+    #calculate the total scores for the gold and predicted rows
+    g_tot = [sum(p["gold"].values()) for p in pairs]
+    m_tot = [sum(p["pred"].values()) for p in pairs]
+    #calculate the tiers for the gold and predicted rows
+    g_tier = [tier_of(t) for t in g_tot]
+    #calculate the tiers for the predicted rows
+    m_tier = [tier_of(t) for t in m_tot]
+
+    #create a dictionary to store the tier
+    out["tier"] = {
+        "kappa": kappa(g_tier, m_tier, TIERS, "none"),
+        "kappa_quadratic": kappa(g_tier, m_tier, TIERS, "quadratic"),
+        "exact_agreement": sum(1 for x, y in zip(g_tier, m_tier) if x == y) / len(pairs),
+        "confusion": confusion(g_tier, m_tier, TIERS),
+        "gold_distribution": {t: g_tier.count(t) for t in TIERS},
+        "pred_distribution": {t: m_tier.count(t) for t in TIERS}
+    }
+    #create a dictionary to store the rubric total
+    out["rubric_total"] = {
+        "mean_gold": sum(g_tot) / len(g_tot),
+        "mean_pred": sum(m_tot) / len(m_tot),
+        "mean_abs_error": sum(abs(x - y) for x, y in zip(g_tot, m_tot)) / len(pairs),
+        "pearson": pearson(g_tot, m_tot),
+        "spearman": spearman(g_tot, m_tot)
+    }
+
+    #for each key and field in the keys and fields
+    for key, field in (("mean_dimension_kappa", "kappa"), ("mean_dimension_kappa_quadratic", "kappa_quadratic")):
+        #get the scores for the field
+        ks = [v[field] for v in out["dimensions"].values() if v[field] is not None]
+        #calculate the mean of the scores
+        out[key] = sum(ks) / len(ks) if ks else None
+    return out
+
+
+#function to print the kappa
+def _k(v) -> str:
+    return "  n/a" if v is None else f"{v:>5.2f}"
+
+#function to print the pearson correlation coefficient
+def _r(v) -> str:
+    return "n/a" if v is None else f"{v:.2f}"
+
+#function to print the subset
+def print_subset(name: str, s: dict) -> None:
+    print(f"\n{'=' * 74}\n{name}  (n={s['n']})\n{'=' * 74}")
+    #if the number of matched tasks is 0
+    if not s["n"]:
+        #print the number of matched tasks
+        print("no matched tasks")
+        return
+
+    print(f"{'dimension':22s} {'kappa':>6} {'quad':>6} {'exact':>7} {'+-1':>6} "
+          f"{'bias':>7}  interpretation (quadratic)")
+    #loop through the dimensions
+    for d in DIMENSIONS:
+        #get the scores for the dimension
+        v = s["dimensions"][d]
+        #print the dimension
+        print(f"{d:22s} {_k(v['kappa'])} {_k(v['kappa_quadratic'])} "
+              f"{v['exact_agreement']:>6.0%} {v['within_one']:>6.0%} "
+              f"{v['bias_pred_minus_gold']:>+7.2f}  {landis_koch(v['kappa_quadratic'])}")
+
+    #get the tier scores
+    t = s["tier"]
+    #print the difficulty tier
+    print(f"\n{'difficulty tier':22s} {_k(t['kappa'])} {_k(t['kappa_quadratic'])} "
+          f"{t['exact_agreement']:>6.0%} {landis_koch(t['kappa'])}")
+    #print the mean of 4 dimensions
+    print(f"{'mean of 4 dimensions':22s} {_k(s['mean_dimension_kappa'])} "
+          f"{_k(s['mean_dimension_kappa_quadratic'])}")
+    #get the rubric total
+    r = s["rubric_total"]
+    #print the rubric total
+    print(f"\nrubric total 0-8:  human mean {r['mean_gold']:.2f}   "
+          f"model mean {r['mean_pred']:.2f} MAE {r['mean_abs_error']:.2f}   "
+          f"r={_r(r['pearson'])} rho={_r(r['spearman'])}")
+
+    #print the tier confusion
+    print("\ntier confusion (rows = human, cols = model)")
+    #loop through the tiers
+    print(" " + "".join(f"{c:>10}" for c in TIERS))
+    for i, row in enumerate(t["confusion"]):
+        print(f"{TIERS[i]:10s}" + "".join(f"{v:>10}" for v in row))
+
+
+#function to print the confusions
+def print_confusions(s: dict) -> None:
+    #print the heading
+    print(f"\n{'=' * 74}\nPer-dimension confusion (rows = human, cols = model)\n{'=' * 74}")
+    #for each dimension in the dimensions
+    for d in DIMENSIONS:
+        #print the dimension
+        print(f"\n{d}")
+        print(" " + "".join(f"{j:>7}" for j in SCORES))
+        for i, row in enumerate(s["dimensions"][d]["confusion"]):
+            print(f"   {i:>4}" + "".join(f"{v:>7}" for v in row))
+
+
+#function to print the disagreements
+def print_disagreements(pairs: list, limit: int) -> None:
+    #create a list to store the scored pairs
+    scored = []
+    for p in pairs:
+        #calculate the gap between the gold and predicted scores
+        gap = sum(abs(p["gold"][d] - p["pred"][d]) for d in DIMENSIONS)
+        #if the gap is not 0
+        if gap:
+            scored.append((gap, p))
+    #sort the scored pairs by the gap
+    scored.sort(key=lambda x: -x[0])
+
+    print(f"\n{'=' * 74}\nLargest disagreements "
+          f"({len(scored)} of {len(pairs)} tasks differ)\n{'=' * 74}")
+    #loop through the scored pairs
+    for gap, p in scored[:limit]:
+        #get the sub
+        sub = "exemplar" if p["exemplar"] else ("held out" if p["heldout"] else "")
+        #print the task id, site, gap and sub
+        print(f"\n task {p['task_id']:>4}  {p['site']:15s} gap {gap}  {sub}")
+        #print the intent
+        print(f"{p['intent'][:90]}")
+        #loop through the dimensions
+        for d in DIMENSIONS:
+            #get the gold and predicted scores
+            g, m = p["gold"][d], p["pred"][d]
+            if g != m:
+                #print the dimension, human score and model score
+                print(f" {d:22s} human {g}  model {m}")
+
+
+# Main
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--gold")
+    ap.add_argument("--pred")
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--show", type=int, default=15)
+    ap.add_argument("--confusion", action="store_true")
+    args = ap.parse_args()
+
+    if not args.gold or not args.pred:
+        ap.error("--gold and --pred are required")
+
+    gold_rows = load_jsonl(args.gold)
+    pred_rows = load_jsonl(args.pred)
+    pairs, diag = build_pairs(gold_rows, pred_rows)
+
+    print(f"[kappa] gold file: {args.gold}")
+    print(f"[kappa] pred file: {args.pred}")
+    print(f"[kappa] gold rows: {diag['gold_rows']}  "
+          f"complete: {diag['gold_complete']}  matched: {diag['matched']}")
+    if diag["blank_gold_rows"]:
+        print(f"[kappa] SKIPPED {len(diag['blank_gold_rows'])} gold rows with "
+              f"unfilled scores: {diag['blank_gold_rows'][:20]}")
+    if diag["missing_from_pred"]:
+        print(f"[kappa] {len(diag['missing_from_pred'])} gold tasks absent from "
+              f"the annotator output: {diag['missing_from_pred'][:20]}")
+
+    #function to get the heldout and exemplar pairs
+    heldout = [p for p in pairs if p["heldout"]]
+    #function to get the exemplar pairs
+    exemplar = [p for p in pairs if p["exemplar"]]
+    #function to get the unmarked pairs
+    unmarked = [p for p in pairs if not p["heldout"] and not p["exemplar"]]
+
+    #create a dictionary to store the report
+    report = {
+        "gold_file": args.gold,
+        "pred_file": args.pred,
+        "diagnostics": diag,
+        "all": score(pairs),
+    }
+    print_subset("ALL matched gold tasks", report["all"])
+
+    #check if the heldout or exemplar pairs are not empty
+    if heldout or exemplar:
+        #score the heldout pairs
+        report["heldout"] = score(heldout)
+        report["exemplar"] = score(exemplar)
+        print_subset("HELD OUT", report["heldout"])
+        print_subset("EXEMPLARS", report["exemplar"])
+        if unmarked:
+            report["unmarked"] = score(unmarked)
+            print_subset("UNMARKED - no exemplar flag in the pred file", report["unmarked"])
+
+    if args.confusion:
+        print_confusions(report["all"])
+    if args.show:
+        print_disagreements(pairs, args.show)
+
+    if args.out:
+        out_path = Path(args.out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(report, indent=2))
+        print(f"\n[kappa] wrote {out_path}")
+
+if __name__ == "__main__":
+    main()
 
 
 
@@ -4020,6 +4560,226 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ### gold_set.py
+from __future__ import annotations
+
+import json
+import random
+from collections import Counter, defaultdict
+from pathlib import Path
+
+import tasks
+from observed_cost import load_observed_cost, summarise_hint
+from rubric import DIMENSIONS, RUBRIC_SUMMARY, TIERS, tier_of, total_of
+
+
+# Reading finished hand labels
+def load_gold_labels(path: str | None) -> dict:
+    #Read hand-labelled rows, keyed by task_id
+    if not path:
+        return {}
+    p = Path(path)
+    if not p.exists():
+        print(f"[gold] labels not found: {p}")
+        return {}
+
+    gold, blank, bad = {}, [], []
+    for line in p.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            r = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        tid = r.get("task_id")
+        if any(r.get(d) is None for d in DIMENSIONS):
+            blank.append(tid)
+            continue
+        try:
+            scores = {d: int(r[d]) for d in DIMENSIONS}
+        except (TypeError, ValueError):
+            bad.append(tid)
+            continue
+        if any(not 0 <= v <= 2 for v in scores.values()):
+            bad.append(tid)
+            continue
+
+        scores["task_id"] = tid
+        scores["site"] = r.get("site", "")
+        scores["intent"] = r.get("intent", "")
+        gold[tid] = scores
+
+    print(f"[gold] {len(gold)} complete labels"
+          + (f", {len(blank)} still blank: {blank[:20]}" if blank else "")
+          + (f", {len(bad)} malformed: {bad[:20]}" if bad else ""))
+    return gold
+
+
+def split_exemplars(gold: dict, n_exemplars: int, seed: int) -> tuple[dict, dict]:
+    #Take n_exemplars for the prompt, site-balanced; hold back the rest
+    if not gold:
+        return {}, {}
+    if n_exemplars >= len(gold):
+        print(f"[gold] WARNING: all {len(gold)} labels used as exemplars, so "
+              f"kappa will have no held-out subset and will be inflated")
+        return dict(gold), {}
+
+    by_site = defaultdict(list)
+    for tid in sorted(gold):
+        by_site[gold[tid]["site"]].append(tid)
+
+    rng = random.Random(seed)
+    sites = sorted(by_site)
+    for s in sites:
+        rng.shuffle(by_site[s])
+
+    #create a list to store the picked tasks
+    picked: list = []
+    i = 0
+    #while the number of picked tasks is less than the number of exemplars
+    while len(picked) < n_exemplars:
+        pool = by_site[sites[i % len(sites)]]
+        if pool:
+            picked.append(pool.pop())
+        elif all(not by_site[s] for s in sites):
+            break
+        i += 1
+
+    #create a dictionary to store the exemplars
+    ex = {t: gold[t] for t in picked}
+    #create a dictionary to store the heldout tasks
+    held = {t: gold[t] for t in gold if t not in ex}
+    return ex, held
+
+#function to format the exemplars as a calibration block for the system prompt
+def format_exemplars(ex: dict) -> str:
+    #Render exemplars as a calibration block for the system prompt
+    if not ex:
+        return ""
+    rows = sorted(ex.values(), key=lambda r: (total_of(r), r["site"]))
+    #lines = the lines of the exemplars
+    lines = [
+        "",
+        "CALIBRATION EXAMPLES",
+        "The tasks below were scored by the human researcher. They define the",
+        "standard you must match. Apply the same level of strictness; do not",
+        "score systematically higher or lower than these.",
+        "",
+    ]
+    for r in rows:
+        #t = the total score
+        t = total_of(r)
+        lines.append(f"[{r['site']}] {r['intent'][:150]}")
+        #append the pages to traverse, retrieval type, interaction, target locatability and the total score and tier
+        lines.append(
+            f" pages={r['pages_to_traverse']} retrieval={r['retrieval_type']} "
+            f"interaction={r['interaction']} locatability={r['target_locatability']} "
+            f"-> {t}/8 {tier_of(t)}"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+# Writing the blank gold set
+def write_gold_set(n: int, out: str, seed: int, sites: list, episode_paths) -> None:
+    #Write exactly n blank rows, stratified by site, for hand-labelling
+    site_pools = tasks.pools(sites)
+    alloc = tasks.allocate(n, site_pools)
+    rng = random.Random(seed)
+    #chosen is a list of task ids
+    chosen: list = []
+    #loop through the sites
+    for site in sorted(alloc):
+        #sample the tasks from the site
+        chosen.extend(rng.sample(site_pools[site], alloc[site]))
+
+    #load the observed costs
+    observed = load_observed_cost(episode_paths)
+    #get the configurations by id
+    by_id = tasks.configs_by_id()
+
+    out_path = Path(out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    #written is the number of rows written
+    written = 0
+    with out_path.open("w") as f:
+        for tid in sorted(chosen):
+            #get the configuration by id
+            cfg = by_id.get(tid)
+            if not cfg:
+                continue
+            #create a dictionary to store the row
+            row = {
+                "task_id": tid,
+                "site": cfg["sites"][0],
+                "intent": cfg.get("intent", ""),
+                "eval_criteria": json.dumps(cfg.get("eval", {}))[:1200],
+                # fill these four in by hand, each 0, 1 or 2
+                "pages_to_traverse": None,
+                "retrieval_type": None,
+                "interaction": None,
+                "target_locatability": None,
+            }
+            obs = observed.get(tid)
+            if obs:
+                row["observed_hint"] = summarise_hint(obs)
+            f.write(json.dumps(row) + "\n")
+            written += 1
+
+    print(f"\nWrote {written} blank rows to {out_path}")
+    for site in sorted(alloc):
+        print(f" {site:16s} {alloc[site]:>3}  (pool {len(site_pools[site])})")
+    print(f"\nTask ids: {' '.join(str(t) for t in sorted(chosen))}")
+    print(f"\nRubric:\n{RUBRIC_SUMMARY}")
+
+
+# Merging hand labels into the final metadata
+def apply_gold(pred_path: str, gold: dict, out: str) -> None:
+    #Overwrite the model's scores with the human ones for gold tasks
+    rows = [json.loads(l) for l in open(pred_path) if l.strip()]
+    replaced = 0
+    #loop through the rows
+    for r in rows:
+        #get the gold scores for the task id
+        g = gold.get(r.get("task_id"))
+        #check if the gold scores are not None
+        if not g:
+            #set the label source to model
+            r.setdefault("label_source", "model")
+            #continue to the next row
+            continue
+        if any(r[d] != g[d] for d in DIMENSIONS):
+            #increment the number of replaced rows
+            replaced += 1
+        #loop through the dimensions
+        for d in DIMENSIONS:
+            r[d] = g[d]
+        #set the rubric total
+        r["rubric_total"] = total_of(r)
+        #set the difficulty tier
+        r["difficulty_tier"] = tier_of(r["rubric_total"])
+        r["label_source"] = "human"
+        r["needs_review"] = False
+        r["review_reasons"] = []
+
+    out_path = Path(out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+    #function to print the number of human labels applied and the number of rows written
+    n_human = sum(1 for r in rows if r.get("label_source") == "human")
+    print(f"Wrote {len(rows)} rows to {out_path}")
+    print(f"human labels applied: {n_human} ({replaced} differed from the model)")
+    tiers = Counter(r["difficulty_tier"] for r in rows)
+    #loop through the tiers
+    for t in TIERS:
+        #get the count for the tier
+        c = tiers.get(t, 0)
+        #print the tier, count and percentage
+        print(f" {t:8s} {c:>4}  ({c / max(len(rows), 1):.0%})")
 
 
 
@@ -4030,6 +4790,332 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ### label_tool.py
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import re
+import shutil
+from collections import Counter, defaultdict
+from difflib import SequenceMatcher
+from pathlib import Path
+
+from rubric import DIMENSIONS, RUBRIC_SUMMARY, TIERS, normalise_template, tier_of
+
+#columns for the CSV
+COLUMNS = [
+    "task_id", "site", "group", "intent", "eval_type", "eval_target",
+    "obs_median_steps", "obs_max_steps", "obs_urls",
+    "pages_to_traverse", "retrieval_type", "interaction", "target_locatability",
+]
+
+#function to summarise the evaluation criteria
+# Making the evaluation criteria readable
+def summarise_eval(raw: str) -> tuple[str, str]:
+    #Return (eval_type, target) from the stored criteria JSON.
+    if not raw:
+        return "", ""
+    #try to load the raw as JSON
+    try:
+        e = json.loads(raw)
+    except json.JSONDecodeError:
+        m = re.search(r'"eval_types":\s*\[([^\]]*)\]', raw)
+        types = m.group(1).replace('"', "").replace(" ", "") if m else "?"
+        return f"{types} (truncated)", raw[:120]
+    #types is the evaluation types
+    types = "+".join(e.get("eval_types") or [])
+
+    #ans is the reference answers
+    ans = e.get("reference_answers")
+    #check if the reference answers are not None
+    if ans:
+        #loop through the keys
+        for key in ("exact_match", "must_include", "fuzzy_match"):
+            #check if the key is in the reference answers
+            if key in ans:
+                #get the value for the key
+                v = ans[key]
+                v = ", ".join(str(x) for x in v) if isinstance(v, list) else str(v)
+                return types, f"{key}: {v[:200]}"
+    #check if the reference url is not None
+    if e.get("reference_url"):
+        return types, f"url: {e['reference_url'][:200]}"
+
+    #ph is the program html
+    ph = e.get("program_html") or []
+    #check if the program html is not empty
+    if ph:
+        urls = {p.get("url", "") for p in ph}
+        return types, f"DOM check x{len(ph)} on {len(urls)} page(s)"
+
+    return types, ""
+
+# JSONL <---> CSV conversion
+def load_gold(path: str) -> list[dict]:
+    rows = []
+    #for each line in the file
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line:
+            #append the line as a dictionary to the rows
+            rows.append(json.loads(line))
+    #return the rows
+    return rows
+
+#function to cluster similar tasks by intent-template similarity
+def cluster_similar(rows: list, threshold: float = 0.85) -> dict:
+    #Single-link cluster task ids by intent-template similarity
+    tmpl = {r["task_id"]: normalise_template(r.get("intent", "")) for r in rows}
+    ids = sorted(tmpl)
+    parent = {i: i for i in ids}
+    #find is a function to find the root of a task id
+    def find(x):
+        #while the parent of x is not x
+        while parent[x] != x:
+            #set the parent of x to the parent of the parent of x
+            parent[x] = parent[parent[x]]
+            #set x to the parent of x
+            x = parent[x]
+        return x
+
+    #for each a and b in the ids
+    for a_i, a in enumerate(ids):
+        #loop through the ids after a
+        for b in ids[a_i + 1:]:
+            if SequenceMatcher(None, tmpl[a], tmpl[b]).ratio() >= threshold:
+                #find the root of a and b
+                ra, rb = find(a), find(b)
+                if ra != rb:
+                    parent[rb] = ra
+
+    #clusters = the clusters of the ids
+    clusters = defaultdict(list)
+    #for each i in the ids
+    for i in ids:
+        clusters[find(i)].append(i)
+
+    label, out = {}, {}
+    #for each root and members in the clusters
+    for n, (root, members) in enumerate(sorted(clusters.items()), 1):
+        if len(members) < 2:
+            continue
+        #label the root
+        label[root] = f"G{len(label) + 1}"
+        #for each member in the members
+        for m in members:
+            out[m] = label[root]
+    return out
+
+#function to convert the gold set to a CSV
+def to_csv(gold_path: str, csv_path: str, threshold: float = 0.85) -> None:
+    #load the gold set
+    rows = load_gold(gold_path)
+    #group the rows by similarity
+    group_of = cluster_similar(rows, threshold)
+
+    #ordered = the rows ordered by the group and site and task id
+    ordered = sorted(rows, key=lambda r: (
+        group_of.get(r.get("task_id"), "ZZ"),
+        r.get("site", ""),
+        r.get("task_id", 0),
+    ))
+
+    out = Path(csv_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=COLUMNS)
+        w.writeheader()
+        #loop through the ordered rows
+        for r in ordered:
+            #get the evaluation type and target
+            etype, etarget = summarise_eval(r.get("eval_criteria", ""))
+            #get the observed hint
+            obs = r.get("observed_hint") or {}
+            #get the group id
+            gid = group_of.get(r.get("task_id"), "")
+            #write the row
+            w.writerow({
+                "task_id": r.get("task_id"),
+                "site": r.get("site", ""),
+                "group": gid,
+                "intent": r.get("intent", ""),
+                "eval_type": etype,
+                "eval_target": etarget,
+                "obs_median_steps": obs.get("median_steps", ""),
+                "obs_max_steps": obs.get("max_steps", ""),
+                "obs_urls": obs.get("distinct_urls", ""),
+                **{d: (r.get(d) if r.get(d) is not None else "") for d in DIMENSIONS},
+            })
+
+    # exact = sum(1 for c in counts.values() if c > 1)
+    # n_groups = len(set(group_of.values()))
+    print(f"Wrote {len(ordered)} rows to {out}")
+
+#function to convert the CSV to a JSONL
+def from_csv(gold_path: str, csv_path: str, out_path: str | None) -> None:
+    #load the gold set
+    rows = load_gold(gold_path)
+    #by_id = the rows by task id
+    by_id = {r.get("task_id"): r for r in rows}
+
+    #utf-8-sig tolerates the BOM Excel writes
+    with open(csv_path, newline="", encoding="utf-8-sig") as f:
+        csv_rows = list(csv.DictReader(f))
+
+    missing = [c for c in ("task_id", *DIMENSIONS) if c not in (csv_rows[0] if csv_rows else {})]
+    if missing:
+        raise SystemExit(f"CSV is missing required columns: {missing}")
+
+    #filled = the number of rows filled
+    #blank = the rows that are blank
+    #bad = the rows that are bad
+    #unknown = the rows that are unknown
+    filled, blank, bad, unknown = 0, [], [], []
+    for cr in csv_rows:
+        #try to convert the task id to an integer
+        try:
+            tid = int(str(cr["task_id"]).strip())
+        except (ValueError, KeyError):
+            continue
+        #target = the row by task id
+        target = by_id.get(tid)
+        #if the target is None, add the task id to the unknown list
+        if target is None:
+            unknown.append(tid)
+            continue
+        #scores = the scores for the dimensions
+        scores = {}
+        #for each dimension in the dimensions
+        for d in DIMENSIONS:
+            #v = the value of the dimension
+            v = (cr.get(d) or "").strip()
+            if v == "":
+                #if the value is empty, add the task id to the blank list
+                scores = {}
+                blank.append(tid)
+                break
+            #try to convert the value to an integer
+            try:
+                iv = int(float(v))
+            except ValueError:
+                #if the value is not an integer, add the task id and dimension and value to the bad list
+                scores = {}
+                bad.append((tid, d, v))
+                break
+            if iv not in (0, 1, 2):
+                #if the value is not 0, 1 or 2, add the task id and dimension and value to the bad list
+                scores = {}
+                bad.append((tid, d, v))
+                break
+            scores[d] = iv
+        #if the scores are not empty, update the target with the scores and increment the filled count
+        if scores:
+            target.update(scores)
+            filled += 1
+
+    dest = Path(out_path or gold_path)
+    if dest.exists() and not out_path:
+        backup = dest.with_suffix(dest.suffix + ".bak")
+        shutil.copy2(dest, backup)
+        print(f"Backed up {dest.name} -> {backup.name}")
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with dest.open("w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+    print(f"Wrote {len(rows)} rows to {dest} ({filled} scored)")
+    if blank:
+        print(f"{len(blank)} rows still blank: {blank}")
+    if bad:
+        print(f"{len(bad)} rows with a value outside 0-2: {bad[:10]}")
+    if unknown:
+        print(f"{len(unknown)} csv task_ids not in the gold set: {unknown[:10]}")
+
+    check(str(dest))
+
+
+# Checking
+# AI-Generated
+def check(gold_path: str) -> None:
+    rows = load_gold(gold_path)
+    done = [r for r in rows if all(r.get(d) is not None for d in DIMENSIONS)]
+    todo = [r["task_id"] for r in rows if r not in done]
+
+    print(f"\n{'=' * 66}\nGold set: {len(done)}/{len(rows)} labelled\n{'=' * 66}")
+    if todo:
+        print(f"still blank: {todo}")
+    if not done:
+        return
+
+    for d in DIMENSIONS:
+        dist = Counter(r[d] for r in done)
+        print(f"   {d:22s} 0:{dist.get(0, 0):>3}  1:{dist.get(1, 0):>3}  "
+              f"2:{dist.get(2, 0):>3}")
+
+    totals = [sum(r[d] for d in DIMENSIONS) for r in done]
+    tiers = Counter(tier_of(t) for t in totals)
+    print(f"\n rubric total: mean {sum(totals) / len(totals):.2f}  "
+          f"range {min(totals)}-{max(totals)}")
+    for t in TIERS:
+        c = tiers.get(t, 0)
+        print(f"   {t:8s} {c:>3}  ({c / len(done):.0%})")
+
+    # near-identical tasks must agree, or the gold set contradicts itself
+    group_of = cluster_similar(done)
+    groups = defaultdict(list)
+    for r in done:
+        gid = group_of.get(r["task_id"])
+        if gid:
+            groups[gid].append(r)
+
+    clashes = []
+    for gid, grp in groups.items():
+        for d in DIMENSIONS:
+            if len({r[d] for r in grp}) > 1:
+                clashes.append((gid, d, {r["task_id"]: r[d] for r in grp}))
+
+    if clashes:
+        print(f"\n {len(clashes)} inconsistencies across near-identical tasks:")
+        for gid, d, vals in clashes[:12]:
+            print(f" {gid} differs on {d}: {vals}")
+    elif groups:
+        print(f"\n {len(groups)} near-identical groups: all consistent")
+#AI-Generated
+
+# main function to run the label tool
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    #add the gold argument
+    ap.add_argument("--gold", required=True)
+    #add the csv argument
+    ap.add_argument("--csv", default=None)
+    #add the out argument
+    ap.add_argument("--out", default=None)
+    #add the to-csv argument
+    ap.add_argument("--to-csv", action="store_true")
+    #add the from-csv argument
+    ap.add_argument("--from-csv", action="store_true")
+    #add the check argument
+    ap.add_argument("--check", action="store_true")
+    args = ap.parse_args()
+
+    if args.to_csv:
+        if not args.csv:
+            ap.error("--to-csv needs --csv")
+        to_csv(args.gold, args.csv)
+    elif args.from_csv:
+        if not args.csv:
+            ap.error("--from-csv needs --csv")
+        from_csv(args.gold, args.csv, args.out)
+    elif args.check:
+        check(args.gold)
+    else:
+        ap.error("pick one of --to-csv, --from-csv, --check")
+
+if __name__ == "__main__":
+    main()
 
 
 
@@ -4040,6 +5126,95 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ### observed_cost.py
+from __future__ import annotations
+
+import json
+import statistics
+from collections import defaultdict
+from pathlib import Path
+
+#Aggregate cost per task_id across one or more collection files
+def load_observed_cost(episode_paths) -> dict:
+    if not episode_paths:
+        return {}
+    if isinstance(episode_paths, (str, Path)):
+        episode_paths = [episode_paths]
+    #observed is a dictionary to store the observed cost
+    observed: dict = {}
+    #loop through the episode paths
+    for path in episode_paths:
+        #check if the path exists
+        if not Path(path).exists():
+            print(f"[observed] not found, skipped: {path}")
+            continue
+        #by_task is a dictionary to store the episodes by task id
+        by_task = defaultdict(list)
+        #open the path
+        with open(path) as f:
+            #loop through the lines in the file
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    ep = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if "error" in ep:
+                    continue
+                by_task[ep.get("task_id")].append(ep)
+        #added is the number of tasks added
+        added = 0
+        #loop through the tasks and episodes
+        for tid, eps in by_task.items():
+            acting = [e for e in eps if e.get("steps", 0) > 0]
+            if not acting:
+                continue
+            #urls is a set of urls
+            urls = set()
+            #loop through the episodes
+            for e in acting:
+                for s in e.get("step_log") or []:
+                    if s.get("url"):
+                        urls.add(s["url"])
+                    if s.get("next_url"):
+                        urls.add(s["next_url"])
+            #stat is a dictionary to store the statistics
+            stat = {
+                "median_steps": statistics.median(e["steps"] for e in acting),
+                "max_steps": max(e["steps"] for e in acting),
+                "median_tokens": statistics.median(e.get("total_tokens", 0) for e in acting),
+                "distinct_urls": len(urls),
+                "episodes": len(acting),
+                "source": Path(path).stem,
+            }
+            # first file wins: A's numbers are never overwritten by B's
+            if observed.setdefault(tid, stat) is stat:
+                added += 1
+
+        print(f"[observed] +{added} tasks from {Path(path).name}")
+
+    if observed:
+        print(f"[observed] cost loaded for {len(observed)} tasks total")
+    return observed
+
+#function to format the observed cost for the annotator prompt
+def format_observed(obs) -> str:
+    #Render one task's cost for the annotator prompt. Empty when unknown
+    if not obs:
+        return ""
+    return (
+        f"\nObserved cost (a baseline single agent, across budget levels):\n"
+        f"median steps taken: {obs['median_steps']:.0f}\n"
+        f"maximum steps taken: {obs['max_steps']}\n"
+        f"distinct pages visited: {obs['distinct_urls']}\n"
+        f"median tokens: {obs['median_tokens']:.0f}\n"
+    )
+
+#function to summarise the hint for the hand-labelling row
+def summarise_hint(obs) -> dict:
+    #The subset shown on a hand-labelling row
+    return {"median_steps": obs["median_steps"], "max_steps": obs["max_steps"], "distinct_urls": obs["distinct_urls"],}
 
 
 
@@ -4050,6 +5225,81 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ### postprocess.py
+from __future__ import annotations
+
+import statistics
+from collections import defaultdict
+
+from rubric import DIMENSIONS, tier_of, total_of
+
+#function to harmonise the templates
+def harmonise_templates(rows: list, protect: set | None = None) -> int:
+    #Force instances of one template to share the group median scores
+    protect = protect or set()
+    groups = defaultdict(list)
+    for r in rows:
+        groups[r["template"]].append(r)
+    #adjusted is the number of templates adjusted
+    adjusted = 0
+    #loop through the groups
+    for grp in groups.values():
+        if len(grp) < 2:
+            continue
+        # human-labelled rows set the standard
+        basis = [r for r in grp if r["task_id"] not in protect] or grp
+        medians = {d: int(statistics.median(r[d] for r in basis)) for d in DIMENSIONS}
+        #for each row in the group
+        for r in grp:
+            if r["task_id"] in protect:
+                r["template_adjusted"] = False
+                continue
+            changed = [d for d in DIMENSIONS if r[d] != medians[d]]
+            if not changed:
+                r["template_adjusted"] = False
+                continue
+            for d in changed:
+                r[d] = medians[d]
+            r["rubric_total"] = total_of(r)
+            r["difficulty_tier"] = tier_of(r["rubric_total"])
+            r["template_adjusted"] = True
+            r["adjusted_dimensions"] = changed
+            adjusted += 1
+    return adjusted
+
+#function to flag the rows for review
+def flag_for_review(rows: list, threshold: float) -> None:
+    for r in rows:
+        reasons = []
+        #if the confidence is less than the threshold
+        if r["confidence"] < threshold:
+            reasons.append(f"low confidence ({r['confidence']:.2f})")
+        #if the template was adjusted
+        if r.get("template_adjusted"):
+            reasons.append("disagreed with template median on " + ", ".join(r.get("adjusted_dimensions", [])))
+
+        # a page score that contradicts observed navigation
+        obs = r.get("observed")
+        if obs:
+            pages, urls = r["pages_to_traverse"], obs["distinct_urls"]
+            if pages == 0 and urls >= 3:
+                reasons.append(f"scored 0 pages but agent visited {urls}")
+            elif pages == 2 and urls <= 1:
+                reasons.append(f"scored 2 pages but agent visited {urls}")
+
+        r["needs_review"] = bool(reasons)
+        r["review_reasons"] = reasons
+
+#function to re-derive totals and tiers from the stored dimension scores
+def reband(rows: list) -> int:
+    #Re-derive totals and tiers from the stored dimension scores
+    changed = 0
+    for r in rows:
+        r["rubric_total"] = total_of(r)
+        new_tier = tier_of(r["rubric_total"])
+        if new_tier != r.get("difficulty_tier"):
+            changed += 1
+        r["difficulty_tier"] = new_tier
+    return changed
 
 
 
@@ -4060,6 +5310,105 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ### reporting.py
+from __future__ import annotations
+
+import statistics
+from collections import Counter
+
+from rubric import DIMENSIONS, TIERS
+
+#function to print the rule
+def _rule(title: str) -> None:
+    print(f"\n{'=' * 70}\n{title}\n{'=' * 70}")
+
+#function to print the tier distribution
+def tier_distribution(rows: list) -> None:
+    n = len(rows)
+    _rule("Tier distribution")
+    tiers = Counter(r["difficulty_tier"] for r in rows)
+    for t in TIERS:
+        c = tiers.get(t, 0)
+        print(f"{t:8s} {c:4d}  ({c / n:>4.0%})  {'#' * int(40 * c / n)}")
+
+#function to print the tier by site
+def tier_by_site(rows: list, sites: list) -> None:
+    _rule("Tier by site")
+    for site in sites:
+        rs = [r for r in rows if r["site"] == site]
+        if not rs:
+            continue
+        c = Counter(r["difficulty_tier"] for r in rs)
+        print(f" {site:16s} E:{c.get('Easy', 0):>3}  M:{c.get('Medium', 0):>3}  "
+              f"H:{c.get('Hard', 0):>3}   (n={len(rs)})")
+
+#function to print the category distribution
+def category_distribution(rows: list) -> None:
+    _rule("Category distribution")
+    for cat, c in Counter(r["task_category"] for r in rows).most_common():
+        print(f"{cat:25s} {c:>4}")
+
+#function to print the dimension spread
+def dimension_spread(rows: list) -> None:
+    _rule("Dimension scores")
+    for d in DIMENSIONS:
+        dist = Counter(r[d] for r in rows)
+        print(f" {d:22s} 0:{dist.get(0, 0):>4}  1:{dist.get(1, 0):>4}  "
+              f"2:{dist.get(2, 0):>4}")
+
+#function to print the validity check
+def validity_check(rows: list) -> None:
+    #Tier against observed cost. Expect steps and tokens to rise with tier
+    with_obs = [r for r in rows if r.get("observed")]
+    if len(with_obs) < 10:
+        return
+    _rule("Tier vs observed cost (validity check)")
+    for t in TIERS:
+        sub = [r for r in with_obs if r["difficulty_tier"] == t]
+        if not sub:
+            continue
+        print(f" {t:8s} n={len(sub):>3}  "
+              f"median steps {statistics.median(r['observed']['median_steps'] for r in sub):>5.1f}  "
+              f"median tokens {statistics.median(r['observed']['median_tokens'] for r in sub):>8.0f}  "
+              f"median pages {statistics.median(r['observed']['distinct_urls'] for r in sub):>4.1f}")
+
+#function to print the review queue
+def review_queue(rows: list, show: int = 15) -> None:
+    n = len(rows)
+    n_review = sum(1 for r in rows if r.get("needs_review"))
+    n_adjusted = sum(1 for r in rows if r.get("template_adjusted"))
+
+    #print the review queue
+    _rule("Review queue")
+    print(f"harmonised to template median: {n_adjusted}")
+    print(f"flagged for review: {n_review} ({n_review / n:.0%})")
+    if not n_review:
+        return
+    #create a counter to store the reasons
+    all_reasons = Counter()
+    for r in rows:
+        for reason in r.get("review_reasons", []):
+            #split the reason by the first parenthesis and strip the whitespace
+            all_reasons[reason.split("(")[0].strip()] += 1
+    print("\nReasons:")
+    for reason, c in all_reasons.most_common():
+        print(f" {reason:45s} {c:>4}")
+
+    print(f"\nFirst {show} flagged tasks:")
+    for r in [x for x in rows if x.get("needs_review")][:show]:
+        print(f" {r['task_id']:>4} {r['difficulty_tier']:6s} {r['intent'][:44]}")
+        print(f" {'; '.join(r['review_reasons'])[:66]}")
+
+#function to print the report
+def report(rows: list, sites: list) -> None:
+    if not rows:
+        print("No rows annotated.")
+        return
+    tier_distribution(rows)
+    tier_by_site(rows, sites)
+    category_distribution(rows)
+    dimension_spread(rows)
+    validity_check(rows)
+    review_queue(rows)
 
 
 
@@ -4070,6 +5419,112 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ### rubric.py
+from __future__ import annotations
+
+import re
+
+from pydantic import BaseModel, Field
+
+#define the dimensions
+DIMENSIONS = ["pages_to_traverse", "retrieval_type", "interaction", "target_locatability"]
+
+#define the tiers
+TIERS = ["Easy", "Medium", "Hard"]
+
+#define the easy max
+EASY_MAX = 2
+#define the medium max
+MEDIUM_MAX = 5
+
+#define the task annotation model
+class TaskAnnotation(BaseModel):
+    pages_to_traverse: int = Field(ge=0, le=2, description="0 single page, 1 two-to-three pages, 2 four-plus or unbounded")
+    retrieval_type: int = Field(ge=0, le=2, description="0 read one value, 1 compare or filter a few, 2 aggregate or count over a set")
+    interaction: int = Field(ge=0, le=2, description="0 read-only, 1 one form or click sequence, 2 multi-step state change")
+    target_locatability: int = Field(ge=0, le=2, description="0 target named explicitly, 1 derivable from the page, 2 must be discovered by scanning")
+    confidence: float = Field(ge=0.0, le=1.0, description="Honest confidence. Use below 0.7 when the task text is ambiguous about how much navigation it requires.")
+
+#define the annotator instructions
+ANNOTATOR_INSTRUCTIONS = """\
+You score WebArena web-agent tasks on four difficulty dimensions for a study of token budgets.
+
+PAGES TO TRAVERSE - how many distinct pages must be visited?
+    0 = everything needed is on the starting page
+    1 = two or three pages
+    2 = four or more, or an unbounded search across pages
+
+RETRIEVAL TYPE - what must be done with the information?
+    0 = read a single stated value
+    1 = compare or filter a small number of items
+    2 = aggregate, count, or reason over a set of items
+
+INTERACTION - what must be done to the site?
+    0 = read-only; nothing on the site changes
+    1 = one form submission or click sequence
+    2 = a multi-step state change (create, edit, delete, configure)
+
+TARGET LOCATABILITY - how hard is the target to find?
+    0 = named explicitly in the task, e.g. "the Sprite Stasis Ball"
+    1 = derivable from what is on the page
+    2 = must be discovered by scanning or searching
+
+You measure the task's STRUCTURAL DEMANDS, not an agent's capability. Judge on
+the number of distinct interactions and the reasoning depth required, not on
+sentence length or surface wording.
+
+You may also be shown OBSERVED COST: how many steps and distinct pages a
+baseline agent actually needed. Use it to calibrate PAGES TO TRAVERSE, which
+is difficult to judge from text alone. Do NOT use it to infer the other three
+dimensions, and note that an agent may wander - observed pages is an upper
+bound on what the task requires, not the exact number.
+
+Give an honest confidence. Use below 0.7 when the task text leaves the amount
+of navigation genuinely ambiguous.
+"""
+
+#define the rubric summary
+RUBRIC_SUMMARY = """\
+  pages_to_traverse    0 one page        1 two-three      2 four+/unbounded
+  retrieval_type       0 one value       1 compare/filter 2 aggregate/count
+  interaction          0 read-only       1 one form/click 2 multi-step change
+  target_locatability  0 named in task   1 derivable      2 must be discovered"""
+
+
+#Band a rubric total (0-8) into Easy/Medium/Hard
+def tier_of(total: int) -> str:
+    if total <= EASY_MAX:
+        return "Easy"
+    if total <= MEDIUM_MAX:
+        return "Medium"
+    return "Hard"
+
+# Sum the four dimension scores of a dict or an annotation object
+def total_of(row) -> int:
+    if isinstance(row, dict):
+        return sum(int(row[d]) for d in DIMENSIONS)
+    return sum(int(getattr(row, d)) for d in DIMENSIONS)
+
+#function to normalise the template
+def normalise_template(intent: str) -> str:
+    #normalise the template
+    t = intent
+    #replace the quoted strings with X
+    t = re.sub(r'"[^"]*"', "X", t)
+    #replace the single quoted strings with X
+    t = re.sub(r"'[^']*'", "X", t)
+    #replace the user strings with USER
+    t = re.sub(r"\b[A-Z][a-z]+_[A-Z][a-z]+\d*\b", "USER", t)
+    t = re.sub(r"\b[a-zA-Z]+\d+\b", "USER", t)
+    #replace the numbers with N
+    t = re.sub(r"\$?\d[\d,.]*\b", "N", t)
+    #replace the subreddit strings with subreddit X
+    t = re.sub(r"\bsubreddit \w+", "subreddit X", t)
+    #replace the forum strings with forum X
+    t = re.sub(r"\bforum \w+", "forum X", t)
+    #replace the r/ strings with r/X
+    t = re.sub(r"\br/\w+", "r/X", t)
+    #replace the whitespace with a single space
+    return re.sub(r"\s+", " ", t).strip().lower()
 
 
 
@@ -4080,6 +5535,68 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ### tasks.py
+from __future__ import annotations
+
+import random
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import wa_env as W
+
+#SITES is the list of sites
+SITES = W.SITES
+
+#Single-site task ids per site, empty sites dropped.
+def pools(sites: list | None = None) -> dict:
+    return {s: ids for s, ids in W.single_site_tasks(sites or SITES).items() if ids}
+
+#function to get the configs by id
+def configs_by_id() -> dict:
+    return {c["task_id"]: c for c in W.load_configs() if "task_id" in c}
+
+#function to sample the task ids
+def sample_task_ids(n: int, sites: list, seed: int) -> list:
+    #Sample up to n tasks per site. Mirrors run_batch.py's sampling.
+    p = W.single_site_tasks(sites)
+    rng = random.Random(seed)
+    ids: list[int] = []
+    for site in sites:
+        pool = p.get(site, [])
+        if pool:
+            ids.extend(rng.sample(pool, min(n, len(pool))))
+    return sorted(ids)
+
+#function to allocate the tasks to the sites
+def allocate(n: int, site_pools: dict) -> dict:
+    #Split n across sites in proportion to pool size (largest remainder)
+    total = sum(len(v) for v in site_pools.values())
+    if not total:
+        return {}
+    #sort the sites by the pool size
+    sites = sorted(site_pools, key=lambda s: -len(site_pools[s]))
+    #calculate the exact allocation
+    exact = {s: n * len(site_pools[s]) / total for s in sites}
+    #calculate the allocation
+    alloc = {s: min(int(exact[s]), len(site_pools[s])) for s in sites}
+    #calculate the remainder
+    left = n - sum(alloc.values())
+    for s in sorted(sites, key=lambda s: -(exact[s] - int(exact[s]))):
+        if left > 0 and alloc[s] < len(site_pools[s]):
+            alloc[s] += 1
+            left -= 1
+
+    # a site ran out of tasks: spill the remainder onto whichever still has room
+    i = 0
+    #loop while the left is greater than 0 and the index is less than 10000
+    while left > 0 and i < 10_000:
+        s = sites[i % len(sites)]
+        if alloc[s] < len(site_pools[s]):
+            alloc[s] += 1
+            left -= 1
+        i += 1
+    return alloc
 
 
 
@@ -4090,6 +5607,283 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ### tier_diagrams.py
+from __future__ import annotations
+
+import argparse
+import json
+from collections import Counter, defaultdict
+from pathlib import Path
+
+import matplotlib
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch, PathPatch
+from matplotlib.path import Path as MPath
+
+from rubric import TIERS
+
+# Colour tokens
+SURFACE = "#fcfcfb"
+INK = "#0b0b0b"
+INK_SECONDARY = "#52514e"
+INK_MUTED = "#898781"
+GRID = "#e1e0d9"
+AXIS = "#c3c2b7"
+
+# Tier colours
+TIER_COLOURS = {"Easy": "#86b6ef", "Medium": "#2a78d6", "Hard": "#104281"}
+# Score colours
+SCORE_COLOURS = ["#86b6ef", "#2a78d6", "#104281"]
+# Site labels
+SITE_LABELS = {"shopping": "Shopping", "shopping_admin": "Shopping admin", "reddit": "Reddit"}
+# Dimension labels
+DIMENSION_LABELS = {"pages_to_traverse": "Pages to traverse", "retrieval_type": "Retrieval type", "interaction": "Interaction", "target_locatability": "Target locatability",}
+
+#DPI is the dots per inch
+DPI = 300
+#GAP_PT is the surface gap between touching fills
+GAP_PT = 2.0
+#ROUND_PT is the rounded data-end
+ROUND_PT = 4.0
+
+
+#function to style the figure
+def _style() -> None:
+    #update the parameters
+    plt.rcParams.update({
+        "figure.facecolor": SURFACE,
+        "axes.facecolor": SURFACE,
+        "savefig.facecolor": SURFACE,
+        "font.family": "sans-serif",
+        "font.sans-serif": ["DejaVu Sans", "Segoe UI", "Helvetica", "Arial"],
+        "text.color": INK,
+        "axes.edgecolor": AXIS,
+        "axes.labelcolor": INK_SECONDARY,
+        "xtick.color": INK_MUTED,
+        "ytick.color": INK_MUTED,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.spines.left": False,
+        "axes.spines.bottom": False,
+        "xtick.bottom": False,
+        "ytick.left": False,
+        "axes.grid": False,
+        "figure.dpi": DPI,
+    })
+
+#Layout helpers
+#Create a new figure and adjust the layout
+def _canvas(w: float, h: float, left: float, right: float, top: float, bottom: float):
+    fig, ax = plt.subplots(figsize=(w, h))
+    fig.subplots_adjust(left=left, right=right, top=top, bottom=bottom)
+    return fig, ax
+
+#Add a title and subtitle to the figure
+def _header(fig, title: str, subtitle: str | None, x: float = 0.015) -> None:
+    # one point, in figure fraction
+    pt = 1.0 / (fig.get_figheight() * 72.0)
+    fig.text(x, 1 - 14 * pt, title, fontsize=12.5, fontweight="semibold", color=INK, va="top", ha="left")
+    if subtitle:
+        fig.text(x, 1 - 34 * pt, subtitle, fontsize=9.2, color=INK_SECONDARY, va="top", ha="left")
+
+#Add a legend to the figure
+def _legend(fig, labels: list[str], colours: list[str], x: float = 0.015, y: float = 0.012) -> None:
+    handles = [Patch(facecolor=c, edgecolor="none", label=l) for l, c in zip(labels, colours)]
+    leg = fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(x, y), ncol=len(labels), frameon=False, fontsize=8.8,
+                     handlelength=0.85, handleheight=0.85, columnspacing=1.8, handletextpad=0.55)
+    for t in leg.get_texts():
+        t.set_color(INK_SECONDARY)
+
+# Save the figure to a file
+def _save(fig, out: Path) -> None:
+    fig.savefig(out, dpi=DPI, bbox_inches="tight", pad_inches=0.26)
+    plt.close(fig)
+
+
+#Helper functions
+#Calculate the luminance of a hex colour
+def _luminance(hex_colour: str) -> float:
+    #r, g, b are the red, green and blue values of the hex colour
+    r, g, b = (int(hex_colour[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    #f is a lambda function to calculate the luminance
+    f = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    #return the luminance
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+
+#Determine the ink or white inside a coloured fill, whichever clears contrast
+def _on_fill(hex_colour: str) -> str:
+    return "#ffffff" if _luminance(hex_colour) < 0.42 else INK
+
+#Convert points to data coordinates
+def _pt_to_data(ax, pts: float) -> tuple[float, float]:
+    #inv is the inverted transformation
+    inv = ax.transData.inverted()
+    #scale is the scale of the figure
+    scale = ax.figure.dpi / 72.0
+    #x0, y0 are the transformed coordinates
+    x0, y0 = inv.transform((0, 0))
+    #x1, y1 are the transformed coordinates
+    x1, y1 = inv.transform((pts * scale, pts * scale))
+    #return the absolute difference between x1 and x0 and y1 and y0
+    return abs(x1 - x0), abs(y1 - y0)
+
+def _rounded_hbar(ax, y, width, height, colour) -> None:
+    # Horizontal bar: square at the baseline, rounded at the data end.
+    if width == 0:
+        return
+    #rx, ry are the rounded data end
+    rx, ry = _pt_to_data(ax, ROUND_PT)
+    #r_x, r_y are the rounded data end
+    r_x, r_y = min(rx, abs(width)), min(ry, height / 2)
+    #yb, yt are the y-axis values
+    yb, yt = y - height / 2, y + height / 2
+    #verts are the vertices of the path
+    verts = [(0, yb), (width - r_x, yb), (width, yb), (width, yb + r_y), (width, yt - r_y), (width, yt), (width - r_x, yt), (0, yt), (0, yb)]
+    #Define the path codes
+    codes = [MPath.MOVETO, MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO, MPath.CURVE3, MPath.CURVE3, MPath.LINETO, MPath.CLOSEPOLY]
+    ax.add_patch(PathPatch(MPath(verts, codes), facecolor=colour, edgecolor="none", lw=0, zorder=3))
+
+#function to check if the text fits inside the segment
+def _fits(ax, text: str, seg_width_data: float, fontsize: float) -> bool:
+    #Measure the rendered label before placing it inside a segment
+    ax.figure.canvas.draw()
+    t = ax.text(0, 0, text, fontsize=fontsize, alpha=0)
+    bb = t.get_window_extent(renderer=ax.figure.canvas.get_renderer())
+    t.remove()
+    inv = ax.transData.inverted()
+    w = abs(inv.transform((bb.width, 0))[0] - inv.transform((0, 0))[0])
+    # Return True if the label fits inside the segment, False otherwise
+    return w * 1.5 < abs(seg_width_data)
+
+ 
+def _stacked_row(ax, y, parts, total, height, fontsize=8.5) -> None:
+    #One 100%-stacked row. parts = [(value, colour), ...]
+    gap_x, _ = _pt_to_data(ax, GAP_PT)
+    left = 0.0
+    for value, colour in parts:
+        if value <= 0:
+            continue
+        w = 100.0 * value / total
+        ax.barh(y, max(w - gap_x, 0.01), left=left, height=height, color=colour, edgecolor="none", lw=0, zorder=3)
+        if _fits(ax, str(value), w - gap_x, fontsize):
+            ax.text(left + (w - gap_x) / 2, y, str(value), ha="center", va="center", fontsize=fontsize, color=_on_fill(colour), zorder=4)
+        left += w
+
+#function to set the x-axis ticks and labels
+def _pct_axis(ax) -> None:
+    # Set the x-axis ticks and labels
+    ax.set_xticks([0, 25, 50, 75, 100])
+    ax.set_xticklabels(["0", "25", "50", "75", "100%"], fontsize=8.8)
+
+# Create a figure and axis for the tier distribution
+def fig_tier_distribution(rows: list, out: Path) -> None:
+    # Count the number of tasks in each tier
+    counts = Counter(r["difficulty_tier"] for r in rows)
+    # Get the number of tasks and the maximum number of tasks in a tier
+    n, top = len(rows), max(Counter(r["difficulty_tier"] for r in rows).values())
+    # Create a new figure and axis
+    fig, ax = _canvas(6.6, 2.8, left=0.115, right=0.985, top=0.72, bottom=0.07)
+    # Set the x-axis limits and y-axis limits
+    ax.set_xlim(0, top * 1.24)
+    ax.set_ylim(-0.66, len(TIERS) - 0.34)
+    # Get the y-axis values
+    ys = list(range(len(TIERS)))[::-1]
+    # Create a bar for each tier
+    for y, tier in zip(ys, TIERS):
+        c = counts.get(tier, 0)
+        _rounded_hbar(ax, y, c, 0.5, TIER_COLOURS[tier])
+        # Add the number of tasks in the tier
+        ax.text(c + top * 0.025, y, f"{c}", va="center", ha="left", fontsize=10.5, color=INK)
+        ax.text(c + top * 0.025 + top * 0.085, y, f"{c / n:.0%}", va="center", ha="left", fontsize=10.5, color=INK_MUTED)
+
+    # Set the y-axis ticks and labels
+    ax.set_yticks(ys)
+    ax.set_yticklabels(TIERS, fontsize=10.5, color=INK)
+    # Set the x-axis ticks to empty
+    ax.set_xticks([])
+    # Add a header to the figure
+    _header(fig, "Task difficulty tiers", None)
+    _save(fig, out / "tier_distribution.png")
+
+#Create a figure and axis for the tier by site
+def fig_tier_by_site(rows: list, out: Path) -> None:
+    # Count the number of tasks in each site
+    by_site = defaultdict(Counter)
+    for r in rows:
+        by_site[r["site"]][r["difficulty_tier"]] += 1
+    sites = [s for s in SITE_LABELS if s in by_site] or sorted(by_site)
+    # Create a new figure and axis
+    fig, ax = _canvas(6.6, 2.9, left=0.175, right=0.905, top=0.72, bottom=0.20)
+    ax.set_xlim(0, 100)
+    ax.set_ylim(-0.66, len(sites) - 0.34)
+    ys = list(range(len(sites)))[::-1]
+    # Create a stacked row for each site
+    for y, site in zip(ys, sites):
+        c = by_site[site]
+        total = sum(c.values())
+        _stacked_row(ax, y, [(c.get(t, 0), TIER_COLOURS[t]) for t in TIERS], total, 0.5)
+        ax.text(102, y, f"n={total}", va="center", ha="left", fontsize=9, color=INK_MUTED)
+
+    ax.set_yticks(ys)
+    ax.set_yticklabels([SITE_LABELS.get(s, s) for s in sites], fontsize=10.5, color=INK)
+    _pct_axis(ax)
+    _header(fig, "Difficulty composition by site", None)
+    _legend(fig, TIERS, [TIER_COLOURS[t] for t in TIERS])
+    _save(fig, out / "tier_by_site.png")
+
+#function to create a figure and axis for the tier by category
+def fig_tier_by_category(rows: list, out: Path) -> None:
+    #Count the number of tasks in each category
+    by_cat = defaultdict(Counter)
+    for r in rows:
+        by_cat[r.get("task_category", "unknown")][r["difficulty_tier"]] += 1
+    cats = sorted(by_cat, key=lambda c: -sum(by_cat[c].values()))
+    #Calculate the height of the figure
+    h = 0.40 * len(cats) + 1.7
+    #Create a new figure and axis
+    fig, ax = _canvas(6.6, h, left=0.245, right=0.895, top=1 - 0.88 / h, bottom=0.62 / h)
+    ax.set_xlim(0, 100)
+    ax.set_ylim(-0.7, len(cats) - 0.3)
+    ys = list(range(len(cats)))[::-1]
+    #Create a stacked row for each category
+    for y, cat in zip(ys, cats):
+        c = by_cat[cat]
+        total = sum(c.values())
+        _stacked_row(ax, y, [(c.get(t, 0), TIER_COLOURS[t]) for t in TIERS], total, 0.5, fontsize=8)
+        ax.text(102, y, f"n={total}", va="center", ha="left", fontsize=8.5, color=INK_MUTED)
+
+    ax.set_yticks(ys)
+    ax.set_yticklabels([c.replace("_", " ") for c in cats], fontsize=9.5, color=INK)
+    # Set the x-axis ticks and labels
+    _pct_axis(ax)
+    # Add a header to the figure
+    _header(fig, "Difficulty composition by task category", None)
+    _legend(fig, TIERS, [TIER_COLOURS[t] for t in TIERS])
+    _save(fig, out / "tier_by_category.png")
+
+
+#main
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--metadata", default="../../data/processed/final_annotation_difficulty_tiers/task_metadata.jsonl")
+    ap.add_argument("--out", default="../../data/processed/diagrams/difficulty_tiers")
+    args = ap.parse_args()
+ 
+    rows = [json.loads(l) for l in Path(args.metadata).read_text().splitlines() if l.strip()]
+
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+
+    _style()
+    fig_tier_distribution(rows, out)
+    # fig_rubric_total(rows, out)
+    fig_tier_by_site(rows, out)
+    # fig_dimension_profiles(rows, out)
+    fig_tier_by_category(rows, out)
+
+if __name__ == "__main__":
+    main()
 
 
 
@@ -4100,3 +5894,5 @@ def spearman(xs: list, ys: list) -> float | None:
 
 
 ## Router C Module
+
+### 
