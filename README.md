@@ -197,7 +197,7 @@ python strategy_c.py --budget 32000 276
 ```
 
 ### Section 8. Running the collections
-All runs are made from ~project/src inside tmux, so they survive SSH disconnects. Tmux starts in (base), so activate the environment inside it. Run 1 batch at a time.
+All runs are made from ~project/src inside tmux, so they survive SSH disconnects. Tmux starts in (base), so activate the environment inside it. Run 1 batch at a time as 1 batch takes around 20-30 hours to complete.
 ```bash
 tmux new -s collect
 conda activate tokenbudget && cd ~/project/src
@@ -223,8 +223,12 @@ python -m spending_schemes.run_schemes 2>&1 | tee -a ../data/processed/spending_
 ```
 
 ### Section 9. Resetting site states
+State-changing tasks (orders, posts, address updates) permanently modify the containers. Before each new collection, the sites were restored by re-running all of Section 6. 
+That recreates the containers from the original AMI images and reapplies the localhost setting. 
+Within a collection, repeated attempts at the same state-changing task are handled by the decontamination pipeline: remove_errors.py --> sort_batch.py --> classify_tasks.py --> flag_episodes.py
 
 
+### Section 10. Restrieving the results
 
 
 ## Directory Tree:
