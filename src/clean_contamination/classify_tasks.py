@@ -141,7 +141,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--annotations", default="../data/processed/final_annotation_difficulty_tiers/task_metadata.jsonl")
     ap.add_argument("--output", default="../data/processed/task_list/task_risk_levels.jsonl")
-    ap.add_argument("--configs", default="task_analysis/test.raw.json")
+    ap.add_argument("--configs", default="../data/processed/task_list/test.raw.json")
     ap.add_argument("--show", type=int, default=5)
     ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args()

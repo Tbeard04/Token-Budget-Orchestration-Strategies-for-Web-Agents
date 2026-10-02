@@ -122,8 +122,8 @@ def categorise(intent: str) -> str:
 #main function
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--input", default="test_raw.json")
-    ap.add_argument("--output", default="task_intents.json")
+    ap.add_argument("--input", default="../data/processed/task_list/test.raw.json")
+    ap.add_argument("--output", default="../data/processed/task_list/task_intents.json")
     args = ap.parse_args()
 
     data = json.load(open(args.input))

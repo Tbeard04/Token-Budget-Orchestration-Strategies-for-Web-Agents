@@ -73,7 +73,7 @@ python -m clean_contamination.classify_tasks --annotations $M --output $K --conf
 |---|---|---|
 | `--annotations` | `../data/processed/final_annotation_difficulty_tiers/task_metadata.jsonl` | Annotated task list. Supplies each task's `intent`, `task_category` and `site` |
 | `--output` | `../data/processed/task_list/task_risk_levels.jsonl` | Where the risk levels are written (one row per task) |
-| `--configs` | `task_analysis/test.raw.json` | WebArena's raw task configs. These are used to find "impossible" tasks, whose expected answer is only `N/A`. Those tasks write nothing, so they are forced to `read_only`. If the file is missing, this check is skipped with a warning |
+| `--configs` | `../data/processed/task_list/test.raw.json")` | WebArena's raw task configs. These are used to find "impossible" tasks, whose expected answer is only `N/A`. Those tasks write nothing, so they are forced to `read_only`. If the file is missing, this check is skipped with a warning |
 | `--show` | `5` | Number of example tasks printed per risk level. `0` hides the examples |
 | `--self-test` | off | Run the built-in test cases (intent phrasing, quoted payloads, word boundaries, the N/A detector) and exit without writing anything |
 
