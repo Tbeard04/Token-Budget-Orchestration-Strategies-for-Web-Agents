@@ -1,7 +1,6 @@
 """
 compare_models.py generates figures and one comparison table for the three router versions trained by train_router.py
 """
-
 from __future__ import annotations
 
 import argparse

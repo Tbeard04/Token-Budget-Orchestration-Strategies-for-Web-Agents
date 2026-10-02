@@ -1,7 +1,6 @@
 """
 This script is used to join the episodes with the metadata and risk levels.
 """
-
 from __future__ import annotations
 
 import argparse

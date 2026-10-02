@@ -1,7 +1,6 @@
 """
 This script is used to remove environment errors from the data (not action errors)
 """
-
 from __future__ import annotations
  
 import argparse
