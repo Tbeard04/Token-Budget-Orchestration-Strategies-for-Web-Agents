@@ -7,7 +7,6 @@ w(s,a) = exp(A(s,a) / beta), clipped
 R_stop = success - lambda * tokens_remaining / budget   [[(continue) vs 0 (stop)]]
 R_mode = success * (1 - lambda * tokens / budget)  [[failure = 0, see build_mode_set]]
 """
-
 from __future__ import annotations
 
 import argparse

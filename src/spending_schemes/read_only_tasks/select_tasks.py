@@ -56,7 +56,7 @@ def main() -> None:
     print(f"[select] eligible read-only, non-impossible: "
           + ", ".join(f"{t} {len(v)}" for t, v in sorted(pool.items())))
     print(f"[select] excluded: {excluded}")
-    print(f"[select] chose {len(chosen)} tasks -> {OUT}")
+    print(f"[select] chose {len(chosen)} tasks --> {OUT}")
 
 if __name__ == "__main__":
     main()
