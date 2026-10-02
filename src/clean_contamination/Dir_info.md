@@ -161,14 +161,3 @@ The `batch_analysis` commands read the split files from `batch_strategy_A/` and 
 - the list of columns
 
 ---
-
-## Data flow
-
-```
-task_metadata.jsonl --> classify_tasks --> task_risk_levels.jsonl
-                                                   │
-strategy_x.jsonl --> remove_errors --> sort_batch --> flag_episodes --> episodes_flagged.jsonl
-                                                                            │
-                                    task_metadata.jsonl + task_risk_levels --> join_metadata --> final_episodes_x.jsonl
-```                              
----
