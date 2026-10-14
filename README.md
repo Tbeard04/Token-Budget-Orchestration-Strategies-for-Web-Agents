@@ -276,148 +276,295 @@ Refer to `Dir_info.md` in each module folder:
 ## Directory Tree:
 ```text
 token-budget-orchestration-strategies-for-web-agents/
-│
-├── src/
-│   ├── wa_env.py           # shared WebArena/BrowserGym harness: task pools, agent construction, budget accounting
-│   ├── run_batch.py        # batch driver: runs a strategy over N tasks x 6 budgets
-│   ├── strategy_a.py       # Strategy A - single-agent baseline
-│   ├── strategy_b.py       # Strategy B - fixed Planner -> Executor -> Critic pipeline
-│   ├── .env                # API keys and site URLs (git-ignored)
-│   │
-│   ├── task_analysis/                  # what the tasks are
-│   │   ├── extract_task_intent.py      # intents + regex task_category -> task_intents.json
-│   │   ├── task_category_plots.py      # category distribution plots
-│   │   └── test.raw.json               # Taken from WebArena repository
-│   │
+├── src/                                # all source code, one folder per module (each has a Dir_info.md)
+│   ├── wa_env.py                       # shared WebArena/BrowserGym harness: prompts, agents, guards, budget accounting
+│   ├── run_batch.py                    # batch driver: one strategy over N tasks x 6 budgets, resumable
+│   ├── strategy_a.py                   # Strategy A - single-agent baseline
+│   ├── strategy_b.py                   # Strategy B - fixed Planner --> Executor --> Critic pipeline
+│   ├── strategy_c.py                   # Strategy C - router-directed (loads the trained router)
+│   ├── .env.example                    # template for API keys and site URLs (.env is git-ignored)
+│   ├── Dir_info.md                     # how to run the main scripts
+|   |
+│   ├── task_analysis/                  # what the tasks are (categories per site)
+│   │   ├── Dir_info.md
+│   │   ├── extract_task_intent.py      # intents + regex category --> task_intents.json
+│   │   └── task_category_plots.py      # category distribution plots
+|   |
 │   ├── task_annotation/                # how hard the tasks are (difficulty rubric)
+│   │   ├── Dir_info.md
 │   │   ├── annotate_tasks.py           # entry point: gold set, annotation, re-band, merge
+│   │   ├── label_tool.py               # gold set <-> CSV for hand-labelling + consistency checks
+│   │   ├── cohen_kappa.py              # entry point: human-vs-model agreement
+│   │   ├── tier_diagrams.py            # plots of the final tiers
 │   │   ├── rubric.py                   # the scale: 4 dimensions, prompt, band cut-points
-│   │   ├── tasks.py                    # task pools, sampling, site allocation
-│   │   ├── observed_cost.py            # per-task navigation cost from a collection file
-│   │   ├── gold_set.py                 # blank gold set, exemplar split, merging hand labels
 │   │   ├── annotator.py                # the LLM call and the output row
+│   │   ├── gold_set.py                 # blank gold set, exemplar split, merging hand labels
+│   │   ├── observed_cost.py            # per-task navigation cost hint from A's episodes
 │   │   ├── postprocess.py              # template harmonisation, review flags, re-banding
 │   │   ├── reporting.py                # terminal summaries and the validity check
 │   │   ├── agreement.py                # Cohen's kappa, Landis & Koch bands, correlations
-│   │   └── cohen_kappa.py              # entry point: human-vs-model agreement
-│   │
-│   ├── clean_contamination/            # decontamination pipeline (ran in this order)
+│   │   └── tasks.py                    # task pools, sampling, site allocation
+|   |
+│   ├── clean_contamination/            # decontamination pipeline (run in this order)
 │   │   ├── __init__.py
+│   │   ├── Dir_info.md
 │   │   ├── remove_errors.py            # 1. strip timeout / environment errors
 │   │   ├── sort_batch.py               # 2. sort episodes deterministically
 │   │   ├── classify_tasks.py           # 3. read_only / idempotent / non_idempotent
 │   │   ├── flag_episodes.py            # 4. per-strategy first-success rule
-│   │   └── join_metadata.py            # 5. attach difficulty + category to episodes
-│   │
-│   └── batch_analysis/                 # results analysis
+│   │   └── join_metadata.py            # 5. attach difficulty + category -> final_episodes*.jsonl
+|   |
+│   ├── router_c/                       # Strategy C's router: training data, training, model analysis
+│   │   ├── __init__.py
+│   │   ├── Dir_info.md
+│   │   ├── build_transitions.py        # A+B episodes --> mode_pairs.jsonl + transitions.jsonl
+│   │   ├── train/
+│   │   │   ├── __init__.py
+│   │   │   └── train_router.py         # AWR training of both heads, 5-fold task-level CV
+│   │   └── model_analysis/
+│   │       ├── __init__.py
+│   │       └── compare_models.py       # models 1-3 vs always-A / always-B / oracle
+|   |
+│   ├── spending_schemes/                    # RQ3: within-episode allocation schemes
+│   │   ├── Dir_info.md
+│   │   ├── spending_scheme_config.py        # every scheme constant and the task sample
+│   │   ├── allowance.py                     # per-step allowance, effort and prompt trimming
+│   │   ├── agents.py                        # low/high-effort agents and instruction overheads
+│   │   ├── read_only_tasks/
+│   │   │   └── select_tasks.py              # 100 read-only tasks, stratified by tier
+│   │   ├── run_schemes.py                   # runs the strategy x scheme x task grid
+│   │   └── scheme_analysis/
+│   │       ├── __init__.py
+│   │       └── analyse_schemes.py           # RQ3 tables, tests and plots
+|   |
+│   └── batch_analysis/                 # results analysis for the main grid
 │       ├── __init__.py
-│       ├── shared.py                   # loading, budget bucketing, plot helpers
-│       ├── analyse_a.py                # Strategy A cost-performance curves
-│       ├── analyse_b.py                # Strategy B, plus critic-invocation analysis
-│       ├── compare_ab.py               # A vs B under matched budgets
-│       └── compare_b_instructions.py   # B instruction versions v1 / v2 / v3
-│
-├── data/
-│   ├── raw/                                    # collection output, never edited in place
-│   │   ├── 6_budgets_ALL_tasks_batch/          # MAIN DATASET - all 475 single-site tasks
+│       ├── Dir_info.md
+│       ├── shared.py                   # loading + decontamination filter, Wilson, McNemar, plot helpers
+│       ├── analyse_a.py                # Strategy A tables and plots
+│       ├── analyse_b.py                # Strategy B, plus Critic and per-role cost analysis
+│       ├── analyse_c.py                # Strategy C, plus router-stop analysis
+│       └── compare_abc.py              # A vs B vs C: McNemar, cost ratios, difficulty, failure modes
+|
+├── data/                                         # every dataset: raw collection output and processed derivatives
+│   ├── raw/                                      # collection output, never edited in place
+│   │   ├── 6_budgets_ALL_tasks_batch/            # MAIN DATASET - all 475 single-site tasks x 6 budgets
 │   │   │   ├── batch_Strategy_A/
-│   │   │   │   └── strategy_a.jsonl            # 2,850 episodes (475 tasks x 6 budgets)
-│   │   │   └── batch_Strategy_B/
+│   │   │   │   └── strategy_a.jsonl              # 2,850 raw A episodes
+│   │   │   ├── batch_Strategy_B/
+│   │   │   │   └── strategy_b.jsonl              # 2,850 raw B episodes
+│   │   │   └── batch_Strategy_C/
+│   │   │       ├── strategy_c.jsonl              # 2,850 raw C episodes
+│   │   │       └── strategy_c_routing.jsonl      # router's per-episode decisions
+|   |   |
+│   │   ├── 6_budgets_201_tasks_batch/            # earlier 67-per-site (201-task) collection
+│   │   │   ├── 201_batch_Strategy_A/
+│   │   │   │   ├── analyse_batch_results_terminal_output.txt
+│   │   │   │   └── strategy_a.jsonl
+│   │   │   └── 201_batch_Strategy_B/
+│   │   │       ├── analyse_batch_results_terminal_output.txt
 │   │   │       └── strategy_b.jsonl
-│   │   │
-│   │   ├── 6_budgets_201_tasks_batch/          # earlier 67-per-site sample
-│   │   │   ├── 67_batch_Strategy_A/
-│   │   │   │   ├── strategy_a.jsonl
-│   │   │   │   └── analyse_batch_results_terminal_output.txt
-│   │   │   └── 67_batch_Strategy_B/
-│   │   │       ├── strategy_b.jsonl
-│   │   │       └── analyse_batch_results_terminal_output.txt
-│   │   │
-│   │   ├── pilot_batch_outputs/                # first initial runs
+|   |   |
+│   │   ├── pilot_batch_outputs/                            # first pilot runs
 │   │   │   ├── small_batch_test_Strategy_A/
+│   │   │   │   ├── Pilot test batch run for strategy A.txt
 │   │   │   │   ├── pilot_a.jsonl
-│   │   │   │   ├── pilot_a_structured.json
-│   │   │   │   └── Pilot test batch run for strategy A.txt
+│   │   │   │   └── pilot_a_structured.json
 │   │   │   └── small_batch_test_Strategy_B/
+│   │   │       ├── Pilot test batch run for strategy B.txt
 │   │   │       ├── pilot_b.jsonl
-│   │   │       ├── pilot_b_structured.json
-│   │   │       └── Pilot test batch run for strategy B.txt
-│   │   │
-│   │   ├── annotation_tests/                   # difficulty-annotation runs
-│   │   │   ├── run1/
+│   │   │       └── pilot_b_structured.json
+|   |   |
+│   │   ├── annotation_tests/                               # difficulty-annotation runs
+│   │   │   ├── run1/                                       # first annotation run (no kappa)
+│   │   │   │   ├── readme.txt
 │   │   │   │   ├── tasks_annotated_run1.jsonl
-│   │   │   │   ├── tasks_annotated_structured_run1.json
-│   │   │   │   └── readme.txt                  # with task_intents & A's output, no kappa
-│   │   │   └── run2/
-│   │   │       └── readme.txt                  # with task_intents & A's output + Cohen's kappa
-│   │   │
-│   │   ├── strategy_B_instruction_versions/    # prompt provenance for Strategy B
-│   │   │   ├── v1_B_instructions.md
-│   │   │   ├── v2_B_instructions.md
-│   │   │   ├── v3_B_instructions.md
-│   │   │   ├── strategy_b_v1_instructions.jsonl
-│   │   │   ├── strategy_b_v2_instructions.jsonl
-│   │   │   └── strategy_b_v3_instructions.jsonl
-│   │   │
-│   │   └── readme.txt
-│   │
-│   └── processed/                              # derived data, reproducible from raw/
-│       ├── 6_budgets_ALL_tasks_decontaminated_batch/
-│       │   ├── batch_strategy_A/
-│       │   └── batch_strategy_B/
-│       │
-│       ├── task_list/
-│       │   └── task_intents.json               # intents + task_category for all 475 tasks from task_analysis/
-│       │
-│       ├── final_annotation_difficulty_tiers/  # task_metadata.jsonl (final labels)
-│       │
-│       ├── diagrams/
-│       │   ├── 6_budgets_ALL_tasks_decontaminated_batches/
-│       │   │   ├── strategy_a_batch/
-│       │   │   ├── strategy_b_batch/
-│       │   │   └── comparisons/
-│       │   ├── difficulty_tiers/
-│       │   ├── pilot_C_batch/
-│       │   ├── task_list/
-│       │   │   ├── task_categories_overall.png
-│       │   │   ├── task_categories_by_site.png
-│       │   │   └── task_categories_risk.png
-│       │   └── other_diagrams/
-│       │       ├── 6_budgets_201_tasks/
-│       │       │   ├── strategy_a_batch/
-│       │       │   │   ├── cost_curve_a.png
-│       │       │   │   ├── success_by_site_a.png
-│       │       │   │   ├── termination_reasons_a.png
-│       │       │   │   └── token_boxplot_a.png
-│       │       │   └── strategy_b_batch/
-│       │       │       ├── cost_curve_b.png
-│       │       │       ├── success_by_site_b.png
-│       │       │       ├── termination_reasons_b.png
-│       │       │       └── token_boxplot_b.png
-│       │       └── pilot_batch/
-│       │           ├── pilot_batch_strategy A/
-│       │           │   ├── cost_curve_a.png
-│       │           │   ├── success_by_site_a.png
-│       │           │   ├── termination_reasons_a.png
-│       │           │   └── token_boxplot_a.png
-│       │           └── pilot_batch_strategy B/
-│       │               ├── cost_curve_b.png
-│       │               ├── success_by_site_b.png
-│       │               ├── termination_reasons_b.png
-│       │               └── token_boxplot_b.png
-│       │
-│       └── readme.txt
-│
-├── docs/
-│   ├── Additional Material/
-│   └── Source Code.txt
-│
-├── keys/
-│   └── webarena-key.pem               # AWS SSH key (git-ignored - never commit)
-│
-├── .venv/
-├── .vscode/
-├── requirements.txt
-├── .gitignore
-└── README.md
+│   │   │   │   └── tasks_annotated_structured_run1.json
+│   │   │   └── run2/                                       # final annotation run
+│   │   │       ├── gold_set_50.csv                         # hand labels entered via CSV
+│   │   │       ├── gold_set_50.jsonl                       # the 50-task gold set
+│   │   │       ├── gold_set_50.jsonl.bak
+│   │   │       ├── kappa_run2.json                         # agreement results (report Table 3.5)
+│   │   │       └── tasks_annotated_run2.jsonl              # the annotator's raw scores
+|   |   |
+│   │   └── strategy_B_instruction_versions/                # prompt provenance for Strategy B's instructions v1-v3
+│   │       ├── strategy_b_v1_instructions.jsonl
+│   │       ├── strategy_b_v2_instructions.jsonl
+│   │       ├── strategy_b_v3_instructions.jsonl
+│   │       ├── v1_B_instructions.md
+│   │       ├── v2_B_instructions.md
+│   │       └── v3_B_instructions.md
+|   |
+│   ├── processed/                                          # derived data, reproducible from raw/
+│   │   ├── 6_budgets_ALL_tasks_decontaminated_batch/       # decontaminated episode files
+│   │   │   ├── episodes_flagged.jsonl                      # A+B with eligibility flags
+│   │   │   ├── final_episodes.jsonl                        # combined A+B (router training input)
+│   │   │   ├── batch_strategy_A/
+│   │   │   │   └── final_episodes_a.jsonl                  # behind every Ch.4 table
+│   │   │   ├── batch_strategy_B/
+│   │   │   │   └── final_episodes_b.jsonl
+│   │   │   └── batch_strategy_C/
+│   │   │       └── final_episodes_c.jsonl
+|   |   |
+│   │   ├── task_list/                                 # task-level lists
+│   │   │   ├── read_only_tasks.jsonl                  # the fixed 100-task RQ3 sample
+│   │   │   ├── task_intents.json                      # intent + category per kept task
+│   │   │   ├── task_risk_levels.jsonl                 # contamination-risk level per task
+│   │   │   └── test.raw.json                          # WebArena's raw configs (all 812 tasks)
+|   |   |
+│   │   ├── final_annotation_difficulty_tiers/
+│   │   │   └── task_metadata.jsonl                    # final difficulty labels per task
+|   |   |
+│   │   ├── router_c_models/                           # Strategy C's training data and the three trained routers
+│   │   │   ├── mode_pairs.jsonl                       # mode-head training data
+│   │   │   ├── transitions.jsonl                      # stop-head training data
+│   │   │   ├── model_1/
+│   │   │   │   ├── config.json
+│   │   │   │   ├── metrics.json
+│   │   │   │   ├── oof_predictions.jsonl
+│   │   │   │   └── router.pt
+│   │   │   ├── model_2/                               # the deployed router (strategy_c.py loads this)
+│   │   │   │   ├── config.json
+│   │   │   │   ├── metrics.json
+│   │   │   │   ├── oof_predictions.jsonl
+│   │   │   │   └── router.pt                          # both heads + normalisation + stop threshold
+│   │   │   └── model_3/
+│   │   │       ├── config.json
+│   │   │       ├── metrics.json
+│   │   │       ├── oof_predictions.jsonl
+│   │   │       └── router.pt
+|   |   |
+│   │   ├── schemes_output/
+│   │   │   └── schemes.jsonl         # the 900 RQ3 episodes
+|   |   |
+│   │   └── diagrams/                                       # every generated figure and analysis printout
+│   │       ├── 6_budgets_ALL_tasks_decontaminted_batches/  # main-grid figures + analyse_*/compare printouts
+│   │       │   ├── comparisons/
+│   │       │   │   ├── compare_abc_output.txt
+│   │       │   │   ├── cost_curve_a_vs_b_vs_c.png
+│   │       │   │   ├── cost_performance_a_vs_b_vs_c.png
+│   │       │   │   ├── difficulty_a_vs_b_vs_c.png
+│   │       │   │   ├── difficulty_easy_by_budget_a_vs_b_vs_c.png
+│   │       │   │   ├── difficulty_hard_by_budget_a_vs_b_vs_c.png
+│   │       │   │   ├── difficulty_medium_by_budget_a_vs_b_vs_c.png
+│   │       │   │   ├── difficulty_sensitivity_a_vs_b_vs_c.png
+│   │       │   │   ├── outcome_mix_a_vs_b_vs_c.png
+│   │       │   │   ├── outcome_mix_by_tier_a_vs_b_vs_c.png
+│   │       │   │   ├── per_step_cost_a_vs_b_vs_c.png
+│   │       │   │   └── token_efficiency_a_vs_b_vs_c.png
+|   |       |   |
+│   │       │   ├── strategy_a_batch/
+│   │       │   │   ├── analyse_a_output.txt
+│   │       │   │   ├── cost_curve_a.png
+│   │       │   │   ├── difficulty_curve_a.png
+│   │       │   │   ├── success_by_site_a.png
+│   │       │   │   ├── termination_reasons_a.png
+│   │       │   │   └── token_boxplot_a.png
+|   |       |   |
+│   │       │   ├── strategy_b_batch/
+│   │       │   │   ├── analyse_b_output.txt
+│   │       │   │   ├── cost_curve_b.png
+│   │       │   │   ├── critic_analysis_b.png
+│   │       │   │   ├── difficulty_curve_b.png
+│   │       │   │   ├── role_cost_breakdown_b.png
+│   │       │   │   ├── success_by_site_b.png
+│   │       │   │   ├── termination_reasons_b.png
+│   │       │   │   └── token_boxplot_b.png
+|   |       |   |
+│   │       │   └── strategy_c_batch/
+│   │       │       ├── analyse_c_output.txt
+│   │       │       ├── cost_curve_c.png
+│   │       │       ├── difficulty_curve_c.png
+│   │       │       ├── router_stop_by_tier_c.png
+│   │       │       ├── router_stop_rate_c.png
+│   │       │       ├── router_stop_step_c.png
+│   │       │       ├── success_all_vs_attempted_c.png
+│   │       │       ├── success_by_site_c.png
+│   │       │       ├── termination_reasons_c.png
+│   │       │       ├── tier_all_vs_attempted_c.png
+│   │       │       └── token_boxplot_c.png
+|   |       |
+│   │       ├── difficulty_tiers/                           # tier distribution figures
+│   │       │   ├── tier_by_category.png
+│   │       │   ├── tier_by_site.png
+│   │       │   └── tier_distribution.png
+|   |       |
+│   │       ├── other_diagrams/                             # figures from the 201-task and pilot runs
+│   │       │   ├── 6_budgets_201_tasks/
+│   │       │   │   ├── strategy_a_batch/
+│   │       │   │   │   ├── cost_curve_a.png
+│   │       │   │   │   ├── success_by_site_a.png
+│   │       │   │   │   ├── termination_reasons_a.png
+│   │       │   │   │   └── token_boxplot_a.png
+│   │       │   │   └── strategy_b_batch/
+│   │       │   │       ├── cost_curve_b.png
+│   │       │   │       ├── critic_analysis_b.png
+│   │       │   │       ├── role_cost_breakdown_b.png
+│   │       │   │       ├── success_by_site_b.png
+│   │       │   │       ├── termination_reasons_b.png
+│   │       │   │       └── token_boxplot_b.png
+|   |       |   |
+│   │       │   └── pilot_batch/
+│   │       │       ├── pilot_batch_strategy A/
+│   │       │       │   ├── cost_curve_a.png
+│   │       │       │   ├── success_by_site_a.png
+│   │       │       │   ├── termination_reasons_a.png
+│   │       │       │   └── token_boxplot_a.png
+│   │       │       └── pilot_batch_strategy B/
+│   │       │           ├── cost_curve_b.png
+│   │       │           ├── success_by_site_b.png
+│   │       │           ├── termination_reasons_b.png
+│   │       │           └── token_boxplot_b.png
+|   |       |
+│   │       ├── schemes_output/                         # RQ3 figures, grid.csv and printout
+│   │       │   ├── analyse_schemes_output.txt
+│   │       │   ├── cost_vs_success.png
+│   │       │   ├── cost_vs_success_a.png
+│   │       │   ├── cost_vs_success_b.png
+│   │       │   ├── cost_vs_success_c.png
+│   │       │   ├── effect_success.png
+│   │       │   ├── effect_tokens.png
+│   │       │   ├── grid.csv
+│   │       │   ├── outcome_mix.png
+│   │       │   ├── success_by_scheme.png
+│   │       │   ├── tokens_by_scheme.png
+│   │       │   └── tokens_per_success.png
+|   |       |
+│   │       ├── strategy_c_model123_plots/             # router models 1-3 comparison plots
+│   │       │   ├── frontier.png
+│   │       │   ├── mode_by_winner.png
+│   │       │   ├── mode_p_cycle.png
+│   │       │   ├── per_budget_successes.png
+│   │       │   ├── per_budget_tokens.png
+│   │       │   ├── stop_by_step.png
+│   │       │   └── stop_step0.png
+|   |       |
+│   │       └── task_list/                               # task category figures
+│   │           ├── task_categories_by_site.png
+│   │           ├── task_categories_overall.png
+│   │           └── task_categories_risk.png
+|   |
+│   └── demo/                               # single-episode demo output for the project video
+│       ├── strategy_a_demo.jsonl
+│       └── test.txt
+|
+├── docs/                                   # report and the additional material
+│   └── Additional Material/                # submission bundle: see its own README.md
+│       ├── README.md                       # directory tree for the additional material
+│       ├── AI Usage.md                     # the generative-AI usage log behind report Chapter 5 / Appendix D
+|       ├── Token Budget..docx              # Full report in word format
+|       ├── Proposal..docx                  # Final preliminary proposal                     
+│       ├── Datasets/                       # copies of the key datasets (originals under data/)
+│       ├── Diagrams/                       # every figure used in the report
+│       ├── Research/                       # the cited papers, grouped by literature strand
+│       └── Source Code.txt                 # full source code in txt format
+|
+├── setup/                                  # environment patch script
+│   └── patch_webarena.sh                   # applies the WebArena/BrowserGym patches of Section 5
+├── keys/                                   # SSH key template for the AWS instance (real key git-ignored)
+│   └── webarena-key.pem.example            # placeholder; the real key is git-ignored
+├── requirements_instance.txt               # Python packages for the AWS instance
+├── requirements_local.txt                  # Python packages for local analysis/training
+├── .gitignore                              # excludes src/.env, keys/*.pem and other local files
+└── README.md                               # this file: reproduction guide + directory tree
 ```
