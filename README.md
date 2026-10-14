@@ -556,6 +556,7 @@ token-budget-orchestration-strategies-for-web-agents/
 |       ├── Proposal..docx                  # Final preliminary proposal                     
 │       ├── Datasets/                       # copies of the key datasets (originals under data/)
 │       ├── Diagrams/                       # every figure used in the report
+|       ├── Videos/                         # Contains the demo submission video and powerpoint
 │       ├── Research/                       # the cited papers, grouped by literature strand
 │       └── Source Code.txt                 # full source code in txt format
 |
